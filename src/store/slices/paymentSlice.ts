@@ -165,7 +165,7 @@ export const generatePayroll = createAsyncThunk(
   'payment/generatePayroll',
   async (paymentMonth: string, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/payments/generate/${paymentMonth}`);
+      const response = await api.post(`/workers/payments/generate/${paymentMonth}`);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error?.message || 'Failed to generate payroll');

@@ -89,7 +89,7 @@ const Procurement: React.FC = () => {
         setOilPurchases(response.data.data?.purchases || []);
       }
     } catch (err: any) {
-      setError(err.error?.message || 'Failed to fetch oil purchases');
+      setError(err.response?.data?.error?.message || 'Failed to fetch oil purchases');
     } finally {
       setLoading(false);
     }
@@ -107,7 +107,7 @@ const Procurement: React.FC = () => {
         setPackagingPurchases(response.data.data?.purchases || []);
       }
     } catch (err: any) {
-      setError(err.error?.message || 'Failed to fetch packaging purchases');
+      setError(err.response?.data?.error?.message || 'Failed to fetch packaging purchases');
     } finally {
       setLoading(false);
     }

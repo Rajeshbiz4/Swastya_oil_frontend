@@ -64,6 +64,7 @@ const Sales: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [creditLoading, setCreditLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -104,6 +105,7 @@ const Sales: React.FC = () => {
   const fetchDistributors = async () => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (showActiveOnly) params.append('isActive', 'true');
@@ -113,7 +115,7 @@ const Sales: React.FC = () => {
         setDistributors(response.data.data?.distributors || []);
       }
     } catch (err: any) {
-      setError(err.error?.message || 'Failed to fetch distributors');
+      setError(err.response?.data?.error?.message || 'Failed to fetch distributors');
     } finally {
       setLoading(false);
     }
@@ -145,6 +147,7 @@ const Sales: React.FC = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
@@ -154,7 +157,7 @@ const Sales: React.FC = () => {
         setOrders(response.data.data || []);
       }
     } catch (err: any) {
-      setError(err.error?.message || 'Failed to fetch sales orders');
+      setError(err.response?.data?.error?.message || 'Failed to fetch sales orders');
     } finally {
       setLoading(false);
     }
@@ -351,7 +354,7 @@ const Sales: React.FC = () => {
         fetchDistributors();
       }
     } catch (err: any) {
-      setError(err.error?.message || `Failed to ${distributor.isActive ? 'deactivate' : 'activate'} distributor`);
+      setError(err.response?.data?.error?.message || `Failed to ${distributor.isActive ? 'deactivate' : 'activate'} distributor`);
     } finally {
       setLoading(false);
     }
@@ -380,6 +383,8 @@ const Sales: React.FC = () => {
     try {
       setFormLoading(true);
       setOrderFormErrors({});
+      setError(null);
+      setSuccess(null);
 
       if (!orderFormData.distributorId || orderFormData.items.length === 0 || !orderFormData.paymentMode) {
         setOrderFormErrors({ form: 'Please select a distributor, add at least one item, and select payment mode' });
@@ -388,7 +393,7 @@ const Sales: React.FC = () => {
 
       const response = await api.post('/sales/orders', orderFormData);
       if (response.data.success) {
-        setShowForm(false);
+        setSuccess('Sales order created successfully!');
         setOrderFormData({
           distributorId: '',
           items: [],
@@ -400,20 +405,24 @@ const Sales: React.FC = () => {
           quantity: 0,
           unitPrice: 0,
         });
-        fetchOrders();
+        setTimeout(() => {
+          setShowForm(false);
+          fetchOrders();
+          setSuccess(null);
+        }, 1500);
       }
     } catch (err: any) {
       // Handle field-specific errors
-      if (err.error?.code === 'DUPLICATE_ORDER') {
+      if (err.response?.data?.error?.code === 'DUPLICATE_ORDER') {
         setOrderFormErrors({ distributorId: 'Order already exists for this distributor' });
-      } else if (err.error?.code === 'INSUFFICIENT_INVENTORY') {
+      } else if (err.response?.data?.error?.code === 'INSUFFICIENT_INVENTORY') {
         setOrderFormErrors({ quantity: 'Insufficient inventory for requested quantity' });
-      } else if (err.error?.code === 'CREDIT_LIMIT_EXCEEDED') {
+      } else if (err.response?.data?.error?.code === 'CREDIT_LIMIT_EXCEEDED') {
         setOrderFormErrors({ form: 'Order exceeds distributor credit limit' });
-      } else if (err.error?.code === 'MISSING_FIELDS') {
-        setError('Please fill in all required fields');
+      } else if (err.response?.data?.error?.code === 'MISSING_FIELDS') {
+        setOrderFormErrors({ form: 'Please fill in all required fields' });
       } else {
-        setError(err.error?.message || 'Failed to create sales order');
+        setError(err.response?.data?.error?.message || 'Failed to create sales order');
       }
     } finally {
       setFormLoading(false);
@@ -561,9 +570,24 @@ const Sales: React.FC = () => {
         </div>
 
         <div className="form-container">
+          {error && (
+            <div className="error-message" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{error}</span>
+              <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1.5rem' }}>×</button>
+            </div>
+          )}
+
+          {success && (
+            <div className="success-message" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{success}</span>
+              <button onClick={() => setSuccess(null)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1.5rem' }}>×</button>
+            </div>
+          )}
+
           {orderFormErrors.form && (
-            <div className="error-message" style={{ marginBottom: '1rem' }}>
-              {orderFormErrors.form}
+            <div className="error-message" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{orderFormErrors.form}</span>
+              <button onClick={() => setOrderFormErrors({})} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1.5rem' }}>×</button>
             </div>
           )}
 

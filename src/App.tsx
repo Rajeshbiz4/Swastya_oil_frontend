@@ -14,7 +14,7 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Procurement from './pages/Procurement';
 import Inventory from './pages/Inventory';
-import Production from './pages/Production';
+import ProductionImproved from './pages/ProductionImproved';
 import Sales from './pages/Sales';
 import Reports from './pages/Reports';
 import Worker from './pages/Worker';
@@ -51,7 +51,7 @@ const AppContent: React.FC = () => {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="procurement" element={<Procurement />} />
           <Route path="inventory" element={<Inventory />} />
-          <Route path="production" element={<Production />} />
+          <Route path="production" element={<ProductionImproved />} />
           <Route path="sales" element={<Sales />} />
           <Route path="reports" element={<Reports />} />
           <Route path="workers" element={<Worker />} />

@@ -86,7 +86,7 @@ const DailyReports: React.FC<DailyReportsProps> = ({ onError }) => {
         setReportData(response.data.data);
       }
     } catch (err: any) {
-      onError(err.error?.message || 'Failed to fetch daily report');
+      onError(err.response?.data?.error?.message || 'Failed to fetch daily report');
       setReportData(null);
     } finally {
       setLoading(false);

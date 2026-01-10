@@ -1,0 +1,735 @@
+import React, { useState } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+import { Bar, Line, Pie } from 'react-chartjs-2';
+import DataTable from '../UI/DataTable';
+import ExportButton from '../UI/ExportButton';
+import api from '../../services/api';
+import '../UI/UI.css';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
+
+interface MonthlyPnLData {
+  period: string;
+  revenue: {
+    totalSales: number;
+    totalOrders: number;
+    averageOrderValue: number;
+  };
+  costOfGoodsSold: {
+    oilCost: number;
+    laborCost: number;
+    packagingCost: number;
+    total: number;
+  };
+  grossProfit: {
+    amount: number;
+    margin: number;
+  };
+  operationalExpenses: {
+    totalPurchases: number;
+    oilPurchases: number;
+    packagingPurchases: number;
+  };
+  netProfit: {
+    amount: number;
+    margin: number;
+  };
+  production: {
+    totalBatches: number;
+    totalOilConsumed: number;
+    totalProduction: number;
+  };
+}
+
+interface MonthlySummaryData {
+  period: string;
+  procurement: {
+    oilPurchases: {
+      totalQuantity: number;
+      totalAmount: number;
+      averageRate: number;
+      transactionCount: number;
+    };
+    packagingPurchases: {
+      totalQuantity: number;
+      totalAmount: number;
+      averageRate: number;
+      transactionCount: number;
+    };
+  };
+  production: {
+    totalBatches: number;
+    completedBatches: number;
+    totalOilConsumed: number;
+    totalProductionQuantity: number;
+    efficiency: number;
+    totalLaborCost: number;
+  };
+  sales: {
+    totalOrders: number;
+    totalValue: number;
+    totalQuantity: number;
+    averageOrderValue: number;
+    efficiency: number;
+    pendingOrders: number;
+    deliveredOrders: number;
+  };
+  financial: {
+    totalRevenue: number;
+    totalExpenses: number;
+    grossMargin: number;
+    cashTransactions: number;
+    creditTransactions: number;
+  };
+}
+
+interface MonthlyComparisonData {
+  currentPeriod: string;
+  previousPeriod: string;
+  current: {
+    totalSales: number;
+    totalOrders: number;
+    totalPurchases: number;
+    totalProduction: number;
+    totalBatches: number;
+  };
+  previous: {
+    totalSales: number;
+    totalOrders: number;
+    totalPurchases: number;
+    totalProduction: number;
+    totalBatches: number;
+  };
+  changes: {
+    sales: { amount: number; percentage: number };
+    orders: { amount: number; percentage: number };
+    purchases: { amount: number; percentage: number };
+    production: { amount: number; percentage: number };
+    batches: { amount: number; percentage: number };
+  };
+  trends: {
+    salesTrend: string;
+    productionTrend: string;
+    purchasesTrend: string;
+  };
+}
+
+interface MonthlyReportData {
+  pnl?: MonthlyPnLData;
+  summary?: MonthlySummaryData;
+  comparison?: MonthlyComparisonData;
+}
+
+interface MonthlyReportsProps {
+  onError: (error: string) => void;
+}
+
+const MonthlyReports: React.FC<MonthlyReportsProps> = ({ onError }) => {
+  const [reportType, setReportType] = useState<'comprehensive' | 'pnl'>('comprehensive');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [reportData, setReportData] = useState<MonthlyReportData | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchMonthlyReport = async () => {
+    try {
+      setLoading(true);
+      onError('');
+      
+      const reportData: MonthlyReportData = {};
+      
+      if (reportType === 'pnl') {
+        // Fetch P&L report only
+        const pnlResponse = await api.get(`/reports/monthly/pnl/${selectedYear}/${selectedMonth}`);
+        if (pnlResponse.data.success) {
+          reportData.pnl = pnlResponse.data.data;
+        }
+      } else {
+        // Fetch comprehensive report (P&L + Summary + Comparison)
+        const [pnlResponse, summaryResponse, comparisonResponse] = await Promise.all([
+          api.get(`/reports/monthly/pnl/${selectedYear}/${selectedMonth}`),
+          api.get(`/reports/monthly/summary/${selectedYear}/${selectedMonth}`),
+          api.get(`/reports/monthly/comparison/${selectedYear}/${selectedMonth}`)
+        ]);
+        
+        if (pnlResponse.data.success) {
+          reportData.pnl = pnlResponse.data.data;
+        }
+        if (summaryResponse.data.success) {
+          reportData.summary = summaryResponse.data.data;
+        }
+        if (comparisonResponse.data.success) {
+          reportData.comparison = comparisonResponse.data.data;
+        }
+      }
+      
+      setReportData(reportData);
+    } catch (err: any) {
+      onError(err.response?.data?.error?.message || 'Failed to fetch monthly report');
+      setReportData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getExportData = () => {
+    if (!reportData) return [];
+
+    const exportData: any[] = [];
+
+    // Add P&L summary
+    if (reportData.pnl) {
+      exportData.push({
+        Section: 'Profit & Loss Summary',
+        'Total Revenue': reportData.pnl.revenue.totalSales || 0,
+        'Cost of Goods Sold': reportData.pnl.costOfGoodsSold.total || 0,
+        'Gross Profit': reportData.pnl.grossProfit.amount || 0,
+        'Gross Profit Margin': `${reportData.pnl.grossProfit.margin?.toFixed(2) || 0}%`,
+        'Net Profit': reportData.pnl.netProfit.amount || 0,
+        'Net Profit Margin': `${reportData.pnl.netProfit.margin?.toFixed(2) || 0}%`,
+      });
+
+      // Add cost breakdown
+      exportData.push({
+        Section: 'Cost Breakdown',
+        'Oil Cost': reportData.pnl.costOfGoodsSold.oilCost || 0,
+        'Labor Cost': reportData.pnl.costOfGoodsSold.laborCost || 0,
+        'Packaging Cost': reportData.pnl.costOfGoodsSold.packagingCost || 0,
+        'Total COGS': reportData.pnl.costOfGoodsSold.total || 0,
+      });
+
+      // Add operational expenses
+      exportData.push({
+        Section: 'Operational Expenses',
+        'Oil Purchases': reportData.pnl.operationalExpenses.oilPurchases || 0,
+        'Packaging Purchases': reportData.pnl.operationalExpenses.packagingPurchases || 0,
+        'Total Purchases': reportData.pnl.operationalExpenses.totalPurchases || 0,
+      });
+    }
+
+    // Add production summary
+    if (reportData.summary) {
+      exportData.push({
+        Section: 'Production Summary',
+        'Total Batches': reportData.summary.production.totalBatches || 0,
+        'Completed Batches': reportData.summary.production.completedBatches || 0,
+        'Oil Consumed (L)': reportData.summary.production.totalOilConsumed || 0,
+        'Total Production': reportData.summary.production.totalProductionQuantity || 0,
+        'Production Efficiency': `${reportData.summary.production.efficiency?.toFixed(2) || 0}%`,
+        'Total Labor Cost': reportData.summary.production.totalLaborCost || 0,
+      });
+
+      // Add procurement summary
+      exportData.push({
+        Section: 'Procurement Summary',
+        'Oil Purchased (L)': reportData.summary.procurement.oilPurchases.totalQuantity || 0,
+        'Oil Purchase Amount': reportData.summary.procurement.oilPurchases.totalAmount || 0,
+        'Packaging Purchased': reportData.summary.procurement.packagingPurchases.totalQuantity || 0,
+        'Packaging Purchase Amount': reportData.summary.procurement.packagingPurchases.totalAmount || 0,
+      });
+
+      // Add sales summary
+      exportData.push({
+        Section: 'Sales Summary',
+        'Total Orders': reportData.summary.sales.totalOrders || 0,
+        'Total Sales Value': reportData.summary.sales.totalValue || 0,
+        'Total Quantity Sold': reportData.summary.sales.totalQuantity || 0,
+        'Average Order Value': reportData.summary.sales.averageOrderValue || 0,
+        'Sales Efficiency': `${reportData.summary.sales.efficiency?.toFixed(2) || 0}%`,
+        'Pending Orders': reportData.summary.sales.pendingOrders || 0,
+        'Delivered Orders': reportData.summary.sales.deliveredOrders || 0,
+      });
+    }
+
+    // Add month-over-month comparison
+    if (reportData.comparison) {
+      exportData.push({
+        Section: 'Month-over-Month Comparison',
+        'Current Sales': reportData.comparison.current.totalSales,
+        'Previous Sales': reportData.comparison.previous.totalSales,
+        'Sales Growth': `${reportData.comparison.changes.sales.percentage?.toFixed(2) || 0}%`,
+        'Current Production': reportData.comparison.current.totalProduction,
+        'Previous Production': reportData.comparison.previous.totalProduction,
+        'Production Growth': `${reportData.comparison.changes.production.percentage?.toFixed(2) || 0}%`,
+        'Sales Trend': reportData.comparison.trends.salesTrend,
+        'Production Trend': reportData.comparison.trends.productionTrend,
+      });
+    }
+
+    return exportData;
+  };
+
+  const renderSummaryCards = () => {
+    if (!reportData?.pnl) return null;
+
+    return (
+      <div className="report-summary-cards">
+        <div className="report-summary-card">
+          <h4>Total Revenue</h4>
+          <div className="report-summary-value">
+            ₹{reportData.pnl.revenue.totalSales?.toLocaleString() || 0}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#6c757d' }}>
+            {reportData.pnl.revenue.totalOrders || 0} orders
+          </div>
+        </div>
+        <div className="report-summary-card">
+          <h4>Gross Profit</h4>
+          <div className="report-summary-value">
+            ₹{reportData.pnl.grossProfit.amount?.toLocaleString() || 0}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#6c757d' }}>
+            {reportData.pnl.grossProfit.margin?.toFixed(2) || 0}% margin
+          </div>
+        </div>
+        <div className="report-summary-card">
+          <h4>Net Profit</h4>
+          <div className="report-summary-value">
+            ₹{reportData.pnl.netProfit.amount?.toLocaleString() || 0}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#6c757d' }}>
+            {reportData.pnl.netProfit.margin?.toFixed(2) || 0}% margin
+          </div>
+        </div>
+        <div className="report-summary-card">
+          <h4>Total Production</h4>
+          <div className="report-summary-value">
+            {reportData.pnl.production.totalProduction?.toLocaleString() || 0}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#6c757d' }}>
+            {reportData.pnl.production.totalBatches || 0} batches
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderCostBreakdownChart = () => {
+    if (!reportData?.pnl?.costOfGoodsSold) return null;
+
+    const data = {
+      labels: ['Oil Cost', 'Labor Cost', 'Packaging Cost'],
+      datasets: [
+        {
+          data: [
+            reportData.pnl.costOfGoodsSold.oilCost || 0,
+            reportData.pnl.costOfGoodsSold.laborCost || 0,
+            reportData.pnl.costOfGoodsSold.packagingCost || 0,
+          ],
+          backgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+          ],
+          hoverBackgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+          ],
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom' as const,
+        },
+        title: {
+          display: true,
+          text: 'Cost of Goods Sold Breakdown',
+        },
+      },
+    };
+
+    return (
+      <div className="report-section">
+        <h3 className="report-section-title">Cost Breakdown</h3>
+        <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+          <Pie data={data} options={options} />
+        </div>
+        <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+          <p><strong>Oil Cost:</strong> ₹{reportData.pnl.costOfGoodsSold.oilCost?.toLocaleString() || 0}</p>
+          <p><strong>Labor Cost:</strong> ₹{reportData.pnl.costOfGoodsSold.laborCost?.toLocaleString() || 0}</p>
+          <p><strong>Packaging Cost:</strong> ₹{reportData.pnl.costOfGoodsSold.packagingCost?.toLocaleString() || 0}</p>
+          <p><strong>Total COGS:</strong> ₹{reportData.pnl.costOfGoodsSold.total?.toLocaleString() || 0}</p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderProductionChart = () => {
+    if (!reportData?.summary?.production) return null;
+
+    // Create a simple production metrics chart
+    const data = {
+      labels: ['Total Batches', 'Completed Batches', 'Oil Consumed (L)', 'Production Quantity'],
+      datasets: [
+        {
+          label: 'Production Metrics',
+          data: [
+            reportData.summary.production.totalBatches,
+            reportData.summary.production.completedBatches,
+            reportData.summary.production.totalOilConsumed / 1000, // Convert to thousands for better visualization
+            reportData.summary.production.totalProductionQuantity / 1000, // Convert to thousands
+          ],
+          backgroundColor: [
+            'rgba(54, 162, 235, 0.6)',
+            'rgba(75, 192, 192, 0.6)',
+            'rgba(255, 206, 86, 0.6)',
+            'rgba(153, 102, 255, 0.6)',
+          ],
+          borderColor: [
+            'rgba(54, 162, 235, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(255, 206, 86, 1)',
+            'rgba(153, 102, 255, 1)',
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top' as const,
+        },
+        title: {
+          display: true,
+          text: 'Production Analysis',
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+        },
+      },
+    };
+
+    return (
+      <div className="report-section">
+        <h3 className="report-section-title">Production Analysis</h3>
+        <Bar data={data} options={options} />
+        <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+          <p><strong>Total Batches:</strong> {reportData.summary.production.totalBatches || 0}</p>
+          <p><strong>Completed Batches:</strong> {reportData.summary.production.completedBatches || 0}</p>
+          <p><strong>Oil Consumed:</strong> {reportData.summary.production.totalOilConsumed?.toLocaleString() || 0} L</p>
+          <p><strong>Total Production:</strong> {reportData.summary.production.totalProductionQuantity?.toLocaleString() || 0}</p>
+          <p><strong>Efficiency:</strong> {reportData.summary.production.efficiency?.toFixed(2) || 0}%</p>
+          <p><strong>Labor Cost:</strong> ₹{reportData.summary.production.totalLaborCost?.toLocaleString() || 0}</p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSalesAnalysis = () => {
+    if (!reportData?.summary?.sales) return null;
+
+    const data = {
+      labels: ['Total Orders', 'Pending Orders', 'Delivered Orders'],
+      datasets: [
+        {
+          data: [
+            reportData.summary.sales.totalOrders,
+            reportData.summary.sales.pendingOrders,
+            reportData.summary.sales.deliveredOrders,
+          ],
+          backgroundColor: [
+            '#36A2EB',
+            '#FF6384',
+            '#4BC0C0',
+          ],
+          hoverBackgroundColor: [
+            '#36A2EB',
+            '#FF6384',
+            '#4BC0C0',
+          ],
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom' as const,
+        },
+        title: {
+          display: true,
+          text: 'Sales Order Status Distribution',
+        },
+      },
+    };
+
+    return (
+      <div className="report-section">
+        <h3 className="report-section-title">Sales Analysis</h3>
+        <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+          <Pie data={data} options={options} />
+        </div>
+        <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+          <p><strong>Total Orders:</strong> {reportData.summary.sales.totalOrders || 0}</p>
+          <p><strong>Total Value:</strong> ₹{reportData.summary.sales.totalValue?.toLocaleString() || 0}</p>
+          <p><strong>Total Quantity:</strong> {reportData.summary.sales.totalQuantity?.toLocaleString() || 0}</p>
+          <p><strong>Average Order Value:</strong> ₹{reportData.summary.sales.averageOrderValue?.toLocaleString() || 0}</p>
+          <p><strong>Sales Efficiency:</strong> {reportData.summary.sales.efficiency?.toFixed(2) || 0}%</p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderMonthlyComparison = () => {
+    if (!reportData?.comparison) return null;
+
+    const data = {
+      labels: ['Sales', 'Production', 'Purchases', 'Orders', 'Batches'],
+      datasets: [
+        {
+          label: 'Current Month',
+          data: [
+            reportData.comparison.current.totalSales,
+            reportData.comparison.current.totalProduction,
+            reportData.comparison.current.totalPurchases,
+            reportData.comparison.current.totalOrders,
+            reportData.comparison.current.totalBatches,
+          ],
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Previous Month',
+          data: [
+            reportData.comparison.previous.totalSales,
+            reportData.comparison.previous.totalProduction,
+            reportData.comparison.previous.totalPurchases,
+            reportData.comparison.previous.totalOrders,
+            reportData.comparison.previous.totalBatches,
+          ],
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1,
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top' as const,
+        },
+        title: {
+          display: true,
+          text: `Month-over-Month Comparison (${reportData.comparison.currentPeriod} vs ${reportData.comparison.previousPeriod})`,
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+        },
+      },
+    };
+
+    return (
+      <div className="report-section">
+        <h3 className="report-section-title">Monthly Comparison</h3>
+        <Bar data={data} options={options} />
+        <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+          <p><strong>Sales Growth:</strong> {reportData.comparison.changes.sales.percentage?.toFixed(2) || 0}% ({reportData.comparison.trends.salesTrend})</p>
+          <p><strong>Production Growth:</strong> {reportData.comparison.changes.production.percentage?.toFixed(2) || 0}% ({reportData.comparison.trends.productionTrend})</p>
+          <p><strong>Purchase Growth:</strong> {reportData.comparison.changes.purchases.percentage?.toFixed(2) || 0}% ({reportData.comparison.trends.purchasesTrend})</p>
+          <p><strong>Order Growth:</strong> {reportData.comparison.changes.orders.percentage?.toFixed(2) || 0}%</p>
+          <p><strong>Batch Growth:</strong> {reportData.comparison.changes.batches.percentage?.toFixed(2) || 0}%</p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderFinancialSummary = () => {
+    if (!reportData?.summary?.financial) return null;
+
+    const data = {
+      labels: ['Cash Transactions', 'Credit Transactions'],
+      datasets: [
+        {
+          data: [
+            reportData.summary.financial.cashTransactions,
+            reportData.summary.financial.creditTransactions,
+          ],
+          backgroundColor: [
+            '#4BC0C0',
+            '#FF9F40',
+          ],
+          hoverBackgroundColor: [
+            '#4BC0C0',
+            '#FF9F40',
+          ],
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom' as const,
+        },
+        title: {
+          display: true,
+          text: 'Transaction Mode Distribution',
+        },
+      },
+    };
+
+    return (
+      <div className="report-section">
+        <h3 className="report-section-title">Financial Summary</h3>
+        <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+          <Pie data={data} options={options} />
+        </div>
+        <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+          <p><strong>Total Revenue:</strong> ₹{reportData.summary.financial.totalRevenue?.toLocaleString() || 0}</p>
+          <p><strong>Total Expenses:</strong> ₹{reportData.summary.financial.totalExpenses?.toLocaleString() || 0}</p>
+          <p><strong>Gross Margin:</strong> ₹{reportData.summary.financial.grossMargin?.toLocaleString() || 0}</p>
+          <p><strong>Cash Transactions:</strong> {reportData.summary.financial.cashTransactions || 0}</p>
+          <p><strong>Credit Transactions:</strong> {reportData.summary.financial.creditTransactions || 0}</p>
+        </div>
+      </div>
+    );
+  };
+
+  const getMonthName = (month: number) => {
+    return new Date(0, month - 1).toLocaleString('default', { month: 'long' });
+  };
+
+  return (
+    <div>
+      {/* Filters */}
+      <div className="report-filters">
+        <div className="report-filters-header">
+          <h3 className="report-filters-title">Monthly Report Filters</h3>
+          <div className="report-actions">
+            <button
+              onClick={fetchMonthlyReport}
+              disabled={loading}
+              className="generate-report-button"
+            >
+              {loading ? 'Generating...' : 'Generate Report'}
+            </button>
+            {reportData && (
+              <ExportButton
+                data={getExportData()}
+                filename={`monthly-report-${selectedYear}-${selectedMonth.toString().padStart(2, '0')}`}
+                title={`Monthly Report - ${getMonthName(selectedMonth)} ${selectedYear}`}
+                disabled={loading}
+              />
+            )}
+          </div>
+        </div>
+        
+        <div className="report-filters-content">
+          <div className="report-filter-group">
+            <label>Report Type</label>
+            <select 
+              value={reportType} 
+              onChange={(e) => setReportType(e.target.value as any)}
+            >
+              <option value="comprehensive">Comprehensive</option>
+              <option value="pnl">P&L Only</option>
+            </select>
+          </div>
+
+          <div className="report-filter-group">
+            <label>Month</label>
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            >
+              {Array.from({ length: 12 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {getMonthName(i + 1)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="report-filter-group">
+            <label>Year</label>
+            <select 
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            >
+              {Array.from({ length: 5 }, (_, i) => (
+                <option key={i} value={new Date().getFullYear() - i}>
+                  {new Date().getFullYear() - i}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Report Content */}
+      {loading ? (
+        <div className="report-loading">
+          <div className="loading-spinner"></div>
+          <p>Generating report...</p>
+        </div>
+      ) : reportData ? (
+        <div className="report-content">
+          <div className="report-header">
+            <h2 className="report-title">Monthly Report - {getMonthName(selectedMonth)} {selectedYear}</h2>
+            <ExportButton
+              data={getExportData()}
+              filename={`monthly-report-${selectedYear}-${selectedMonth.toString().padStart(2, '0')}`}
+              title={`Monthly Report - ${getMonthName(selectedMonth)} ${selectedYear}`}
+            />
+          </div>
+
+          {renderSummaryCards()}
+          
+          <div className="report-sections">
+            {renderCostBreakdownChart()}
+            {reportType === 'comprehensive' && renderProductionChart()}
+            {reportType === 'comprehensive' && renderSalesAnalysis()}
+            {reportType === 'comprehensive' && renderFinancialSummary()}
+            {reportType === 'comprehensive' && renderMonthlyComparison()}
+          </div>
+        </div>
+      ) : (
+        <div className="report-no-data">
+          <h3>No Report Generated</h3>
+          <p>Select your filters and click "Generate Report" to view monthly report data.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MonthlyReports;

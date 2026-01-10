@@ -12,7 +12,7 @@ export interface ApiResponse<T = unknown> {
 }
 
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
-const baseURL = (import.meta as any).env?.VITE_API_BASE || '/api';
+const baseURL =  'https://swastya-oil-backend.vercel.app/api';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({

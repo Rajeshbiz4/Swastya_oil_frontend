@@ -11,9 +11,12 @@ export interface ApiResponse<T = unknown> {
   };
 }
 
+// Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
+const baseURL = (import.meta as any).env?.VITE_API_BASE || '/api';
+
 // Create axios instance
 const api: AxiosInstance = axios.create({
-  baseURL: '/api', // Vite proxy will handle this
+  baseURL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

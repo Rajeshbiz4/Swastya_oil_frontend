@@ -12,6 +12,7 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 
 // Pages
 import Dashboard from './pages/Dashboard';
+import Booking from './pages/Booking';
 import Procurement from './pages/Procurement';
 import Inventory from './pages/Inventory';
 import ProductionImproved from './pages/ProductionImproved';
@@ -49,6 +50,7 @@ const AppContent: React.FC = () => {
         }>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="booking" element={<Booking />} />
           <Route path="procurement" element={<Procurement />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="production" element={<ProductionImproved />} />

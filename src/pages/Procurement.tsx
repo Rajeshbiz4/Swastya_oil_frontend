@@ -3,22 +3,8 @@ import DataTable from '../components/UI/DataTable';
 import FormBuilder from '../components/UI/FormBuilder';
 import DateRangePicker from '../components/UI/DateRangePicker';
 import { FormField, PaymentMode, SKUSize, PackagingType } from '../types';
-import api from '../services/api';
+import localDataService, { TankerBooking, OilPurchase } from '../services/localDataService';
 import './Pages.css';
-
-interface OilPurchase {
-  _id: string;
-  supplierName: string;
-  quantity: number;
-  ratePerLiter: number;
-  totalAmount: number;
-  paymentMode: PaymentMode;
-  invoiceNumber: string;
-  invoiceDate: string;
-  deliveryDate: string;
-  isPaid: boolean;
-  createdAt: string;
-}
 
 interface PackagingPurchase {
   _id: string;
@@ -41,9 +27,12 @@ const Procurement: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [oilPurchases, setOilPurchases] = useState<OilPurchase[]>([]);
   const [packagingPurchases, setPackagingPurchases] = useState<PackagingPurchase[]>([]);
+  const [pendingBookings, setPendingBookings] = useState<TankerBooking[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<TankerBooking | null>(null);
   const [loading, setLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Date range filter
   const [startDate, setStartDate] = useState('');
@@ -51,13 +40,14 @@ const Procurement: React.FC = () => {
 
   // Form data
   const [oilFormData, setOilFormData] = useState({
+    bookingId: '',
     supplierName: '',
     quantity: 0,
     ratePerLiter: 0,
     paymentMode: '',
     invoiceNumber: '',
-    invoiceDate: '',
-    deliveryDate: '',
+    invoiceDate: localDataService.getTodayDate(),
+    deliveryDate: localDataService.getTodayDate(),
   });
 
   const [packagingFormData, setPackagingFormData] = useState({
@@ -76,53 +66,87 @@ const Procurement: React.FC = () => {
   const [oilFormErrors, setOilFormErrors] = useState<Record<string, string>>({});
   const [packagingFormErrors, setPackagingFormErrors] = useState<Record<string, string>>({});
 
-  // Fetch data
-  const fetchOilPurchases = async () => {
+  // Fetch pending bookings from local data service
+  const fetchPendingBookings = () => {
+    try {
+      const pending = localDataService.getPendingBookings();
+      setPendingBookings(pending);
+    } catch (err: any) {
+      console.error('Failed to fetch pending bookings:', err);
+    }
+  };
+
+  // Fetch oil purchases from local data service
+  const fetchOilPurchases = () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
-      
-      const response = await api.get(`/procurement/oil-purchases?${params}`);
-      if (response.data.success) {
-        setOilPurchases(response.data.data?.purchases || []);
-      }
+      const purchases = localDataService.getOilPurchasesByDateRange(startDate, endDate);
+      setOilPurchases(purchases);
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to fetch oil purchases');
+      setError('Failed to fetch oil purchases');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchPackagingPurchases = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
-      
-      const response = await api.get(`/procurement/packaging-purchases?${params}`);
-      if (response.data.success) {
-        setPackagingPurchases(response.data.data?.purchases || []);
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to fetch packaging purchases');
-    } finally {
-      setLoading(false);
-    }
+  // Placeholder for packaging purchases (not implemented in local storage yet)
+  const fetchPackagingPurchases = () => {
+    setLoading(true);
+    // For now, packaging purchases are not stored locally
+    setPackagingPurchases([]);
+    setLoading(false);
   };
 
   useEffect(() => {
     if (activeTab === 'oil') {
       fetchOilPurchases();
+      fetchPendingBookings();
     } else {
       fetchPackagingPurchases();
     }
   }, [activeTab, startDate, endDate]);
 
-  // Form fields
+  // Handle booking selection
+  const handleBookingSelect = (bookingId: string) => {
+    const booking = pendingBookings.find(b => b._id === bookingId);
+    if (booking) {
+      setSelectedBooking(booking);
+      setOilFormData(prev => ({
+        ...prev,
+        bookingId: booking._id,
+        quantity: booking.tankerCapacity,
+        ratePerLiter: booking.rate,
+        deliveryDate: new Date(booking.bookingDate).toISOString().split('T')[0],
+      }));
+    } else {
+      setSelectedBooking(null);
+      setOilFormData(prev => ({
+        ...prev,
+        bookingId: '',
+        quantity: 0,
+        ratePerLiter: 0,
+      }));
+    }
+  };
+
+  // Calculate total amount for oil purchase
+  const calculatedOilAmount = oilFormData.quantity * oilFormData.ratePerLiter;
+
+  // Form fields for oil (with booking selection)
   const oilFormFields: FormField[] = [
+    { 
+      name: 'bookingId', 
+      label: 'Select Booking', 
+      type: 'select', 
+      required: false,
+      options: [
+        { value: '', label: '-- Select a Booking (Optional) --' },
+        ...pendingBookings.map(booking => ({
+          value: booking._id,
+          label: `${new Date(booking.bookingDate).toLocaleDateString()} - ${booking.tankerCapacity.toLocaleString()}L @ ₹${booking.rate}/L (Pending: ₹${(booking.pendingAmount || booking.bookingAmount).toLocaleString()})`
+        }))
+      ]
+    },
     { name: 'supplierName', label: 'Supplier Name', type: 'text', required: true },
     { name: 'quantity', label: 'Quantity (Liters)', type: 'number', required: true },
     { name: 'ratePerLiter', label: 'Rate per Liter', type: 'number', required: true },
@@ -200,94 +224,109 @@ const Procurement: React.FC = () => {
 
   // Form handlers
   const handleOilFormChange = (name: string, value: any) => {
-    setOilFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'bookingId') {
+      handleBookingSelect(value);
+    } else {
+      setOilFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handlePackagingFormChange = (name: string, value: any) => {
     setPackagingFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleOilFormSubmit = async (e: React.FormEvent) => {
+  const resetOilForm = () => {
+    setOilFormData({
+      bookingId: '',
+      supplierName: '',
+      quantity: 0,
+      ratePerLiter: 0,
+      paymentMode: '',
+      invoiceNumber: '',
+      invoiceDate: localDataService.getTodayDate(),
+      deliveryDate: localDataService.getTodayDate(),
+    });
+    setSelectedBooking(null);
+    setOilFormErrors({});
+  };
+
+  const handleOilFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate
+    const errors: Record<string, string> = {};
+    if (!oilFormData.supplierName.trim()) {
+      errors.supplierName = 'Supplier name is required';
+    }
+    if (!oilFormData.quantity || oilFormData.quantity <= 0) {
+      errors.quantity = 'Quantity must be greater than 0';
+    }
+    if (!oilFormData.ratePerLiter || oilFormData.ratePerLiter <= 0) {
+      errors.ratePerLiter = 'Rate must be greater than 0';
+    }
+    if (!oilFormData.paymentMode) {
+      errors.paymentMode = 'Payment mode is required';
+    }
+    if (!oilFormData.invoiceNumber.trim()) {
+      errors.invoiceNumber = 'Invoice number is required';
+    }
+    if (!oilFormData.invoiceDate) {
+      errors.invoiceDate = 'Invoice date is required';
+    }
+    if (!oilFormData.deliveryDate) {
+      errors.deliveryDate = 'Delivery date is required';
+    }
+    
+    // Check for duplicate invoice number
+    if (localDataService.isInvoiceNumberExists(oilFormData.invoiceNumber)) {
+      errors.invoiceNumber = 'Invoice number already exists';
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setOilFormErrors(errors);
+      return;
+    }
+    
     try {
       setFormLoading(true);
       setOilFormErrors({});
-      const response = await api.post('/procurement/oil-purchases', oilFormData);
-      if (response.data.success) {
-        setShowForm(false);
-        setOilFormData({
-          supplierName: '',
-          quantity: 0,
-          ratePerLiter: 0,
-          paymentMode: '',
-          invoiceNumber: '',
-          invoiceDate: '',
-          deliveryDate: '',
-        });
-        fetchOilPurchases();
-      }
+      
+      // Create oil purchase using local data service
+      localDataService.createOilPurchase({
+        bookingId: oilFormData.bookingId || undefined,
+        supplierName: oilFormData.supplierName,
+        quantity: oilFormData.quantity,
+        ratePerLiter: oilFormData.ratePerLiter,
+        paymentMode: oilFormData.paymentMode,
+        invoiceNumber: oilFormData.invoiceNumber,
+        invoiceDate: oilFormData.invoiceDate,
+        deliveryDate: oilFormData.deliveryDate,
+      });
+      
+      setShowForm(false);
+      setSuccess('Oil purchase created successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+      resetOilForm();
+      fetchOilPurchases();
+      fetchPendingBookings();
+      
     } catch (err: any) {
-      // Handle field-specific errors
-      if (err.error?.code === 'DUPLICATE_INVOICE') {
-        setOilFormErrors({ invoiceNumber: 'Invoice number already exists' });
-      } else if (err.error?.code === 'INVALID_QUANTITY') {
-        setOilFormErrors({ quantity: 'Quantity must be between 10,000 and 20,000 liters' });
-      } else if (err.error?.code === 'INVALID_PAYMENT_MODE') {
-        setOilFormErrors({ paymentMode: 'Payment mode must be either Cash or Credit' });
-      } else if (err.error?.code === 'INVALID_INVOICE_DATE') {
-        setOilFormErrors({ invoiceDate: 'Invoice date cannot be in the future' });
-      } else if (err.error?.code === 'INVALID_DELIVERY_DATE') {
-        setOilFormErrors({ deliveryDate: 'Delivery date cannot be in the past' });
-      } else if (err.error?.code === 'MISSING_FIELDS') {
-        setOilFormErrors({ form: err.error?.message || 'Please fill in all required fields' });
-      } else {
-        setError(err.error?.message || 'Failed to create oil purchase');
-      }
+      setError('Failed to create oil purchase');
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handlePackagingFormSubmit = async (e: React.FormEvent) => {
+  const handlePackagingFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      setFormLoading(true);
-      setPackagingFormErrors({});
-      const response = await api.post('/procurement/packaging-purchases', packagingFormData);
-      if (response.data.success) {
-        setShowForm(false);
-        setPackagingFormData({
-          supplierName: '',
-          skuSize: '',
-          packagingType: '',
-          quantity: 0,
-          ratePerUnit: 0,
-          paymentMode: '',
-          invoiceNumber: '',
-          invoiceDate: '',
-          deliveryDate: '',
-        });
-        fetchPackagingPurchases();
-      }
-    } catch (err: any) {
-      // Handle field-specific errors
-      if (err.error?.code === 'DUPLICATE_INVOICE') {
-        setPackagingFormErrors({ invoiceNumber: 'Invoice number already exists' });
-      } else if (err.error?.code === 'INVALID_PAYMENT_MODE') {
-        setPackagingFormErrors({ paymentMode: 'Payment mode must be either Cash or Credit' });
-      } else if (err.error?.code === 'INVALID_INVOICE_DATE') {
-        setPackagingFormErrors({ invoiceDate: 'Invoice date cannot be in the future' });
-      } else if (err.error?.code === 'INVALID_DELIVERY_DATE') {
-        setPackagingFormErrors({ deliveryDate: 'Delivery date cannot be in the past' });
-      } else if (err.error?.code === 'MISSING_FIELDS') {
-        setPackagingFormErrors({ form: err.error?.message || 'Please fill in all required fields' });
-      } else {
-        setError(err.error?.message || 'Failed to create packaging purchase');
-      }
-    } finally {
-      setFormLoading(false);
-    }
+    // Packaging purchases not implemented in local storage
+    setError('Packaging purchases are not yet implemented');
   };
+
+  // Calculate total pending amount from all pending bookings
+  const totalPendingBookingAmount = pendingBookings.reduce((sum, booking) => {
+    return sum + (booking.pendingAmount || booking.bookingAmount);
+  }, 0);
 
   if (showForm) {
     return (
@@ -296,6 +335,36 @@ const Procurement: React.FC = () => {
           <h1>Add {activeTab === 'oil' ? 'Oil' : 'Packaging'} Purchase</h1>
           <p>Enter the purchase details below</p>
         </div>
+
+        {activeTab === 'oil' && selectedBooking && (
+          <div className="info-section" style={{ marginBottom: '1.5rem' }}>
+            <h3>Selected Booking Details</h3>
+            <div className="summary-cards" style={{ marginTop: '1rem' }}>
+              <div className="credit-card">
+                <div className="credit-label">Booking Date</div>
+                <div className="credit-value">{new Date(selectedBooking.bookingDate).toLocaleDateString()}</div>
+              </div>
+              <div className="credit-card">
+                <div className="credit-label">Tanker Capacity</div>
+                <div className="credit-value">{selectedBooking.tankerCapacity.toLocaleString()} L</div>
+              </div>
+              <div className="credit-card">
+                <div className="credit-label">Rate per Liter</div>
+                <div className="credit-value">₹{selectedBooking.rate.toFixed(2)}</div>
+              </div>
+              <div className="credit-card">
+                <div className="credit-label">Booking Amount</div>
+                <div className="credit-value">₹{selectedBooking.bookingAmount.toLocaleString()}</div>
+              </div>
+              <div className="credit-card" style={{ borderLeft: '4px solid #e74c3c' }}>
+                <div className="credit-label">Pending Amount</div>
+                <div className="credit-value" style={{ color: '#e74c3c' }}>
+                  ₹{(selectedBooking.tankerCapacity * selectedBooking.rate - selectedBooking.bookingAmount).toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="form-container">
           {(activeTab === 'oil' ? oilFormErrors.form : packagingFormErrors.form) && (
@@ -312,12 +381,29 @@ const Procurement: React.FC = () => {
             submitText={`Add ${activeTab === 'oil' ? 'Oil' : 'Packaging'} Purchase`}
             errors={activeTab === 'oil' ? oilFormErrors : packagingFormErrors}
           />
+
+          {activeTab === 'oil' && (
+            <div className="summary-card" style={{ margin: '1.5rem', textAlign: 'center' }}>
+              <h4>Calculated Purchase Amount</h4>
+              <div className="summary-value" style={{ color: '#27ae60', fontSize: '1.75rem' }}>
+                ₹{calculatedOilAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p style={{ color: '#7f8c8d', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>
+                {oilFormData.quantity.toLocaleString()} L × ₹{oilFormData.ratePerLiter.toFixed(2)} per liter
+              </p>
+            </div>
+          )}
         </div>
 
         <div style={{ marginTop: '1rem', textAlign: 'center' }}>
           <button 
             className="secondary-button"
-            onClick={() => setShowForm(false)}
+            onClick={() => {
+              setShowForm(false);
+              if (activeTab === 'oil') {
+                resetOilForm();
+              }
+            }}
           >
             Cancel
           </button>
@@ -347,6 +433,70 @@ const Procurement: React.FC = () => {
         <div className="error-message" style={{ marginBottom: '1rem' }}>
           {error}
           <button onClick={() => setError(null)} style={{ marginLeft: '1rem' }}>×</button>
+        </div>
+      )}
+
+      {success && (
+        <div className="success-message" style={{ marginBottom: '1rem' }}>
+          {success}
+        </div>
+      )}
+
+      {/* Pending Bookings Summary */}
+      {activeTab === 'oil' && pendingBookings.length > 0 && (
+        <div className="info-section" style={{ marginBottom: '1.5rem' }}>
+          <h3>Pending Bookings Summary</h3>
+          <div className="summary-cards" style={{ marginTop: '1rem' }}>
+            <div className="credit-card">
+              <div className="credit-label">Total Pending Bookings</div>
+              <div className="credit-value">{pendingBookings.length}</div>
+            </div>
+            <div className="credit-card" style={{ borderLeft: '4px solid #e74c3c' }}>
+              <div className="credit-label">Total Pending Amount</div>
+              <div className="credit-value" style={{ color: '#e74c3c' }}>
+                ₹{totalPendingBookingAmount.toLocaleString()}
+              </div>
+            </div>
+          </div>
+          
+          {/* List of pending bookings */}
+          <div style={{ marginTop: '1rem' }}>
+            <table className="data-table" style={{ width: '100%' }}>
+              <thead>
+                <tr>
+                  <th>Booking Date</th>
+                  <th>Capacity</th>
+                  <th>Rate/L</th>
+                  <th>Booking Amount</th>
+                  <th>Pending Amount</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingBookings.map(booking => (
+                  <tr key={booking._id}>
+                    <td>{new Date(booking.bookingDate).toLocaleDateString()}</td>
+                    <td>{booking.tankerCapacity.toLocaleString()} L</td>
+                    <td>₹{booking.rate.toFixed(2)}</td>
+                    <td>₹{booking.bookingAmount.toLocaleString()}</td>
+                    <td style={{ color: '#e74c3c', fontWeight: 600 }}>
+                      ₹{(booking.pendingAmount || booking.bookingAmount).toLocaleString()}
+                    </td>
+                    <td>
+                      <span style={{ 
+                        padding: '0.25rem 0.5rem', 
+                        borderRadius: '4px',
+                        backgroundColor: booking.status === 'Pending' ? '#fff3cd' : '#cce5ff',
+                        color: booking.status === 'Pending' ? '#856404' : '#004085'
+                      }}>
+                        {booking.status || 'Pending'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

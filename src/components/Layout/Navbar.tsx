@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
           </span>
           <button 
             className="logout-btn"
-            onClick={handleLogout}
+            onClick={handleLogout} 
           >
             Logout
           </button>

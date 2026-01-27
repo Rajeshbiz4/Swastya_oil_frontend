@@ -10,49 +10,66 @@ interface NavItem {
   roles?: UserRole[];
 }
 
-const navigationItems: NavItem[] = [
-  { label: 'Dashboard', path: '/dashboard' },
+// Admin-only menus
+const adminMenuItems: NavItem[] = [
+  { 
+    label: 'Booking', 
+    path: '/booking',
+    roles: [UserRole.ADMIN]
+  },
   { 
     label: 'Procurement', 
     path: '/procurement',
-    roles: [UserRole.ADMIN, UserRole.PURCHASE_MANAGER]
+    roles: [UserRole.ADMIN]
+  },
+];
+
+// Non-admin user menus
+const userMenuItems: NavItem[] = [
+  { 
+    label: 'Dashboard', 
+    path: '/dashboard',
+    roles: [UserRole.PURCHASE_MANAGER, UserRole.PRODUCTION_SUPERVISOR, UserRole.SALES_MANAGER, UserRole.ACCOUNTANT, UserRole.VIEWER]
   },
   { 
     label: 'Inventory', 
     path: '/inventory',
-    roles: [UserRole.ADMIN, UserRole.PURCHASE_MANAGER, UserRole.PRODUCTION_SUPERVISOR, UserRole.SALES_MANAGER]
+    roles: [UserRole.PURCHASE_MANAGER, UserRole.PRODUCTION_SUPERVISOR, UserRole.SALES_MANAGER]
   },
   { 
     label: 'Production', 
     path: '/production',
-    roles: [UserRole.ADMIN, UserRole.PRODUCTION_SUPERVISOR]
+    roles: [UserRole.PRODUCTION_SUPERVISOR]
   },
   { 
     label: 'Sales', 
     path: '/sales',
-    roles: [UserRole.ADMIN, UserRole.SALES_MANAGER]
+    roles: [UserRole.SALES_MANAGER]
   },
   {
     label: 'Workers',
     path: '/workers',
-    roles: [UserRole.ADMIN, UserRole.PRODUCTION_SUPERVISOR]
+    roles: [UserRole.PRODUCTION_SUPERVISOR]
   },
   {
     label: 'Attendance',
     path: '/attendance',
-    roles: [UserRole.ADMIN, UserRole.PRODUCTION_SUPERVISOR]
+    roles: [UserRole.PRODUCTION_SUPERVISOR]
   },
   {
     label: 'Payroll',
     path: '/payroll',
-    roles: [UserRole.ADMIN, UserRole.ACCOUNTANT]
+    roles: [UserRole.ACCOUNTANT]
   },
   { 
     label: 'Reports', 
     path: '/reports',
-    roles: [UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.VIEWER, UserRole.SALES_MANAGER, UserRole.PRODUCTION_SUPERVISOR, UserRole.PURCHASE_MANAGER]
+    roles: [UserRole.ACCOUNTANT, UserRole.VIEWER, UserRole.SALES_MANAGER, UserRole.PRODUCTION_SUPERVISOR, UserRole.PURCHASE_MANAGER]
   },
 ];
+
+// Combined navigation items
+const navigationItems: NavItem[] = [...adminMenuItems, ...userMenuItems];
 
 const Sidebar: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);

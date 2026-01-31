@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { store } from './store';
 import { useAppSelector, useAppDispatch } from './store';
 import { fetchProfile } from './store/slices/authSlice';
+import { UserRole } from './types';
 
 // Components
 import Layout from './components/Layout/Layout';
@@ -21,6 +22,8 @@ import Reports from './pages/Reports';
 import Worker from './pages/Worker';
 import Attendance from './pages/Attendance';
 import Payment from './pages/Payment';
+import UserManagement from './pages/UserManagement';
+import Profile from './pages/Profile';
 
 // Placeholder components for future implementation
 const NotFound = () => <div className="page-placeholder">Page Not Found</div>;
@@ -49,16 +52,90 @@ const AppContent: React.FC = () => {
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="booking" element={<Booking />} />
-          <Route path="procurement" element={<Procurement />} />
-          <Route path="inventory" element={<Inventory />} />
-          <Route path="production" element={<ProductionImproved />} />
-          <Route path="sales" element={<Sales />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="workers" element={<Worker />} />
-          <Route path="attendance" element={<Attendance />} />
-          <Route path="payroll" element={<Payment />} />
+          
+          {/* Admin-only routes */}
+          <Route path="dashboard" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="users" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+              <UserManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="booking" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+              <Booking />
+            </ProtectedRoute>
+          } />
+          <Route path="procurement" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+              <Procurement />
+            </ProtectedRoute>
+          } />
+          <Route path="reports" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+              <Reports />
+            </ProtectedRoute>
+          } />
+          
+          {/* User-only routes */}
+          <Route path="inventory" element={
+            <ProtectedRoute requiredRoles={[UserRole.USER]}>
+              <Inventory />
+            </ProtectedRoute>
+          } />
+          <Route path="production" element={
+            <ProtectedRoute requiredRoles={[UserRole.USER]}>
+              <ProductionImproved />
+            </ProtectedRoute>
+          } />
+          <Route path="sales" element={
+            <ProtectedRoute requiredRoles={[UserRole.USER, UserRole.SALES_PERSON]}>
+              <Sales />
+            </ProtectedRoute>
+          } />
+          <Route path="workers" element={
+            <ProtectedRoute requiredRoles={[UserRole.USER]}>
+              <Worker />
+            </ProtectedRoute>
+          } />
+          <Route path="attendance" element={
+            <ProtectedRoute requiredRoles={[UserRole.USER]}>
+              <Attendance />
+            </ProtectedRoute>
+          } />
+          <Route path="payroll" element={
+            <ProtectedRoute requiredRoles={[UserRole.USER]}>
+              <Payment />
+            </ProtectedRoute>
+          } />
+          
+          {/* Shared routes (Admin + User) */}
+          <Route path="production" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
+              <ProductionImproved />
+            </ProtectedRoute>
+          } />
+          <Route path="sales" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
+              <Sales />
+            </ProtectedRoute>
+          } />
+          <Route path="attendance" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
+              <Attendance />
+            </ProtectedRoute>
+          } />
+          <Route path="reports" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
+              <Reports />
+            </ProtectedRoute>
+          } />
+          
+          {/* Profile route for all authenticated users */}
+          <Route path="profile" element={<Profile />} />
         </Route>
         
         {/* Catch all route */}

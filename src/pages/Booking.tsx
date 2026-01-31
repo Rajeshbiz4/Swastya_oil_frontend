@@ -1,13 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../components/UI/DataTable';
 import { FormField } from '../types';
-import localDataService, { TankerBooking } from '../services/localDataService';
+import { bookingAPI, TankerBooking, BookingSummary } from '../services/api';
 import './Pages.css';
+
+// Utility functions
+const getTodayDate = (): string => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
+const getPresetDateRange = (preset: string): { startDate: string; endDate: string } => {
+  const end = new Date();
+  const start = new Date();
+  
+  switch (preset) {
+    case 'today':
+      return {
+        startDate: end.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
+      };
+    case '7days':
+      start.setDate(end.getDate() - 7);
+      break;
+    case '30days':
+      start.setDate(end.getDate() - 30);
+      break;
+    case '90days':
+      start.setDate(end.getDate() - 90);
+      break;
+    case 'thisMonth':
+      start.setDate(1);
+      break;
+    default:
+      start.setDate(end.getDate() - 30);
+  }
+  
+  return {
+    startDate: start.toISOString().split('T')[0],
+    endDate: end.toISOString().split('T')[0],
+  };
+};
 
 const Booking: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
+  const [editingBooking, setEditingBooking] = useState<TankerBooking | null>(null);
   const [bookings, setBookings] = useState<TankerBooking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<TankerBooking[]>([]);
+  const [summary, setSummary] = useState<BookingSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +60,7 @@ const Booking: React.FC = () => {
 
   // Form data with default current date
   const [formData, setFormData] = useState({
-    bookingDate: localDataService.getTodayDate(),
+    bookingDate: getTodayDate(),
     tankerCapacity: 0,
     rate: 0,
     bookingAmount: 0,
@@ -30,48 +70,81 @@ const Booking: React.FC = () => {
   // Field errors
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Load bookings from local data service
-  const loadBookings = () => {
-    setLoading(true);
+  // Load bookings from backend
+  const loadBookings = async () => {
     try {
-      const storedBookings = localDataService.getAllBookings();
-      setBookings(storedBookings);
-    } catch (err) {
-      setError('Failed to load bookings');
+      setLoading(true);
+      setError(null);
+      
+      const params: any = {};
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      
+      const response = await bookingAPI.getAll(params);
+      if (response.data.success) {
+        setBookings(response.data.data || []);
+        setFilteredBookings(response.data.data || []);
+      }
+    } catch (err: any) {
+      setError(err.error?.message || 'Failed to load bookings');
     } finally {
       setLoading(false);
     }
   };
 
+  // Load summary statistics
+  const loadSummary = async () => {
+    try {
+      const params: any = {};
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      
+      const response = await bookingAPI.getSummary(params);
+      if (response.data.success) {
+        setSummary(response.data.data || null);
+      }
+    } catch (err: any) {
+      console.error('Failed to load summary:', err);
+    }
+  };
+
   // Filter bookings based on date range
   useEffect(() => {
-    if (!startDate && !endDate) {
-      setFilteredBookings(bookings);
-      return;
-    }
-
-    const filtered = localDataService.getBookingsByDateRange(startDate, endDate);
-    setFilteredBookings(filtered);
-  }, [bookings, startDate, endDate]);
+    loadBookings();
+    loadSummary();
+  }, [startDate, endDate]);
 
   // Load bookings on mount
   useEffect(() => {
     loadBookings();
+    loadSummary();
   }, []);
 
   // Reset form when opening
   useEffect(() => {
     if (showForm) {
-      setFormData({
-        bookingDate: localDataService.getTodayDate(),
-        tankerCapacity: 0,
-        rate: 0,
-        bookingAmount: 0,
-        remarks: '',
-      });
+      if (editingBooking) {
+        // Populate form with existing booking data
+        setFormData({
+          bookingDate: editingBooking.bookingDate.split('T')[0], // Convert to YYYY-MM-DD format
+          tankerCapacity: editingBooking.tankerCapacity,
+          rate: editingBooking.rate,
+          bookingAmount: editingBooking.bookingAmount,
+          remarks: editingBooking.remarks || '',
+        });
+      } else {
+        // Reset form for new booking
+        setFormData({
+          bookingDate: getTodayDate(),
+          tankerCapacity: 0,
+          rate: 0,
+          bookingAmount: 0,
+          remarks: '',
+        });
+      }
       setFormErrors({});
     }
-  }, [showForm]);
+  }, [showForm, editingBooking]);
 
   // Form fields
   const formFields: FormField[] = [
@@ -149,8 +222,7 @@ const Booking: React.FC = () => {
       title: 'Pending Amount', 
       sortable: true, 
       render: (value: number, row: TankerBooking) => {
-        const pending = (row.tankerCapacity * row.rate - row.bookingAmount);
-        debugger;
+        const pending = row.pendingAmount;
         return (
           <span style={{ color: pending > 0 ? '#e74c3c' : '#27ae60', fontWeight: 600 }}>
             ₹{pending.toLocaleString()}
@@ -186,6 +258,46 @@ const Booking: React.FC = () => {
       title: 'Remarks', 
       render: (value: string) => value || '-' 
     },
+    {
+      key: 'actions',
+      title: 'Actions',
+      render: (value: any, row: TankerBooking) => (
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={() => handleEditBooking(row)}
+            disabled={row.status === 'Completed' || showForm}
+            className="btn-edit"
+            style={{
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.8rem',
+              backgroundColor: row.status === 'Completed' ? '#ccc' : '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: row.status === 'Completed' ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleDeleteBooking(row._id)}
+            disabled={row.paidAmount > 0 || showForm}
+            className="btn-delete"
+            style={{
+              padding: '0.25rem 0.5rem',
+              fontSize: '0.8rem',
+              backgroundColor: row.paidAmount > 0 ? '#ccc' : '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: row.paidAmount > 0 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      )
+    }
   ];
 
   // Form handlers
@@ -193,7 +305,7 @@ const Booking: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate
@@ -219,27 +331,93 @@ const Booking: React.FC = () => {
     try {
       setFormLoading(true);
       setFormErrors({});
+      setError(null);
       
-      // Create booking using local data service
-      localDataService.createBooking({
+      const bookingData = {
         bookingDate: formData.bookingDate,
         tankerCapacity: formData.tankerCapacity,
         rate: formData.rate,
         bookingAmount: formData.bookingAmount,
-        remarks: formData.remarks,
-      });
-      
-      // Update state
-      setShowForm(false);
-      setSuccess('Tanker booking created successfully!');
-      setTimeout(() => setSuccess(null), 3000);
-      loadBookings();
+        remarks: formData.remarks || undefined,
+      };
+
+      let response;
+      if (editingBooking) {
+        // Update existing booking
+        response = await bookingAPI.update(editingBooking._id, bookingData);
+        if (response.data.success) {
+          setShowForm(false);
+          setEditingBooking(null);
+          setSuccess('Tanker booking updated successfully!');
+          setTimeout(() => setSuccess(null), 3000);
+          loadBookings();
+          loadSummary();
+        }
+      } else {
+        // Create new booking
+        response = await bookingAPI.create(bookingData);
+        if (response.data.success) {
+          setShowForm(false);
+          setSuccess('Tanker booking created successfully!');
+          setTimeout(() => setSuccess(null), 3000);
+          loadBookings();
+          loadSummary();
+        }
+      }
       
     } catch (err: any) {
-      setError('Failed to create booking');
+      setError(err.error?.message || `Failed to ${editingBooking ? 'update' : 'create'} booking`);
     } finally {
       setFormLoading(false);
     }
+  };
+
+  // Handle edit booking
+  const handleEditBooking = (booking: TankerBooking) => {
+    if (booking.status === 'Completed') {
+      setError('Cannot edit completed bookings');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    
+    setEditingBooking(booking);
+    setShowForm(true);
+  };
+
+  // Handle delete booking
+  const handleDeleteBooking = async (bookingId: string) => {
+    const booking = bookings.find(b => b._id === bookingId);
+    if (!booking) return;
+
+    if (booking.paidAmount > 0) {
+      setError('Cannot delete booking with payments. Cancel payments first.');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to delete this booking? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await bookingAPI.delete(bookingId);
+      if (response.data.success) {
+        setSuccess('Booking deleted successfully!');
+        setTimeout(() => setSuccess(null), 3000);
+        loadBookings();
+        loadSummary();
+      }
+    } catch (err: any) {
+      setError(err.error?.message || 'Failed to delete booking');
+    }
+  };
+
+  // Handle cancel form
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingBooking(null);
+    setFormErrors({});
+    setError(null);
   };
 
   // Date filter handlers
@@ -254,7 +432,7 @@ const Booking: React.FC = () => {
   };
 
   const setPresetRange = (preset: string) => {
-    const { startDate: start, endDate: end } = localDataService.getPresetDateRange(preset);
+    const { startDate: start, endDate: end } = getPresetDateRange(preset);
     setStartDate(start);
     setEndDate(end);
     setActivePreset(preset);
@@ -266,18 +444,17 @@ const Booking: React.FC = () => {
     setActivePreset('');
   };
 
-  // Calculate summary stats
-  const totalBookings = filteredBookings.length;
-  debugger;
-  const totalBookingAmount = filteredBookings.reduce((sum, b) => sum , 0);
-  const totalPendingAmount = filteredBookings.reduce((sum, b) => sum + (b.pendingAmount || b.bookingAmount), 0);
+  // Calculate summary stats from summary data or fallback to filtered bookings
+  const totalBookings = summary?.totalBookings || filteredBookings.length;
+  const totalBookingAmount = summary?.totalBookingAmount || filteredBookings.reduce((sum, b) => sum + b.bookingAmount, 0);
+  const totalPendingAmount = summary?.totalPendingAmount || filteredBookings.reduce((sum, b) => sum + b.pendingAmount, 0);
 
   if (showForm) {
     return (
       <div className="form-page">
         <div className="form-header">
-          <h1>Book Oil Tanker</h1>
-          <p>Enter the tanker booking details below</p>
+          <h1>{editingBooking ? 'Edit Oil Tanker Booking' : 'Book Oil Tanker'}</h1>
+          <p>{editingBooking ? 'Update the tanker booking details below' : 'Enter the tanker booking details below'}</p>
         </div>
 
         <div className="form-container">
@@ -343,12 +520,15 @@ const Booking: React.FC = () => {
                   className="btn btn-primary"
                   disabled={formLoading}
                 >
-                  {formLoading ? 'Creating...' : 'Create Booking'}
+                  {formLoading 
+                    ? (editingBooking ? 'Updating...' : 'Creating...') 
+                    : (editingBooking ? 'Update Booking' : 'Create Booking')
+                  }
                 </button>
                 <button 
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => setShowForm(false)}
+                  onClick={handleCancelForm}
                 >
                   Cancel
                 </button>
@@ -422,7 +602,7 @@ const Booking: React.FC = () => {
                   type="date"
                   value={startDate}
                   onChange={(e) => handleStartDateChange(e.target.value)}
-                  max={endDate || localDataService.getTodayDate()}
+                  max={endDate || getTodayDate()}
                   style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ced4da' }}
                 />
               </div>
@@ -435,7 +615,7 @@ const Booking: React.FC = () => {
                   value={endDate}
                   onChange={(e) => handleEndDateChange(e.target.value)}
                   min={startDate}
-                  max={localDataService.getTodayDate()}
+                  max={getTodayDate()}
                   style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ced4da' }}
                 />
               </div>

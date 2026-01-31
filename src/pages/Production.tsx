@@ -369,8 +369,6 @@ const Production: React.FC = () => {
         return;
       }
 
-      console.log('Sending inventory update data:', inventoryUpdateData);
-
       const response = await api.post('/production/inventory-update', inventoryUpdateData);
       if (response.data.success) {
         setShowInventoryUpdate(false);

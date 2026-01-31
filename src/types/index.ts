@@ -12,11 +12,8 @@ export interface User {
 
 export enum UserRole {
   ADMIN = 'Admin',
-  PURCHASE_MANAGER = 'PurchaseManager',
-  PRODUCTION_SUPERVISOR = 'ProductionSupervisor',
-  SALES_MANAGER = 'SalesManager',
-  ACCOUNTANT = 'Accountant',
-  VIEWER = 'Viewer'
+  USER = 'User',
+  SALES_PERSON = 'SalesPerson'
 }
 
 export enum PaymentMode {

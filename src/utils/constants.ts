@@ -38,12 +38,9 @@ export const API_ENDPOINTS = {
 
 // Role permissions mapping
 export const ROLE_PERMISSIONS = {
-  [UserRole.ADMIN]: ['*'], // All permissions
-  [UserRole.PURCHASE_MANAGER]: ['procurement', 'inventory', 'reports'],
-  [UserRole.PRODUCTION_SUPERVISOR]: ['production', 'inventory', 'reports'],
-  [UserRole.SALES_MANAGER]: ['sales', 'inventory', 'reports'],
-  [UserRole.ACCOUNTANT]: ['reports', 'sales', 'procurement'],
-  [UserRole.VIEWER]: ['reports'],
+  [UserRole.ADMIN]: ['dashboard', 'booking', 'procurement', 'reports', 'users'], // Admin permissions
+  [UserRole.USER]: ['inventory', 'production', 'sales', 'workers', 'attendance', 'payroll'], // User permissions
+  [UserRole.SALES_PERSON]: ['sales'], // SalesPerson permissions
 };
 
 // Business constants

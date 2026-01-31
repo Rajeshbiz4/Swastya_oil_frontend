@@ -33,14 +33,19 @@ export const login = createAsyncThunk<LoginResponse, LoginCredentials>(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
+      console.log('Login attempt for:', credentials.username);
       const response = await api.post<ApiResponse<LoginResponse>>('/auth/login', credentials);
+      console.log('Login API response:', response.data);
       if (response.data.success && response.data.data) {
         const { user, token } = response.data.data;
         localStorage.setItem('authToken', token);
         return { user, token };
       }
+      console.log('Login failed - no success or data');
       throw new Error('Login failed');
     } catch (error: any) {
+      console.log('Login API error:', error);
+      console.log('Login error response:', error.response?.data);
       return rejectWithValue(error.error?.message || 'Login failed');
     }
   }
@@ -99,6 +104,8 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
+        console.log('Login successful - User role:', action.payload.user.role);
+        console.log('Login successful - User data:', action.payload.user);
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -106,6 +113,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
+        console.log('Login failed - Error:', action.payload);
       })
       // Logout
       .addCase(logout.fulfilled, (state) => {

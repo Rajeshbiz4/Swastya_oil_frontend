@@ -3,24 +3,16 @@ import DataTable from '../components/UI/DataTable';
 import FormBuilder from '../components/UI/FormBuilder';
 import DateRangePicker from '../components/UI/DateRangePicker';
 import { FormField, PaymentMode, SKUSize, PackagingType } from '../types';
-import localDataService, { TankerBooking, OilPurchase } from '../services/localDataService';
+import { 
+  bookingAPI, 
+  oilPurchaseAPI, 
+  packagingPurchaseAPI, 
+  TankerBooking, 
+  OilPurchase, 
+  PackagingPurchase,
+  PurchaseSummary
+} from '../services/api';
 import './Pages.css';
-
-interface PackagingPurchase {
-  _id: string;
-  supplierName: string;
-  skuSize: SKUSize;
-  packagingType: PackagingType;
-  quantity: number;
-  ratePerUnit: number;
-  totalAmount: number;
-  paymentMode: PaymentMode;
-  invoiceNumber: string;
-  invoiceDate: string;
-  deliveryDate: string;
-  isPaid: boolean;
-  createdAt: string;
-}
 
 const Procurement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'oil' | 'packaging'>('oil');
@@ -29,6 +21,8 @@ const Procurement: React.FC = () => {
   const [packagingPurchases, setPackagingPurchases] = useState<PackagingPurchase[]>([]);
   const [pendingBookings, setPendingBookings] = useState<TankerBooking[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<TankerBooking | null>(null);
+  const [oilSummary, setOilSummary] = useState<PurchaseSummary | null>(null);
+  const [packagingSummary, setPackagingSummary] = useState<PurchaseSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,8 +40,8 @@ const Procurement: React.FC = () => {
     ratePerLiter: 0,
     paymentMode: '',
     invoiceNumber: '',
-    invoiceDate: localDataService.getTodayDate(),
-    deliveryDate: localDataService.getTodayDate(),
+    invoiceDate: new Date().toISOString().split('T')[0],
+    deliveryDate: new Date().toISOString().split('T')[0],
   });
 
   const [packagingFormData, setPackagingFormData] = useState({
@@ -58,51 +52,104 @@ const Procurement: React.FC = () => {
     ratePerUnit: 0,
     paymentMode: '',
     invoiceNumber: '',
-    invoiceDate: '',
-    deliveryDate: '',
+    invoiceDate: new Date().toISOString().split('T')[0],
+    deliveryDate: new Date().toISOString().split('T')[0],
   });
 
   // Field errors
   const [oilFormErrors, setOilFormErrors] = useState<Record<string, string>>({});
   const [packagingFormErrors, setPackagingFormErrors] = useState<Record<string, string>>({});
 
-  // Fetch pending bookings from local data service
-  const fetchPendingBookings = () => {
+  // Fetch pending bookings from backend
+  const fetchPendingBookings = async () => {
     try {
-      const pending = localDataService.getPendingBookings();
-      setPendingBookings(pending);
+      const response = await bookingAPI.getAll({ status: 'Pending' });
+      if (response.data.success) {
+        setPendingBookings(response.data.data || []);
+      }
     } catch (err: any) {
       console.error('Failed to fetch pending bookings:', err);
     }
   };
 
-  // Fetch oil purchases from local data service
-  const fetchOilPurchases = () => {
+  // Fetch oil purchases from backend
+  const fetchOilPurchases = async () => {
     try {
       setLoading(true);
-      const purchases = localDataService.getOilPurchasesByDateRange(startDate, endDate);
-      setOilPurchases(purchases);
+      const params: any = { limit: 100 }; // Get more records for now
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      
+      const response = await oilPurchaseAPI.getAll(params);
+      if (response.data.success) {
+        setOilPurchases(response.data.data.purchases || []);
+      }
     } catch (err: any) {
-      setError('Failed to fetch oil purchases');
+      setError(err.error?.message || 'Failed to fetch oil purchases');
     } finally {
       setLoading(false);
     }
   };
 
-  // Placeholder for packaging purchases (not implemented in local storage yet)
-  const fetchPackagingPurchases = () => {
-    setLoading(true);
-    // For now, packaging purchases are not stored locally
-    setPackagingPurchases([]);
-    setLoading(false);
+  // Fetch oil purchase summary
+  const fetchOilSummary = async () => {
+    try {
+      const params: any = {};
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      
+      const response = await oilPurchaseAPI.getSummary(params);
+      if (response.data.success) {
+        setOilSummary(response.data.data.summary);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch oil summary:', err);
+    }
+  };
+
+  // Fetch packaging purchases from backend
+  const fetchPackagingPurchases = async () => {
+    try {
+      setLoading(true);
+      const params: any = { limit: 100 }; // Get more records for now
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      
+      const response = await packagingPurchaseAPI.getAll(params);
+      if (response.data.success) {
+        setPackagingPurchases(response.data.data.purchases || []);
+      }
+    } catch (err: any) {
+      setError(err.error?.message || 'Failed to fetch packaging purchases');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch packaging purchase summary
+  const fetchPackagingSummary = async () => {
+    try {
+      const params: any = {};
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      
+      const response = await packagingPurchaseAPI.getSummary(params);
+      if (response.data.success) {
+        setPackagingSummary(response.data.data.summary);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch packaging summary:', err);
+    }
   };
 
   useEffect(() => {
     if (activeTab === 'oil') {
       fetchOilPurchases();
+      fetchOilSummary();
       fetchPendingBookings();
     } else {
       fetchPackagingPurchases();
+      fetchPackagingSummary();
     }
   }, [activeTab, startDate, endDate]);
 
@@ -143,13 +190,13 @@ const Procurement: React.FC = () => {
         { value: '', label: '-- Select a Booking (Optional) --' },
         ...pendingBookings.map(booking => ({
           value: booking._id,
-          label: `${new Date(booking.bookingDate).toLocaleDateString()} - ${booking.tankerCapacity.toLocaleString()}L @ ₹${booking.rate}/L (Pending: ₹${(booking.pendingAmount || booking.bookingAmount).toLocaleString()})`
+          label: `${new Date(booking.bookingDate).toLocaleDateString()} - ${booking.tankerCapacity.toLocaleString()}L @ ₹${booking.rate}/L (Pending: ₹${booking.pendingAmount.toLocaleString()})`
         }))
       ]
     },
     { name: 'supplierName', label: 'Supplier Name', type: 'text', required: true },
-    { name: 'quantity', label: 'Quantity (Liters)', type: 'number', required: true },
-    { name: 'ratePerLiter', label: 'Rate per Liter', type: 'number', required: true },
+    { name: 'quantity', label: 'Quantity (Liters)', type: 'number', required: true, min: '10000', max: '20000' },
+    { name: 'ratePerLiter', label: 'Rate per Liter', type: 'number', required: true, min: '0.01', step: '0.01' },
     { 
       name: 'paymentMode', 
       label: 'Payment Mode', 
@@ -181,8 +228,8 @@ const Procurement: React.FC = () => {
       required: true,
       options: Object.values(PackagingType).map(type => ({ value: type, label: type }))
     },
-    { name: 'quantity', label: 'Quantity', type: 'number', required: true },
-    { name: 'ratePerUnit', label: 'Rate per Unit', type: 'number', required: true },
+    { name: 'quantity', label: 'Quantity', type: 'number', required: true, min: '1' },
+    { name: 'ratePerUnit', label: 'Rate per Unit', type: 'number', required: true, min: '0.01', step: '0.01' },
     { 
       name: 'paymentMode', 
       label: 'Payment Mode', 
@@ -207,7 +254,39 @@ const Procurement: React.FC = () => {
     { key: 'paymentMode', title: 'Payment', sortable: true },
     { key: 'invoiceNumber', title: 'Invoice #', sortable: true },
     { key: 'deliveryDate', title: 'Delivery Date', sortable: true, render: (value: string) => new Date(value).toLocaleDateString() },
-    { key: 'isPaid', title: 'Status', render: (value: boolean) => value ? '✅ Paid' : '⏳ Pending' },
+    { 
+      key: 'isPaid', 
+      title: 'Status', 
+      render: (value: boolean, row: OilPurchase) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ 
+            padding: '0.25rem 0.5rem', 
+            borderRadius: '4px',
+            backgroundColor: value ? '#d4edda' : '#fff3cd',
+            color: value ? '#155724' : '#856404',
+            fontSize: '0.8rem'
+          }}>
+            {value ? '✅ Paid' : '⏳ Pending'}
+          </span>
+          {row.paymentMode === 'Credit' && (
+            <button
+              onClick={() => handlePaymentStatusToggle(row._id, !value)}
+              style={{
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.7rem',
+                backgroundColor: value ? '#dc3545' : '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {value ? 'Mark Unpaid' : 'Mark Paid'}
+            </button>
+          )}
+        </div>
+      )
+    },
   ];
 
   const packagingColumns = [
@@ -219,7 +298,39 @@ const Procurement: React.FC = () => {
     { key: 'totalAmount', title: 'Total Amount', sortable: true, render: (value: number) => `₹${value.toLocaleString()}` },
     { key: 'paymentMode', title: 'Payment', sortable: true },
     { key: 'deliveryDate', title: 'Delivery Date', sortable: true, render: (value: string) => new Date(value).toLocaleDateString() },
-    { key: 'isPaid', title: 'Status', render: (value: boolean) => value ? '✅ Paid' : '⏳ Pending' },
+    { 
+      key: 'isPaid', 
+      title: 'Status', 
+      render: (value: boolean, row: PackagingPurchase) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ 
+            padding: '0.25rem 0.5rem', 
+            borderRadius: '4px',
+            backgroundColor: value ? '#d4edda' : '#fff3cd',
+            color: value ? '#155724' : '#856404',
+            fontSize: '0.8rem'
+          }}>
+            {value ? '✅ Paid' : '⏳ Pending'}
+          </span>
+          {row.paymentMode === 'Credit' && (
+            <button
+              onClick={() => handlePackagingPaymentStatusToggle(row._id, !value)}
+              style={{
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.7rem',
+                backgroundColor: value ? '#dc3545' : '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {value ? 'Mark Unpaid' : 'Mark Paid'}
+            </button>
+          )}
+        </div>
+      )
+    },
   ];
 
   // Form handlers
@@ -243,14 +354,29 @@ const Procurement: React.FC = () => {
       ratePerLiter: 0,
       paymentMode: '',
       invoiceNumber: '',
-      invoiceDate: localDataService.getTodayDate(),
-      deliveryDate: localDataService.getTodayDate(),
+      invoiceDate: new Date().toISOString().split('T')[0],
+      deliveryDate: new Date().toISOString().split('T')[0],
     });
     setSelectedBooking(null);
     setOilFormErrors({});
   };
 
-  const handleOilFormSubmit = (e: React.FormEvent) => {
+  const resetPackagingForm = () => {
+    setPackagingFormData({
+      supplierName: '',
+      skuSize: '',
+      packagingType: '',
+      quantity: 0,
+      ratePerUnit: 0,
+      paymentMode: '',
+      invoiceNumber: '',
+      invoiceDate: new Date().toISOString().split('T')[0],
+      deliveryDate: new Date().toISOString().split('T')[0],
+    });
+    setPackagingFormErrors({});
+  };
+
+  const handleOilFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate
@@ -260,6 +386,9 @@ const Procurement: React.FC = () => {
     }
     if (!oilFormData.quantity || oilFormData.quantity <= 0) {
       errors.quantity = 'Quantity must be greater than 0';
+    }
+    if (oilFormData.quantity < 10000 || oilFormData.quantity > 20000) {
+      errors.quantity = 'Quantity must be between 10,000 and 20,000 liters';
     }
     if (!oilFormData.ratePerLiter || oilFormData.ratePerLiter <= 0) {
       errors.ratePerLiter = 'Rate must be greater than 0';
@@ -277,11 +406,6 @@ const Procurement: React.FC = () => {
       errors.deliveryDate = 'Delivery date is required';
     }
     
-    // Check for duplicate invoice number
-    if (localDataService.isInvoiceNumberExists(oilFormData.invoiceNumber)) {
-      errors.invoiceNumber = 'Invoice number already exists';
-    }
-    
     if (Object.keys(errors).length > 0) {
       setOilFormErrors(errors);
       return;
@@ -290,10 +414,10 @@ const Procurement: React.FC = () => {
     try {
       setFormLoading(true);
       setOilFormErrors({});
+      setError(null);
       
-      // Create oil purchase using local data service
-      localDataService.createOilPurchase({
-        bookingId: oilFormData.bookingId || undefined,
+      // Create oil purchase using backend API
+      const response = await oilPurchaseAPI.create({
         supplierName: oilFormData.supplierName,
         quantity: oilFormData.quantity,
         ratePerLiter: oilFormData.ratePerLiter,
@@ -303,29 +427,137 @@ const Procurement: React.FC = () => {
         deliveryDate: oilFormData.deliveryDate,
       });
       
-      setShowForm(false);
-      setSuccess('Oil purchase created successfully!');
-      setTimeout(() => setSuccess(null), 3000);
-      resetOilForm();
-      fetchOilPurchases();
-      fetchPendingBookings();
+      if (response.data.success) {
+        setShowForm(false);
+        setSuccess('Oil purchase created successfully!');
+        setTimeout(() => setSuccess(null), 3000);
+        resetOilForm();
+        fetchOilPurchases();
+        fetchOilSummary();
+        fetchPendingBookings();
+        
+        // If a booking was selected, update the booking payment
+        if (selectedBooking) {
+          try {
+            await bookingAPI.updatePayment(selectedBooking._id, calculatedOilAmount);
+          } catch (bookingErr) {
+            console.error('Failed to update booking payment:', bookingErr);
+          }
+        }
+      }
       
     } catch (err: any) {
-      setError('Failed to create oil purchase');
+      setError(err.error?.message || 'Failed to create oil purchase');
     } finally {
       setFormLoading(false);
     }
   };
 
-  const handlePackagingFormSubmit = (e: React.FormEvent) => {
+  const handlePackagingFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Packaging purchases not implemented in local storage
-    setError('Packaging purchases are not yet implemented');
+    
+    // Validate
+    const errors: Record<string, string> = {};
+    if (!packagingFormData.supplierName.trim()) {
+      errors.supplierName = 'Supplier name is required';
+    }
+    if (!packagingFormData.skuSize) {
+      errors.skuSize = 'SKU size is required';
+    }
+    if (!packagingFormData.packagingType) {
+      errors.packagingType = 'Packaging type is required';
+    }
+    if (!packagingFormData.quantity || packagingFormData.quantity <= 0) {
+      errors.quantity = 'Quantity must be greater than 0';
+    }
+    if (!packagingFormData.ratePerUnit || packagingFormData.ratePerUnit <= 0) {
+      errors.ratePerUnit = 'Rate per unit must be greater than 0';
+    }
+    if (!packagingFormData.paymentMode) {
+      errors.paymentMode = 'Payment mode is required';
+    }
+    if (!packagingFormData.invoiceNumber.trim()) {
+      errors.invoiceNumber = 'Invoice number is required';
+    }
+    if (!packagingFormData.invoiceDate) {
+      errors.invoiceDate = 'Invoice date is required';
+    }
+    if (!packagingFormData.deliveryDate) {
+      errors.deliveryDate = 'Delivery date is required';
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setPackagingFormErrors(errors);
+      return;
+    }
+    
+    try {
+      setFormLoading(true);
+      setPackagingFormErrors({});
+      setError(null);
+      
+      // Create packaging purchase using backend API
+      const response = await packagingPurchaseAPI.create({
+        supplierName: packagingFormData.supplierName,
+        skuSize: packagingFormData.skuSize,
+        packagingType: packagingFormData.packagingType,
+        quantity: packagingFormData.quantity,
+        ratePerUnit: packagingFormData.ratePerUnit,
+        paymentMode: packagingFormData.paymentMode,
+        invoiceNumber: packagingFormData.invoiceNumber,
+        invoiceDate: packagingFormData.invoiceDate,
+        deliveryDate: packagingFormData.deliveryDate,
+      });
+      
+      if (response.data.success) {
+        setShowForm(false);
+        setSuccess('Packaging purchase created successfully!');
+        setTimeout(() => setSuccess(null), 3000);
+        resetPackagingForm();
+        fetchPackagingPurchases();
+        fetchPackagingSummary();
+      }
+      
+    } catch (err: any) {
+      setError(err.error?.message || 'Failed to create packaging purchase');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Handle payment status toggle for oil purchases
+  const handlePaymentStatusToggle = async (purchaseId: string, isPaid: boolean) => {
+    try {
+      const response = await oilPurchaseAPI.updatePaymentStatus(purchaseId, isPaid);
+      if (response.data.success) {
+        setSuccess(`Payment status updated successfully!`);
+        setTimeout(() => setSuccess(null), 3000);
+        fetchOilPurchases();
+        fetchOilSummary();
+      }
+    } catch (err: any) {
+      setError(err.error?.message || 'Failed to update payment status');
+    }
+  };
+
+  // Handle payment status toggle for packaging purchases
+  const handlePackagingPaymentStatusToggle = async (purchaseId: string, isPaid: boolean) => {
+    try {
+      const response = await packagingPurchaseAPI.updatePaymentStatus(purchaseId, isPaid);
+      if (response.data.success) {
+        setSuccess(`Payment status updated successfully!`);
+        setTimeout(() => setSuccess(null), 3000);
+        fetchPackagingPurchases();
+        fetchPackagingSummary();
+      }
+    } catch (err: any) {
+      setError(err.error?.message || 'Failed to update payment status');
+    }
   };
 
   // Calculate total pending amount from all pending bookings
   const totalPendingBookingAmount = pendingBookings.reduce((sum, booking) => {
-    return sum + (booking.pendingAmount || booking.bookingAmount);
+    return sum + booking.pendingAmount;
   }, 0);
 
   if (showForm) {
@@ -359,7 +591,7 @@ const Procurement: React.FC = () => {
               <div className="credit-card" style={{ borderLeft: '4px solid #e74c3c' }}>
                 <div className="credit-label">Pending Amount</div>
                 <div className="credit-value" style={{ color: '#e74c3c' }}>
-                  ₹{(selectedBooking.tankerCapacity * selectedBooking.rate - selectedBooking.bookingAmount).toLocaleString()}
+                  ₹{selectedBooking.pendingAmount.toLocaleString()}
                 </div>
               </div>
             </div>
@@ -393,6 +625,18 @@ const Procurement: React.FC = () => {
               </p>
             </div>
           )}
+
+          {activeTab === 'packaging' && (
+            <div className="summary-card" style={{ margin: '1.5rem', textAlign: 'center' }}>
+              <h4>Calculated Purchase Amount</h4>
+              <div className="summary-value" style={{ color: '#27ae60', fontSize: '1.75rem' }}>
+                ₹{(packagingFormData.quantity * packagingFormData.ratePerUnit).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p style={{ color: '#7f8c8d', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>
+                {packagingFormData.quantity.toLocaleString()} units × ₹{packagingFormData.ratePerUnit.toFixed(2)} per unit
+              </p>
+            </div>
+          )}
         </div>
 
         <div style={{ marginTop: '1rem', textAlign: 'center' }}>
@@ -402,6 +646,8 @@ const Procurement: React.FC = () => {
               setShowForm(false);
               if (activeTab === 'oil') {
                 resetOilForm();
+              } else {
+                resetPackagingForm();
               }
             }}
           >
@@ -439,6 +685,57 @@ const Procurement: React.FC = () => {
       {success && (
         <div className="success-message" style={{ marginBottom: '1rem' }}>
           {success}
+        </div>
+      )}
+
+      {/* Summary Statistics */}
+      {activeTab === 'oil' && oilSummary && (
+        <div className="summary-cards" style={{ marginBottom: '1.5rem' }}>
+          <div className="card">
+            <h3>Total Purchases</h3>
+            <p className="card-value">{oilSummary.totalPurchases}</p>
+          </div>
+          <div className="card">
+            <h3>Total Quantity</h3>
+            <p className="card-value">{oilSummary.totalQuantity.toLocaleString()} L</p>
+          </div>
+          <div className="card">
+            <h3>Total Amount</h3>
+            <p className="card-value">₹{oilSummary.totalAmount.toLocaleString()}</p>
+          </div>
+          <div className="card">
+            <h3>Average Rate</h3>
+            <p className="card-value">₹{oilSummary.averageRate.toFixed(2)}/L</p>
+          </div>
+          <div className="card" style={{ borderLeftColor: '#e74c3c' }}>
+            <h3>Unpaid Amount</h3>
+            <p className="card-value" style={{ color: '#e74c3c' }}>₹{oilSummary.unpaidAmount.toLocaleString()}</p>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'packaging' && packagingSummary && (
+        <div className="summary-cards" style={{ marginBottom: '1.5rem' }}>
+          <div className="card">
+            <h3>Total Purchases</h3>
+            <p className="card-value">{packagingSummary.totalPurchases}</p>
+          </div>
+          <div className="card">
+            <h3>Total Quantity</h3>
+            <p className="card-value">{packagingSummary.totalQuantity.toLocaleString()}</p>
+          </div>
+          <div className="card">
+            <h3>Total Amount</h3>
+            <p className="card-value">₹{packagingSummary.totalAmount.toLocaleString()}</p>
+          </div>
+          <div className="card">
+            <h3>Average Rate</h3>
+            <p className="card-value">₹{packagingSummary.averageRate.toFixed(2)}</p>
+          </div>
+          <div className="card" style={{ borderLeftColor: '#e74c3c' }}>
+            <h3>Unpaid Amount</h3>
+            <p className="card-value" style={{ color: '#e74c3c' }}>₹{packagingSummary.unpaidAmount.toLocaleString()}</p>
+          </div>
         </div>
       )}
 
@@ -480,7 +777,7 @@ const Procurement: React.FC = () => {
                     <td>₹{booking.rate.toFixed(2)}</td>
                     <td>₹{booking.bookingAmount.toLocaleString()}</td>
                     <td style={{ color: '#e74c3c', fontWeight: 600 }}>
-                      ₹{(booking.pendingAmount || booking.bookingAmount).toLocaleString()}
+                      ₹{booking.pendingAmount.toLocaleString()}
                     </td>
                     <td>
                       <span style={{ 

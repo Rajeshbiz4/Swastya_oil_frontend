@@ -29,7 +29,7 @@ import Profile from './pages/Profile';
 const NotFound = () => <div className="page-placeholder">Page Not Found</div>;
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, token } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, token, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -38,6 +38,22 @@ const AppContent: React.FC = () => {
       dispatch(fetchProfile());
     }
   }, [token, isAuthenticated, dispatch]);
+
+  // Create a role-based default redirect
+  const getDefaultRoute = () => {
+    if (!user) return '/dashboard';
+    
+    switch (user.role) {
+      case UserRole.ADMIN:
+        return '/dashboard';
+      case UserRole.USER:
+        return '/dashboard';
+      case UserRole.SALES_PERSON:
+        return '/dashboard';
+      default:
+        return '/dashboard';
+    }
+  };
 
   return (
     <Router>
@@ -51,14 +67,16 @@ const AppContent: React.FC = () => {
             <Layout />
           </ProtectedRoute>
         }>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route index element={<Navigate to={getDefaultRoute()} replace />} />
           
-          {/* Admin-only routes */}
+          {/* Dashboard - accessible to all roles but shows different content */}
           <Route path="dashboard" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER, UserRole.SALES_PERSON]}>
               <Dashboard />
             </ProtectedRoute>
           } />
+          
+          {/* Admin-only routes */}
           <Route path="users" element={
             <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
               <UserManagement />
@@ -91,11 +109,6 @@ const AppContent: React.FC = () => {
               <ProductionImproved />
             </ProtectedRoute>
           } />
-          <Route path="sales" element={
-            <ProtectedRoute requiredRoles={[UserRole.USER, UserRole.SALES_PERSON]}>
-              <Sales />
-            </ProtectedRoute>
-          } />
           <Route path="workers" element={
             <ProtectedRoute requiredRoles={[UserRole.USER]}>
               <Worker />
@@ -112,25 +125,10 @@ const AppContent: React.FC = () => {
             </ProtectedRoute>
           } />
           
-          {/* Shared routes (Admin + User) */}
-          <Route path="production" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
-              <ProductionImproved />
-            </ProtectedRoute>
-          } />
+          {/* SalesPerson-only routes */}
           <Route path="sales" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
+            <ProtectedRoute requiredRoles={[UserRole.SALES_PERSON]}>
               <Sales />
-            </ProtectedRoute>
-          } />
-          <Route path="attendance" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
-              <Attendance />
-            </ProtectedRoute>
-          } />
-          <Route path="reports" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
-              <Reports />
             </ProtectedRoute>
           } />
           

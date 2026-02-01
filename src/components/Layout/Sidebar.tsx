@@ -14,62 +14,66 @@ const navigationItems: NavItem[] = [
   { 
     label: 'Dashboard', 
     path: '/dashboard',
-    roles: [UserRole.ADMIN] // Admin only
+    roles: [UserRole.ADMIN, UserRole.USER, UserRole.SALES_PERSON] // All roles can access dashboard
   },
+  // Admin-only navigation
   { 
     label: 'User Management', 
     path: '/users',
-    roles: [UserRole.ADMIN] // Admin only
+    roles: [UserRole.ADMIN]
   },
   { 
     label: 'Booking', 
     path: '/booking',
-    roles: [UserRole.ADMIN] // Admin only
+    roles: [UserRole.ADMIN]
   },
   { 
     label: 'Procurement', 
     path: '/procurement',
-    roles: [UserRole.ADMIN] // Admin only
+    roles: [UserRole.ADMIN]
   },
   { 
     label: 'Reports', 
     path: '/reports',
-    roles: [UserRole.ADMIN] // Admin only
+    roles: [UserRole.ADMIN]
   },
+  // User-only navigation
   { 
     label: 'Inventory', 
     path: '/inventory',
-    roles: [UserRole.USER] // User only
+    roles: [UserRole.USER]
   },
   { 
     label: 'Production', 
     path: '/production',
-    roles: [UserRole.USER] // User only
-  },
-  { 
-    label: 'Sales', 
-    path: '/sales',
-    roles: [UserRole.USER, UserRole.SALES_PERSON] // User and SalesPerson
+    roles: [UserRole.USER]
   },
   {
     label: 'Workers',
     path: '/workers',
-    roles: [UserRole.USER] // User only
+    roles: [UserRole.USER]
   },
   {
     label: 'Attendance',
     path: '/attendance',
-    roles: [UserRole.USER] // User only
+    roles: [UserRole.USER]
   },
   {
     label: 'Payroll',
     path: '/payroll',
-    roles: [UserRole.USER] // User only
+    roles: [UserRole.USER]
   },
+  // SalesPerson-only navigation
   { 
-    label: 'My Profile', 
+    label: 'Sales', 
+    path: '/sales',
+    roles: [UserRole.SALES_PERSON]
+  },
+  // Shared navigation (all roles)
+  { 
+    label: 'Profile', 
     path: '/profile',
-    roles: [UserRole.ADMIN, UserRole.USER, UserRole.SALES_PERSON] // All can access
+    roles: [UserRole.ADMIN, UserRole.USER, UserRole.SALES_PERSON]
   },
 ];
 

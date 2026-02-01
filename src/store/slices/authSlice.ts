@@ -32,7 +32,6 @@ const initialState: AuthState = {
 export const login = createAsyncThunk<LoginResponse, LoginCredentials>(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
-    debugger;
     try {
       console.log('Login attempt for:', credentials.username);
       const response = await api.post<ApiResponse<LoginResponse>>('/auth/login', credentials);
@@ -105,8 +104,6 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
-        console.log('Login successful - User role:', action.payload.user.role);
-        console.log('Login successful - User data:', action.payload.user);
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -114,7 +111,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
-        console.log('Login failed - Error:', action.payload);
       })
       // Logout
       .addCase(logout.fulfilled, (state) => {

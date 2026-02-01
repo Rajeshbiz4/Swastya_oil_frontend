@@ -32,6 +32,7 @@ const initialState: AuthState = {
 export const login = createAsyncThunk<LoginResponse, LoginCredentials>(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
+    debugger;
     try {
       console.log('Login attempt for:', credentials.username);
       const response = await api.post<ApiResponse<LoginResponse>>('/auth/login', credentials);

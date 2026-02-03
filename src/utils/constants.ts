@@ -1,7 +1,7 @@
 import { UserRole, SKUSize, PackagingType, PaymentMode } from '../types';
 
 // Application constants
-export const APP_NAME = 'Swastya shakti gold pvt ltd';
+export const APP_NAME = 'Swashtya shakti gold pvt ltd';
 export const APP_VERSION = '1.0.0';
 
 // API endpoints

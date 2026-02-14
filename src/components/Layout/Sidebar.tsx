@@ -17,11 +17,11 @@ const navigationItems: NavItem[] = [
     roles: [UserRole.ADMIN, UserRole.USER, UserRole.SALES_PERSON] // All roles can access dashboard
   },
   // Admin-only navigation
-  { 
-    label: 'User Management', 
-    path: '/users',
-    roles: [UserRole.ADMIN]
-  },
+  // { 
+  //   label: 'User Management', 
+  //   path: '/users',
+  //   roles: [UserRole.ADMIN]
+  // },
   { 
     label: 'Booking', 
     path: '/booking',
@@ -70,11 +70,11 @@ const navigationItems: NavItem[] = [
     roles: [UserRole.SALES_PERSON]
   },
   // Shared navigation (all roles)
-  { 
-    label: 'Profile', 
-    path: '/profile',
-    roles: [UserRole.ADMIN, UserRole.USER, UserRole.SALES_PERSON]
-  },
+  // { 
+  //   label: 'Profile', 
+  //   path: '/profile',
+  //   roles: [UserRole.ADMIN, UserRole.USER, UserRole.SALES_PERSON]
+  // },
 ];
 
 const Sidebar: React.FC = () => {

@@ -3,6 +3,8 @@ import { Navigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { login, clearError } from '../../store/slices/authSlice';
 import { APP_NAME } from '../../utils/constants';
+import LogoTitle from '../Logo/logo';
+import logo from '../../assets/logo.jpeg';
 import './Auth.css';
 
 const Login: React.FC = () => {
@@ -43,9 +45,9 @@ const Login: React.FC = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1>{APP_NAME}</h1>
+           <LogoTitle logo={logo} title="" direction="column" width = "250px" />
           <h2>Login</h2>
-        </div>
+        </div>  
 
         <form onSubmit={handleSubmit} className="auth-form">
           {error && (

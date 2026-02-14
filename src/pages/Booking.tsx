@@ -156,14 +156,14 @@ const Booking: React.FC = () => {
     },
     { 
       name: 'tankerCapacity', 
-      label: 'Tanker Capacity (Liters)', 
+      label: 'Tanker Capacity (KG)', 
       type: 'number', 
       required: true,
       min: '1'
     },
     { 
       name: 'rate', 
-      label: 'Rate per Liter (₹)', 
+      label: 'Rate per KG (₹)', 
       type: 'number', 
       required: true,
       min: '0.01',
@@ -195,13 +195,13 @@ const Booking: React.FC = () => {
     },
     { 
       key: 'tankerCapacity', 
-      title: 'Tanker Capacity (L)', 
+      title: 'Tanker Capacity (KG)', 
       sortable: true, 
       render: (value: number) => value.toLocaleString() 
     },
     { 
       key: 'rate', 
-      title: 'Rate/L', 
+      title: 'Rate/KG', 
       sortable: true, 
       render: (value: number) => `₹${value.toFixed(2)}` 
     },

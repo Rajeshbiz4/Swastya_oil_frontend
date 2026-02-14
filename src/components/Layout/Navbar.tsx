@@ -2,6 +2,8 @@ import React from 'react';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 import { APP_NAME } from '../../utils/constants';
+import LogoTitle from '../Logo/logo';
+import logo from '../../assets/logo.jpeg';
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
@@ -14,7 +16,7 @@ const Navbar: React.FC = () => {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <h1>{APP_NAME}</h1>
+        <LogoTitle logo={logo} title={APP_NAME} />
       </div>
       
       {isAuthenticated && user && (

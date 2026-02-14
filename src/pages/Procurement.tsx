@@ -190,13 +190,13 @@ const Procurement: React.FC = () => {
         { value: '', label: '-- Select a Booking (Optional) --' },
         ...pendingBookings.map(booking => ({
           value: booking._id,
-          label: `${new Date(booking.bookingDate).toLocaleDateString()} - ${booking.tankerCapacity.toLocaleString()}L @ ₹${booking.rate}/L (Pending: ₹${booking.pendingAmount.toLocaleString()})`
+          label: `${new Date(booking.bookingDate).toLocaleDateString()} - ${booking.tankerCapacity.toLocaleString()}KG @ ₹${booking.rate}/KG (Pending: ₹${booking.pendingAmount.toLocaleString()})`
         }))
       ]
     },
     { name: 'supplierName', label: 'Supplier Name', type: 'text', required: true },
-    { name: 'quantity', label: 'Quantity (Liters)', type: 'number', required: true, min: '10000', max: '20000' },
-    { name: 'ratePerLiter', label: 'Rate per Liter', type: 'number', required: true, min: '0.01', step: '0.01' },
+    { name: 'quantity', label: 'Quantity (KG)', type: 'number', required: true, min: '10000', max: '20000' },
+    { name: 'ratePerLiter', label: 'Rate per KG', type: 'number', required: true, min: '0.01', step: '0.01' },
     { 
       name: 'paymentMode', 
       label: 'Payment Mode', 
@@ -248,8 +248,8 @@ const Procurement: React.FC = () => {
   // Table columns
   const oilColumns = [
     { key: 'supplierName', title: 'Supplier', sortable: true },
-    { key: 'quantity', title: 'Quantity (L)', sortable: true, render: (value: number) => value.toLocaleString() },
-    { key: 'ratePerLiter', title: 'Rate/L', sortable: true, render: (value: number) => `₹${value.toFixed(2)}` },
+    { key: 'quantity', title: 'Quantity (KG)', sortable: true, render: (value: number) => value.toLocaleString() },
+    { key: 'ratePerLiter', title: 'Rate/KG', sortable: true, render: (value: number) => `₹${value.toFixed(2)}` },
     { key: 'totalAmount', title: 'Total Amount', sortable: true, render: (value: number) => `₹${value.toLocaleString()}` },
     { key: 'paymentMode', title: 'Payment', sortable: true },
     { key: 'invoiceNumber', title: 'Invoice #', sortable: true },
@@ -697,7 +697,7 @@ const Procurement: React.FC = () => {
           </div>
           <div className="card">
             <h3>Total Quantity</h3>
-            <p className="card-value">{oilSummary.totalQuantity.toLocaleString()} L</p>
+            <p className="card-value">{oilSummary.totalQuantity.toLocaleString()} KG</p>
           </div>
           <div className="card">
             <h3>Total Amount</h3>
@@ -763,7 +763,7 @@ const Procurement: React.FC = () => {
                 <tr>
                   <th>Booking Date</th>
                   <th>Capacity</th>
-                  <th>Rate/L</th>
+                  <th>Rate/KG</th>
                   <th>Booking Amount</th>
                   <th>Pending Amount</th>
                   <th>Status</th>

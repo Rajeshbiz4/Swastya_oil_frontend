@@ -154,7 +154,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Procurement Summary Section */}
-            <div className="dashboard-section">
+            {/* <div className="dashboard-section">
               <h2>Procurement Summary</h2>
               <div className="dashboard-stats">
                 <div className="stat-card">
@@ -211,7 +211,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
           </>
         );
 
@@ -319,7 +319,7 @@ const Dashboard: React.FC = () => {
 
       <div className="dashboard-content">
         {/* Recent Activity - Only for Admin */}
-        {user?.role === UserRole.ADMIN && (
+        {/* {user?.role === UserRole.ADMIN && (
           <div className="dashboard-section">
             <h2>Recent Activity</h2>
             {auditLoading ? (
@@ -359,7 +359,7 @@ const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
-        )}
+        )} */}
 
         {/* Quick Actions */}
         <div className="dashboard-section">

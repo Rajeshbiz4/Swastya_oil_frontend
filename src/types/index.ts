@@ -28,10 +28,10 @@ export enum PackagingType {
 
 export enum SKUSize {
   SIZE_500G = '500g',
-  SIZE_1L = '1L',
-  SIZE_5L = '5L',
-  SIZE_10L = '10L',
-  SIZE_15L = '15L'
+  SIZE_1L = '1KG',
+  SIZE_5L = '5KG',
+  SIZE_10L = '10KG',
+  SIZE_15L = '15KG'
 }
 
 export enum OrderStatus {

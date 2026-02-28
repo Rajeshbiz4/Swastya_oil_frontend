@@ -144,10 +144,11 @@ interface MonthlyReportData {
 
 interface MonthlyReportsProps {
   onError: (error: string) => void;
+  reportType?: 'comprehensive' | 'pnl';
 }
 
-const MonthlyReports: React.FC<MonthlyReportsProps> = ({ onError }) => {
-  const [reportType, setReportType] = useState<'comprehensive' | 'pnl'>('comprehensive');
+const MonthlyReports: React.FC<MonthlyReportsProps> = ({ onError, reportType: propReportType = 'comprehensive' }) => {
+  const reportType = propReportType;
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [reportData, setReportData] = useState<MonthlyReportData | null>(null);
@@ -654,17 +655,6 @@ const MonthlyReports: React.FC<MonthlyReportsProps> = ({ onError }) => {
         </div>
         
         <div className="report-filters-content">
-          <div className="report-filter-group">
-            <label>Report Type</label>
-            <select 
-              value={reportType} 
-              onChange={(e) => setReportType(e.target.value as any)}
-            >
-              <option value="comprehensive">Comprehensive</option>
-              <option value="pnl">P&L Only</option>
-            </select>
-          </div>
-
           <div className="report-filter-group">
             <label>Month</label>
             <select 

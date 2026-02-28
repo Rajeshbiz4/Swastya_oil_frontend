@@ -7,6 +7,7 @@ interface NavItem {
   label: string;
   path: string;
   roles?: UserRole[];
+  children?: NavItem[];
 }
 
 // Navigation items with role-based access
@@ -27,10 +28,14 @@ const navigationItems: NavItem[] = [
     path: '/booking',
     roles: [UserRole.ADMIN]
   },
-  { 
-    label: 'Procurement', 
-    path: '/procurement',
-    roles: [UserRole.ADMIN]
+  {
+    label: 'Procurement',
+    path: '',
+    roles: [UserRole.ADMIN],
+    children: [
+      { label: 'Oil Purchases', path: '/procurement/oil', roles: [UserRole.ADMIN] },
+      { label: 'Packaging Purchases', path: '/procurement/packaging', roles: [UserRole.ADMIN] },
+    ],
   },
   { 
     label: 'Reports', 
@@ -87,22 +92,47 @@ const Sidebar: React.FC = () => {
 
   return (
     <aside className="sidebar">
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav" aria-label="Main Navigation">
         <ul>
           {navigationItems
             .filter(hasAccess)
-            .map((item) => (
-              <li key={item.path}>
-                <NavLink 
-                  to={item.path}
-                  className={({ isActive }) => 
-                    isActive ? 'nav-link active' : 'nav-link'
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
+            .map((item) => {
+              if (item.children && item.children.length > 0) {
+                return (
+                  <li key={item.label} className="nav-group">
+                    <span className="nav-link group-label">{item.label}</span>
+                    <ul className="nav-sublist">
+                      {item.children
+                        .filter(hasAccess)
+                        .map((child) => (
+                          <li key={child.path}>
+                            <NavLink
+                              to={child.path}
+                              className={({ isActive }) =>
+                                isActive ? 'nav-link active' : 'nav-link'
+                              }
+                            >
+                              {child.label}
+                            </NavLink>
+                          </li>
+                        ))}
+                    </ul>
+                  </li>
+                );
+              }
+              return (
+                <li key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      isActive ? 'nav-link active' : 'nav-link'
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                </li>
+              );
+            })}
         </ul>
       </nav>
     </aside>

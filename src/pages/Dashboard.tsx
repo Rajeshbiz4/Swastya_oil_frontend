@@ -66,7 +66,8 @@ const Dashboard: React.FC = () => {
     switch (user?.role) {
       case UserRole.ADMIN:
         return [
-          { label: 'Add Oil Purchase', action: 'oil-purchase', path: '/procurement' },
+          { label: 'Oil Purchases', action: 'oil-purchase', path: '/procurement/oil' },
+          { label: 'Packaging Purchases', action: 'packaging-purchase', path: '/procurement/packaging' },
           { label: 'Manage Bookings', action: 'booking', path: '/booking' },
           { label: 'User Management', action: 'users', path: '/users' },
           { label: 'View Reports', action: 'reports', path: '/reports' }

@@ -14,7 +14,8 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 // Pages
 import Dashboard from './pages/Dashboard';
 import Booking from './pages/Booking';
-import Procurement from './pages/Procurement';
+import ProcurementOil from './pages/ProcurementOil';
+import ProcurementPackaging from './pages/ProcurementPackaging';
 import Inventory from './pages/Inventory';
 import ProductionImproved from './pages/ProductionImproved';
 import Sales from './pages/Sales';
@@ -87,11 +88,27 @@ const AppContent: React.FC = () => {
               <Booking />
             </ProtectedRoute>
           } />
-          <Route path="procurement" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
-              <Procurement />
-            </ProtectedRoute>
-          } />
+          {/* Procurement submenu routes */}
+          <Route
+            path="procurement"
+            element={<Navigate to="/procurement/oil" replace />}
+          />
+          <Route
+            path="procurement/oil"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+                <ProcurementOil />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="procurement/packaging"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+                <ProcurementPackaging />
+              </ProtectedRoute>
+            }
+          />
           <Route path="reports" element={
             <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
               <Reports />

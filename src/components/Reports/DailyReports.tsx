@@ -49,10 +49,11 @@ interface DailyReportData {
 
 interface DailyReportsProps {
   onError: (error: string) => void;
+  reportType?: 'comprehensive' | 'purchases' | 'sales' | 'inventory' | 'production';
 }
 
-const DailyReports: React.FC<DailyReportsProps> = ({ onError }) => {
-  const [reportType, setReportType] = useState<'comprehensive' | 'purchases' | 'sales' | 'inventory' | 'production'>('comprehensive');
+const DailyReports: React.FC<DailyReportsProps> = ({ onError, reportType: propReportType = 'comprehensive' }) => {
+  const reportType = propReportType;
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [reportData, setReportData] = useState<DailyReportData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -404,29 +405,6 @@ const DailyReports: React.FC<DailyReportsProps> = ({ onError }) => {
         </div>
         
         <div className="report-filters-content">
-          <div className="report-filter-group">
-            <label>Report Type</label>
-            <select 
-              value={reportType} 
-              onChange={(e) => setReportType(e.target.value as any)}
-            >
-              <option value="comprehensive">Comprehensive</option>
-              <option value="purchases">Purchases Only</option>
-              <option value="sales">Sales Only</option>
-              <option value="inventory">Inventory Only</option>
-              <option value="production">Production Only</option>
-            </select>
-          </div>
-
-          <div className="report-filter-group">
-            <label>Date</label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-            />
-          </div>
         </div>
       </div>
 

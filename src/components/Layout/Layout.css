@@ -60,32 +60,87 @@
   background-color: #34495e;
   color: white;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
 .sidebar-nav ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  padding-top: 0.5rem;
 }
 
 .sidebar-nav li {
-  border-bottom: 1px solid #2c3e50;
+  border-bottom: 1px solid rgba(44,62,80,0.35);
 }
 
-.nav-link {
+/* Submenu styles */
+.nav-group .group-label {
   display: block;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  color: #bdc3c7;
+  cursor: default;
+}
+
+.nav-group .group-label:hover {
+  background-color: #2c3e50;
+  color: #ecf0f1;
+}
+
+.nav-sublist {
+  list-style: none;
+  padding-left: 1rem;
+  margin-top: 0.25rem;
+}
+
+.nav-sublist li {
+  border-bottom: none;
+}
+
+.nav-sublist .nav-link {
+  padding-left: 2.5rem;
+  font-size: 0.9rem;
+}
+/* base link styles accidentally placed outside a selector previously; fix scope */
+.nav-link {
   padding: 1rem 1.5rem;
   color: white;
   text-decoration: none;
   transition: background-color 0.2s;
 }
 
+.nav-link {
+  display: block;
+}
+
+.nav-link::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: transparent;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  vertical-align: middle;
+}
+
 .nav-link:hover {
-  background-color: #2c3e50;
+  background-color: rgba(255,255,255,0.04);
 }
 
 .nav-link.active {
-  background-color: #3498db;
+  background-color: rgba(52,152,219,0.12);
+  border-left: 4px solid #3498db;
+  padding-left: calc(1rem + 4px);
+}
+
+/* keyboard focus for accessibility */
+.nav-link:focus-visible {
+  outline: 2px dashed rgba(52,152,219,0.6);
+  outline-offset: 2px;
 }
 
 /* Main Content Styles */

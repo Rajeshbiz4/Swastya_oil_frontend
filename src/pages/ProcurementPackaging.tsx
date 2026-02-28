@@ -178,18 +178,23 @@ const ProcurementPackaging: React.FC = () => {
 
       <div className="module-content">
         <div className="filters-section">
-          <DateRangePicker
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-            label="Filter by Delivery Date"
-          />
+          <div className="filters-row">
+            <div className="filter-group">
+              <label>Delivery Date</label>
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                label=""
+              />
+            </div>
 
-          <div className="actions-row">
-            <button className="primary-button" onClick={() => setShowForm(true)}>
-              Add Packaging Purchase
-            </button>
+            <div className="filter-group" style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+              <button className="primary-button" onClick={() => setShowForm(true)}>
+                Add Packaging Purchase
+              </button>
+            </div>
           </div>
         </div>
 

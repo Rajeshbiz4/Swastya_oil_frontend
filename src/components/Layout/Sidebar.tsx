@@ -102,20 +102,18 @@ const Sidebar: React.FC = () => {
                   <li key={item.label} className="nav-group">
                     <span className="nav-link group-label">{item.label}</span>
                     <ul className="nav-sublist">
-                      {item.children
-                        .filter(hasAccess)
-                        .map((child) => (
-                          <li key={child.path}>
-                            <NavLink
-                              to={child.path}
-                              className={({ isActive }) =>
-                                isActive ? 'nav-link active' : 'nav-link'
-                              }
-                            >
-                              {child.label}
-                            </NavLink>
-                          </li>
-                        ))}
+                      {item.children.filter(hasAccess).map((child) => (
+                        <li key={child.path}>
+                          <NavLink
+                            to={child.path}
+                            className={({ isActive }) =>
+                              isActive ? 'nav-link active' : 'nav-link'
+                            }
+                          >
+                            {child.label}
+                          </NavLink>
+                        </li>
+                      ))}
                     </ul>
                   </li>
                 );

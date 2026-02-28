@@ -205,18 +205,23 @@ const ProcurementOil: React.FC = () => {
 
       <div className="module-content">
         <div className="filters-section">
-          <DateRangePicker
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-            label="Filter by Delivery Date"
-          />
+          <div className="filters-row">
+            <div className="filter-group">
+              <label>Delivery Date</label>
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                label=""
+              />
+            </div>
 
-          <div className="actions-row">
-            <button className="primary-button" onClick={() => setShowForm(true)}>
-              Add Oil Purchase
-            </button>
+            <div className="filter-group" style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+              <button className="primary-button" onClick={() => setShowForm(true)}>
+                Add Oil Purchase
+              </button>
+            </div>
           </div>
         </div>
 
@@ -228,17 +233,22 @@ const ProcurementOil: React.FC = () => {
           </div>
         )}
 
-        <DataTable
-          data={oilPurchases}
-          columns={oilColumns}
-          loading={loading}
-          rowKey="_id"
-        />
+        <div className="data-table-wrapper">
+          <DataTable
+            data={oilPurchases}
+            columns={oilColumns}
+            loading={loading}
+            rowKey="_id"
+          />
+        </div>
 
         {showForm && (
-          <div className="modal">
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <div className="modal-content">
-              <h3>New Oil Purchase</h3>
+              <div className="modal-header">
+                <h3 id="modal-title">New Oil Purchase</h3>
+                <button className="modal-close" aria-label="Close" onClick={() => setShowForm(false)}>×</button>
+              </div>
                     {selectedBooking && (
                 <div className="info-section" style={{ marginBottom: '1.5rem' }}>
                   <h3>Selected Booking Details</h3>
@@ -268,6 +278,9 @@ const ProcurementOil: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              
+              <p className="help-text">Tip: selecting a booking will prefill quantity and rate.</p>
 
               <FormBuilder
                 fields={oilFormFields}

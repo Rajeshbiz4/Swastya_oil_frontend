@@ -82,6 +82,7 @@ const Booking: React.FC = () => {
       
       const response = await bookingAPI.getAll(params);
       if (response.data.success) {
+        console.log('Fetched bookings:', response.data.data);
         setBookings(response.data.data || []);
         setFilteredBookings(response.data.data || []);
       }
@@ -231,7 +232,7 @@ const Booking: React.FC = () => {
       }
     },
     { 
-      key: 'status', 
+      key: 'bookingstatus', 
       title: 'Status', 
       sortable: true, 
       render: (value: string) => {

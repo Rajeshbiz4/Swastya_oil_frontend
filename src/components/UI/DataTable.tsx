@@ -1,6 +1,60 @@
 import React, { useState } from 'react';
 import './UI.css';
 
+const styles = {
+  container: {
+    maxWidth: "1000px",
+    margin: "20px auto",
+    padding: "20px",
+    borderRadius: "10px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+    fontFamily: "Arial"
+  },
+  row: {
+    display: "flex",
+    gap: "10px",
+    marginBottom: "10px"
+  },
+  input: {
+    flex: 1,
+    padding: "8px",
+    borderRadius: "5px",
+    border: "1px solid #ccc"
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    marginTop: "10px"
+  },
+  th: {
+    background: "#f5f5f5",
+    padding: "10px",
+    border: "1px solid #ddd"
+  },
+  td: {
+    padding: "8px",
+    border: "1px solid #ddd"
+  },
+  button: {
+    padding: "8px 14px",
+    marginRight: "10px",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer"
+  },
+  primaryBtn: {
+    background: "#007bff",
+    color: "white"
+  },
+  dangerBtn: {
+    background: "#dc3545",
+    color: "white"
+  },
+  successBtn: {
+    background: "#28a745",
+    color: "white"
+  }
+};
 interface Column<T> {
   key: keyof T | string;
   title: string;
@@ -22,6 +76,7 @@ interface DataTableProps<T> {
   rowKey?: keyof T | ((record: T) => string);
   onRowClick?: (record: T) => void;
   className?: string;
+  expandable?: (record: T) => React.ReactNode; // <-- Add this
 }
 
 function DataTable<T extends Record<string, any>>({
@@ -32,16 +87,13 @@ function DataTable<T extends Record<string, any>>({
   rowKey = '_id' as keyof T,
   onRowClick,
   className = '',
+  expandable,
 }: DataTableProps<T>) {
-  const [sortConfig, setSortConfig] = useState<{
-    key: string;
-    direction: 'asc' | 'desc';
-  } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const getRowKey = (record: T, index: number): string => {
-    if (typeof rowKey === 'function') {
-      return rowKey(record);
-    }
+    if (typeof rowKey === 'function') return rowKey(record);
     return record[rowKey]?.toString() || index.toString();
   };
 
@@ -54,31 +106,27 @@ function DataTable<T extends Record<string, any>>({
   };
 
   const sortedData = React.useMemo(() => {
-    // Ensure data is an array
     const dataArray = Array.isArray(data) ? data : [];
-    
     if (!sortConfig) return dataArray;
-
     return [...dataArray].sort((a, b) => {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
-
-      if (aValue < bValue) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
   }, [data, sortConfig]);
 
   const renderCell = (column: Column<T>, record: T) => {
     const value = record[column.key as keyof T];
-    if (column.render) {
-      return column.render(value, record);
-    }
-    return value?.toString() || '';
+    return column.render ? column.render(value, record) : value?.toString() || '';
+  };
+
+  const toggleExpand = (key: string) => {
+    const newSet = new Set(expandedRows);
+    if (newSet.has(key)) newSet.delete(key);
+    else newSet.add(key);
+    setExpandedRows(newSet);
   };
 
   if (loading) {
@@ -106,39 +154,55 @@ function DataTable<T extends Record<string, any>>({
                     {column.title}
                     {column.sortable && (
                       <span className="sort-indicator">
-                        {sortConfig?.key === column.key ? (
-                          sortConfig.direction === 'asc' ? '↑' : '↓'
-                        ) : (
-                          '↕'
-                        )}
+                        {sortConfig?.key === column.key
+                          ? sortConfig.direction === 'asc'
+                            ? '↑'
+                            : '↓'
+                          : '↕'}
                       </span>
                     )}
                   </div>
                 </th>
               ))}
+              {expandable && <th>Expand</th>}
             </tr>
           </thead>
           <tbody>
             {sortedData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="no-data">
+                <td colSpan={columns.length + (expandable ? 1 : 0)} className="no-data">
                   No data available
                 </td>
               </tr>
             ) : (
-              sortedData.map((record, index) => (
-                <tr
-                  key={getRowKey(record, index)}
-                  className={onRowClick ? 'clickable' : ''}
-                  onClick={() => onRowClick?.(record)}
-                >
-                  {columns.map((column) => (
-                    <td key={column.key.toString()}>
-                      {renderCell(column, record)}
-                    </td>
-                  ))}
-                </tr>
-              ))
+              sortedData.map((record, index) => {
+                const key = getRowKey(record, index);
+                const isExpanded = expandedRows.has(key);
+
+                return (
+                  <React.Fragment key={key}>
+                    <tr className={onRowClick ? 'clickable' : ''} onClick={() => onRowClick?.(record)}>
+                      {columns.map((column) => (
+                        <td key={column.key.toString()}>{renderCell(column, record)}</td>
+                      ))}
+
+                      {expandable && (
+                        <td>
+                          <button style={{ ...styles.button, ...styles.successBtn }} onClick={() => toggleExpand(key)}>
+                            {isExpanded ? 'Hide details' : 'Show details'}
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+
+                    {expandable && isExpanded && (
+                      <tr className="expanded-row">
+                        <td colSpan={columns.length + 1}>{expandable(record)}</td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })
             )}
           </tbody>
         </table>

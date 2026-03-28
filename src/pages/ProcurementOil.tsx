@@ -37,8 +37,9 @@ const ProcurementOil: React.FC = () => {
 
   const fetchPendingBookings = useCallback(async () => {
     try {
-      const response = await bookingAPI.getAll({ status: 'Pending' });
+      const response = await bookingAPI.getAll({ bookingstatus: 'Pending' });
       if (response.data.success) {
+        console.log('Fetched pending bookings:', response.data.data);
         setPendingBookings(response.data.data || []);
       }
     } catch (err: unknown) {

@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <LogoTitle logo={logo} title={APP_NAME} />
+        <LogoTitle logo={logo} />
       </div>
       
       {isAuthenticated && user && (

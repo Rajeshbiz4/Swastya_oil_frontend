@@ -126,23 +126,23 @@ const Inventory: React.FC = () => {
             </div>
           </div>
         );
-      case 'packaging':
-        return (
-          <div className="inventory-summary">
-            <div className="summary-card">
-              <h4>Total Stock</h4>
-              <div className="summary-value">{packagingSummary.totalStock.toLocaleString()}</div>
-            </div>
-            <div className="summary-card">
-              <h4>SKU Types</h4>
-              <div className="summary-value">{packagingSummary.totalTypes}</div>
-            </div>
-            <div className="summary-card">
-              <h4>Low Stock Items</h4>
-              <div className="summary-value">{packagingSummary.lowStockItems}</div>
-            </div>
-          </div>
-        );
+      // case 'packaging':
+      //   return (
+      //     <div className="inventory-summary">
+      //       <div className="summary-card">
+      //         <h4>Total Stock</h4>
+      //         <div className="summary-value">{packagingSummary.totalStock.toLocaleString()}</div>
+      //       </div>
+      //       <div className="summary-card">
+      //         <h4>SKU Types</h4>
+      //         <div className="summary-value">{packagingSummary.totalTypes}</div>
+      //       </div>
+      //       <div className="summary-card">
+      //         <h4>Low Stock Items</h4>
+      //         <div className="summary-value">{packagingSummary.lowStockItems}</div>
+      //       </div>
+      //     </div>
+      //   );
       case 'finished-goods':
         return (
           <div className="inventory-summary">

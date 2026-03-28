@@ -4,10 +4,17 @@ import { useAppSelector, useAppDispatch } from '../store';
 import { fetchRawOilInventory, fetchPackagingInventory, fetchFinishedGoodsInventory } from '../store/slices/inventorySlice';
 import { fetchOilPurchaseSummary, fetchPackagingPurchaseSummary } from '../store/slices/procurementSlice';
 import { fetchRecentActivity } from '../store/slices/auditSlice';
+import { fetchProfile } from '../store/slices/authSlice';
 import { UserRole } from '../types';
 import './Pages.css';
 
 const Dashboard: React.FC = () => {
+
+    const { isAuthenticated, token,  } = useAppSelector((state) => state.auth);
+    
+  
+   
+
   const { user } = useAppSelector((state) => state.auth);
   const { rawOil, packaging, finishedGoods, isLoading } = useAppSelector((state) => state.inventory);
   const { oilSummary, packagingSummary, isLoading: procurementLoading } = useAppSelector((state) => state.procurement);
@@ -69,7 +76,7 @@ const Dashboard: React.FC = () => {
           { label: 'Oil Purchases', action: 'oil-purchase', path: '/procurement/oil' },
           { label: 'Packaging Purchases', action: 'packaging-purchase', path: '/procurement/packaging' },
           { label: 'Manage Bookings', action: 'booking', path: '/booking' },
-          { label: 'User Management', action: 'users', path: '/users' },
+          // { label: 'User Management', action: 'users', path: '/users' },
           { label: 'View Reports', action: 'reports', path: '/reports' }
         ];
       case UserRole.USER:
@@ -111,49 +118,48 @@ const Dashboard: React.FC = () => {
           <>
             {/* Admin Dashboard - Full Overview */}
             <div className="dashboard-stats">
-              <div className="stat-card">
-                <div className="stat-icon">🛢️</div>
-                <div className="stat-content">
-                  <h3>Raw Oil Inventory</h3>
-                  <div className="stat-value">{totals.totalRawOil.toLocaleString()} L</div>
-                  <div className="stat-subtext">
-                    Value: ₹{totals.totalRawOilValue.toLocaleString()}
-                  </div>
-                </div>
-              </div>
+  <div className="stat-card">
+    <div className="stat-icon">🛢️</div>
+    <div className="stat-content">
+      <h3>Raw Oil Inventory</h3>
+      <div className="stat-value">{totals.totalRawOil.toLocaleString()} L</div>
+      <div className="stat-subtext">
+        Value: ₹{totals.totalRawOilValue.toLocaleString()}
+      </div>
+    </div>
+  </div>
 
-              <div className="stat-card">
-                <div className="stat-icon">📦</div>
-                <div className="stat-content">
-                  <h3>Packaging Inventory</h3>
-                  <div className="stat-value">{totals.totalPackaging.toLocaleString()}</div>
-                  <div className="stat-subtext">Units in stock</div>
-                </div>
-              </div>
+  <div className="stat-card">
+    <div className="stat-icon">📦</div>
+    <div className="stat-content">
+      <h3>Packaging Inventory</h3>
+      <div className="stat-value">{totals.totalPackaging.toLocaleString()}</div>
+      <div className="stat-subtext">Units in stock</div>
+    </div>
+  </div>
 
-              <div className="stat-card">
-                <div className="stat-icon">✅</div>
-                <div className="stat-content">
-                  <h3>Finished Goods</h3>
-                  <div className="stat-value">{totals.totalFinishedGoods.toLocaleString()}</div>
-                  <div className="stat-subtext">
-                    Value: ₹{totals.totalFinishedGoodsValue.toLocaleString()}
-                  </div>
-                </div>
-              </div>
+  <div className="stat-card">
+    <div className="stat-icon">✅</div>
+    <div className="stat-content">
+      <h3>Finished Goods</h3>
+      <div className="stat-value">{totals.totalFinishedGoods.toLocaleString()}</div>
+      <div className="stat-subtext">
+        Value: ₹{totals.totalFinishedGoodsValue.toLocaleString()}
+      </div>
+    </div>
+  </div>
 
-              <div className="stat-card">
-                <div className="stat-icon">💰</div>
-                <div className="stat-content">
-                  <h3>Total Inventory Value</h3>
-                  <div className="stat-value">
-                    ₹{(totals.totalRawOilValue + totals.totalFinishedGoodsValue).toLocaleString()}
-                  </div>
-                  <div className="stat-subtext">Current valuation</div>
-                </div>
-              </div>
-            </div>
-
+  <div className="stat-card">
+    <div className="stat-icon">💰</div>
+    <div className="stat-content">
+      <h3>Total Inventory Value</h3>
+      <div className="stat-value">
+        ₹{(totals.totalRawOilValue + totals.totalFinishedGoodsValue).toLocaleString()}
+      </div>
+      <div className="stat-subtext">Current valuation</div>
+    </div>
+  </div>
+</div>
             {/* Procurement Summary Section */}
             {/* <div className="dashboard-section">
               <h2>Procurement Summary</h2>

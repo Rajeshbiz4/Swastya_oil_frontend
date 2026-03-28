@@ -20,7 +20,7 @@ export interface TankerBooking {
   bookingAmount: number;
   paidAmount: number;
   pendingAmount: number;
-  status: 'Pending' | 'PartiallyPaid' | 'Completed';
+  bookingstatus: 'Pending' | 'PartiallyPaid' | 'Completed';
   remarks?: string;
   totalValue: number;
   createdBy: {
@@ -43,8 +43,8 @@ export interface BookingSummary {
 }
 
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
-   const baseURL =  'https://swastya-oil-backend.vercel.app/api';
-//  const baseURL =  'http://localhost:5000/api';
+  // const baseURL =  'https://swastya-oil-backend.vercel.app/api';
+const baseURL =  'http://localhost:5000/api';
 
 
 // Create axios instance
@@ -100,11 +100,11 @@ api.interceptors.response.use(
 // Booking API functions
 export const bookingAPI = {
   // Get all bookings with optional filters
-  getAll: (params?: { startDate?: string; endDate?: string; status?: string }) => {
+  getAll: (params?: { startDate?: string; endDate?: string; bookingstatus?: string }) => {
     const queryParams = new URLSearchParams();
     if (params?.startDate) queryParams.append('startDate', params.startDate);
     if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.status) queryParams.append('status', params.status);
+    if (params?.bookingstatus) queryParams.append('bookingstatus', params.bookingstatus);
     
     return api.get<ApiResponse<TankerBooking[]>>(`/bookings?${queryParams}`);
   },

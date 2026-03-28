@@ -18,6 +18,8 @@ import ProcurementOil from './pages/ProcurementOil';
 import ProcurementPackaging from './pages/ProcurementPackaging';
 import Inventory from './pages/Inventory';
 import ProductionImproved from './pages/ProductionImproved';
+import Batch from './pages/batch';
+import Invoices from './pages/invoices';
 import Sales from './pages/Sales';
 import Reports from './pages/Reports';
 import Worker from './pages/Worker';
@@ -114,16 +116,27 @@ const AppContent: React.FC = () => {
               <Reports />
             </ProtectedRoute>
           } />
+
+           <Route path="invoices" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+              <Invoices />
+            </ProtectedRoute>
+          } />
           
           {/* User-only routes */}
           <Route path="inventory" element={
-            <ProtectedRoute requiredRoles={[UserRole.USER]}>
+            <ProtectedRoute requiredRoles={[UserRole.USER, UserRole.ADMIN]}>
               <Inventory />
             </ProtectedRoute>
           } />
           <Route path="production" element={
-            <ProtectedRoute requiredRoles={[UserRole.USER]}>
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
               <ProductionImproved />
+            </ProtectedRoute>
+          } />
+           <Route path="batch" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+              <Batch />
             </ProtectedRoute>
           } />
           <Route path="workers" element={
@@ -159,6 +172,7 @@ const AppContent: React.FC = () => {
     </Router>
   );
 };
+
 
 function App() {
   return (

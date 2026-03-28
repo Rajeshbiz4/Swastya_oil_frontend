@@ -20,9 +20,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   useEffect(() => {
     // If we have a token but no user, fetch the profile
     if (token && !user && !isLoading) {
+      // console.log('Fetching user profile for protected route access...');
       dispatch(fetchProfile());
     }
   }, [token, user, isLoading, dispatch]);
+
+  useEffect(() => {
+    //  console.log('ProtectedRoute - auth state changed:', { isAuthenticated, user, requiredRoles });
+  }, [ user]);
 
   // Show loading while checking authentication
   if (isLoading) {
@@ -39,7 +44,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Check role-based access
-  if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
+   console.log('ProtectedRoute - checking roles:', user.role);
+  if (requiredRoles.length > 0 && !requiredRoles.includes(user?.role)) {
     return (
       <div className="access-denied">
         <h2>Access Denied</h2>

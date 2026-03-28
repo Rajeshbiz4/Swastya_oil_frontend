@@ -37,22 +37,34 @@ const navigationItems: NavItem[] = [
       { label: 'Packaging Purchases', path: '/procurement/packaging', roles: [UserRole.ADMIN] },
     ],
   },
+  //    { 
+  //   label: 'Batch', 
+  //   path: '/Batch',
+  //   roles: [UserRole.ADMIN]
+  // },
+  
+    { 
+    label: 'Production', 
+    path: '/production',
+    roles: [UserRole.USER]
+  },
+   { 
+    label: 'Invoices', 
+    path: '/invoices',
+    roles: [UserRole.ADMIN]
+  },
+  { 
+    label: 'Inventory', 
+    path: '/inventory',
+    roles: [UserRole.ADMIN]
+  },
   { 
     label: 'Reports', 
     path: '/reports',
     roles: [UserRole.ADMIN]
   },
   // User-only navigation
-  { 
-    label: 'Inventory', 
-    path: '/inventory',
-    roles: [UserRole.USER]
-  },
-  { 
-    label: 'Production', 
-    path: '/production',
-    roles: [UserRole.USER]
-  },
+
   {
     label: 'Workers',
     path: '/workers',

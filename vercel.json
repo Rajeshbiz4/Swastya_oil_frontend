@@ -1,17 +1,9 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "build" }
-    }
+    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "build" } }
   ],
   "routes": [
-    // Serve static files as-is
-    { "handle": "filesystem" },
-    
-    // All other routes → index.html (React Router handles them)
-    { "src": "/.*", "dest": "/index.html" }
+    { "src": "/(.*)", "dest": "/build/$1" }
   ]
 }

@@ -29,6 +29,9 @@ const ProcurementOil: React.FC = () => {
     ratePerLiter: 0,
     paymentMode: '',
     invoiceNumber: '',
+      brokerage: 0,
+      extraCharges: 0,
+      tankerTransport: 0,
     invoiceDate: new Date().toISOString().split('T')[0],
     deliveryDate: new Date().toISOString().split('T')[0],
   });
@@ -37,7 +40,7 @@ const ProcurementOil: React.FC = () => {
 
   const fetchPendingBookings = useCallback(async () => {
     try {
-      const response = await bookingAPI.getAll({ bookingstatus: 'Pending' });
+      const response = await bookingAPI.getAll({ bookingstatus: 'PartiallyPaid' });
       if (response.data.success) {
         console.log('Fetched pending bookings:', response.data.data);
         setPendingBookings(response.data.data || []);
@@ -55,6 +58,7 @@ const ProcurementOil: React.FC = () => {
       if (endDate) params.endDate = endDate;
       const response = await oilPurchaseAPI.getAll(params);
       if (response.data.success) {
+        console.log('Fetched oil purchases:', response.data.data);
         setOilPurchases(response.data.data?.purchases || []);
       }
     } catch (err: unknown) {
@@ -111,6 +115,7 @@ const ProcurementOil: React.FC = () => {
     setFormData((prev) => ({
       ...prev,
       bookingId,
+       supplierName: booking?.supplierName || '', 
       quantity: booking ? booking.tankerCapacity : 0,
       ratePerLiter: booking ? booking.rate : 0,
       deliveryDate: booking ? new Date(booking.bookingDate).toISOString().split('T')[0] : prev.deliveryDate,
@@ -132,8 +137,10 @@ const ProcurementOil: React.FC = () => {
         })),
       ],
     },
-    { name: 'supplierName', label: 'Supplier Name', type: 'text', required: true },
-    { name: 'quantity', label: 'Quantity (Liters)', type: 'number', required: true, min: '10000' },
+    { name: 'supplierName', label: 'Supplier Name', type: 'text', required: true, },
+     { name: 'actualWeight', label: 'Actual Weight (kg)', type: 'number', required: true },
+      { name: 'tankerTransport', label: 'Tanker Transport charges', type: 'number', required: true },
+    { name: 'quantity', label: 'booking Quantity (KG)', type: 'number', required: true, min: '10000' },
     { name: 'ratePerLiter', label: 'Rate per Liter', type: 'number', required: true, min: '0.01', step: '0.01' },
     {
       name: 'paymentMode',
@@ -142,17 +149,21 @@ const ProcurementOil: React.FC = () => {
       required: true,
       options: [
         { value: PaymentMode.CASH, label: 'Cash' },
-        { value: PaymentMode.CREDIT, label: 'Credit' },
+        { value: PaymentMode.CHECK, label: 'Cheque' },
+        { value: PaymentMode.ONLINE, label: 'Online' },
       ],
     },
     { name: 'invoiceNumber', label: 'Invoice Number', type: 'text', required: true },
     { name: 'invoiceDate', label: 'Invoice Date', type: 'date', required: true },
     { name: 'deliveryDate', label: 'Delivery Date', type: 'date', required: true },
+     { name: 'brokerage', label: 'Brokerage (optional)', type: 'number', required: false, min: '0' },
+    { name: 'extraCharges', label: 'Extra Charges (optional)', type: 'number', required: false, min: '0' },
   ];
 
   const calculatedOilAmount = formData.quantity * formData.ratePerLiter;
 
   const submitForm = async () => {
+    console.log('Submitting form with data:', formData);
     if (!validateForm()) return;
     try {
       setFormLoading(true);
@@ -169,6 +180,9 @@ const ProcurementOil: React.FC = () => {
           ratePerLiter: 0,
           paymentMode: '',
           invoiceNumber: '',
+          brokerage: 0,
+          extraCharges: 0,
+          tankerTransport: 0,
           invoiceDate: new Date().toISOString().split('T')[0],
           deliveryDate: new Date().toISOString().split('T')[0],
         });
@@ -187,9 +201,6 @@ const ProcurementOil: React.FC = () => {
     { key: 'quantity', title: 'Quantity (L)', sortable: true },
     { key: 'ratePerLiter', title: 'Rate/L', sortable: true },
     { key: 'totalAmount', title: 'Total Amount', sortable: true, render: (val: number) => `₹${val?.toLocaleString()}` },
-    { key: 'paymentMode', title: 'Payment Mode', sortable: true },
-    { key: 'invoiceDate', title: 'Invoice Date', sortable: true, render: (val: string) => new Date(val).toLocaleDateString() },
-    { key: 'deliveryDate', title: 'Delivery Date', sortable: true, render: (val: string) => new Date(val).toLocaleDateString() },
   ];
 
   return (
@@ -226,13 +237,13 @@ const ProcurementOil: React.FC = () => {
           </div>
         </div>
 
-        {oilSummary && (
+        {/* {oilSummary && (
           <div className="summary-row">
             <span>Total Qty: {oilSummary.totalQuantity}</span>
             <span>Total Amount: ₹{oilSummary.totalAmount?.toLocaleString()}</span>
             <span>Avg Rate: ₹{oilSummary.averageRate?.toFixed(2)}</span>
           </div>
-        )}
+        )} */}
 
         <div className="data-table-wrapper">
           <DataTable
@@ -297,7 +308,7 @@ const ProcurementOil: React.FC = () => {
                 <div className="summary-card" style={{ margin: '1.5rem', textAlign: 'center' }}>
                   <h4>Calculated Purchase Amount</h4>
                   <div className="summary-value" style={{ color: '#27ae60', fontSize: '1.75rem' }}>
-                    ₹{calculatedOilAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{(calculatedOilAmount + formData.brokerage + formData.tankerTransport + formData.extraCharges).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p style={{ color: '#7f8c8d', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>
                     {formData.quantity.toLocaleString()} L × ₹{formData.ratePerLiter.toFixed(2)} per liter

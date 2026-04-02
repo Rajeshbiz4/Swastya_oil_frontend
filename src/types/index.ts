@@ -18,7 +18,8 @@ export enum UserRole {
 
 export enum PaymentMode {
   CASH = 'Cash',
-  CREDIT = 'Credit'
+  CHECK = 'Cheque',
+  ONLINE = 'Online'
 }
 
 export enum PackagingType {

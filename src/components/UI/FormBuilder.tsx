@@ -113,28 +113,56 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
       <div key={field.name} className="form-group">
         <label htmlFor={field.name}>
           {field.label}
-          {field.required && <span className="required">*</span>}
+          {field.required ? <span className="required">*</span> : null}
         </label>
         {input}
-        {hasError && <span className="error-text">{error}</span>}
+        {hasError ? <span className="error-text">{error}</span> : null}
       </div>
     );
   };
 
   return (
-    <form onSubmit={onSubmit} className={`form-builder ${className}`}>
-      {fields.map(renderField)}
-      
-      <div className="form-actions">
-        <button
-          type="submit"
-          disabled={loading}
-          className="submit-button"
-        >
-          {loading ? 'Submitting...' : submitText}
-        </button>
+   <form onSubmit={onSubmit}>
+  <div className="form-grid">
+    {fields.map((field) => (
+      <div className="form-group" key={field.name}>
+        <label>{field.label}</label>
+
+        {field.type === 'select' ? (
+          <select
+            value={values[field.name] || ''}
+            onChange={(e) => onChange(field.name, e.target.value)}
+          >
+            {field.options?.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type={field.type}
+            value={values[field.name] || ''}
+            onChange={(e) =>
+              onChange(
+                field.name,
+                field.type === 'number'
+                  ? parseFloat(e.target.value) || 0
+                  : e.target.value
+              )
+            }
+          />
+        )}
+
+        {errors?.[field.name] ? (
+          <span className="error">{errors[field.name]}</span>
+        ) : null}
       </div>
-    </form>
+    ))}
+  </div>
+
+  {/* <button type="submit">{submitText}</button> */}
+</form>
   );
 };
 

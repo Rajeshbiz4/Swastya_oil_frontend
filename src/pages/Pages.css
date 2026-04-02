@@ -1219,3 +1219,37 @@
   font-size: 13px;
   color: #555;
 }
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-container {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  width: 350px;
+  max-width: 90%;
+  text-align: center;
+}
+
+.modal-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}

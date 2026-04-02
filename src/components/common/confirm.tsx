@@ -1,0 +1,43 @@
+import React from 'react';
+
+interface ConfirmModalProps {
+  isOpen: boolean;
+  title?: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmText?: string;
+  cancelText?: string;
+}
+
+const ConfirmModal: React.FC<ConfirmModalProps> = ({
+  isOpen,
+  title = "Confirm",
+  message,
+  onConfirm,
+  onCancel,
+  confirmText = "Yes",
+  cancelText = "Cancel"
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-container">
+        <h3>{title}</h3>
+        <p>{message}</p>
+
+        <div className="modal-actions">
+          <button className="btn btn-secondary" onClick={onCancel}>
+            {cancelText}
+          </button>
+          <button className="btn btn-danger" onClick={onConfirm}>
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ConfirmModal;

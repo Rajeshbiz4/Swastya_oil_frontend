@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../components/UI/DataTable';
 import { FormField } from '../types';
+import ConfirmModal from '../components/common/confirm';
 import { bookingAPI, TankerBooking, BookingSummary } from '../services/api';
 import './Pages.css';
 
@@ -9,6 +10,19 @@ const getTodayDate = (): string => {
   const today = new Date();
   return today.toISOString().split('T')[0];
 };
+
+export const OilTypeLabels = {
+  VEGETABLE_OIL: "Vegetable Oil",
+  SUNFLOWER_OIL: "Sunflower Oil",
+  MUSTARD_OIL: "Mustard Oil",
+  OLIVE_OIL: "Olive Oil",
+  COCONUT_OIL: "Coconut Oil",
+  GROUNDNUT_OIL: "Groundnut Oil",
+  SOYBEAN_OIL: "Soybean Oil",
+  PALM_OIL: "Palm Oil",
+  SESAME_OIL: "Sesame Oil"
+};
+
 
 const getPresetDateRange = (preset: string): { startDate: string; endDate: string } => {
   const end = new Date();
@@ -43,6 +57,8 @@ const getPresetDateRange = (preset: string): { startDate: string; endDate: strin
 };
 
 const Booking: React.FC = () => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingBooking, setEditingBooking] = useState<TankerBooking | null>(null);
   const [bookings, setBookings] = useState<TankerBooking[]>([]);
@@ -61,6 +77,8 @@ const Booking: React.FC = () => {
   // Form data with default current date
   const [formData, setFormData] = useState({
     bookingDate: getTodayDate(),
+    oilType: OilTypeLabels.SOYBEAN_OIL,
+    supplierName: '',
     tankerCapacity: 0,
     rate: 0,
     bookingAmount: 0,
@@ -128,19 +146,23 @@ const Booking: React.FC = () => {
         // Populate form with existing booking data
         setFormData({
           bookingDate: editingBooking.bookingDate.split('T')[0], // Convert to YYYY-MM-DD format
+          oilType: "SOYBEAN_OIL",
           tankerCapacity: editingBooking.tankerCapacity,
           rate: editingBooking.rate,
           bookingAmount: editingBooking.bookingAmount,
+          supplierName: editingBooking.supplierName || '',
           remarks: editingBooking.remarks || '',
         });
       } else {
         // Reset form for new booking
         setFormData({
           bookingDate: getTodayDate(),
+          oilType: "SOYBEAN_OIL",
           tankerCapacity: 0,
           rate: 0,
           bookingAmount: 0,
           remarks: '',
+          supplierName:  '',
         });
       }
       setFormErrors({});
@@ -155,6 +177,12 @@ const Booking: React.FC = () => {
       type: 'date', 
       required: true 
     },
+        { 
+      name: 'supplierName', 
+      label: 'Supplier Name', 
+      type: 'text', 
+      required: true 
+    },
     { 
       name: 'tankerCapacity', 
       label: 'Tanker Capacity (KG)', 
@@ -162,6 +190,12 @@ const Booking: React.FC = () => {
       required: true,
       min: '1'
     },
+          { 
+        name: 'oilType', 
+        label: 'Oil Type', 
+        type: 'select', 
+        required: true 
+      },
     { 
       name: 'rate', 
       label: 'Rate per KG (₹)', 
@@ -195,10 +229,21 @@ const Booking: React.FC = () => {
       render: (value: string) => new Date(value).toLocaleDateString() 
     },
     { 
+      key: 'supplierName', 
+      title: 'Supplier', 
+      sortable: true 
+    },
+    { 
       key: 'tankerCapacity', 
       title: 'Tanker Capacity (KG)', 
       sortable: true, 
       render: (value: number) => value.toLocaleString() 
+    },
+    { 
+      key: 'oilType', 
+      title: 'Oil Type', 
+      sortable: true, 
+      render: (value: string) => value 
     },
     { 
       key: 'rate', 
@@ -212,12 +257,12 @@ const Booking: React.FC = () => {
       sortable: true, 
       render: (value: number) => `₹${value.toLocaleString()}` 
     },
-    { 
-      key: 'paidAmount', 
-      title: 'Paid Amount', 
-      sortable: true, 
-      render: (value: number) => `₹${(value || 0).toLocaleString()}` 
-    },
+    // { 
+    //   key: 'paidAmount', 
+    //   title: 'Paid Amount', 
+    //   sortable: true, 
+    //   render: (value: number) => `₹${(value || 0).toLocaleString()}` 
+    // },
     { 
       key: 'pendingAmount', 
       title: 'Pending Amount', 
@@ -281,7 +326,7 @@ const Booking: React.FC = () => {
             Edit
           </button>
           <button
-            onClick={() => handleDeleteBooking(row._id)}
+            onClick={() => openDeleteModal(row._id)}
             disabled={row.paidAmount > 0 || showForm}
             className="btn-delete"
             style={{
@@ -301,6 +346,39 @@ const Booking: React.FC = () => {
     }
   ];
 
+  const openDeleteModal = (bookingId: string) => {
+  const booking = bookings.find(b => b._id === bookingId);
+  if (!booking) return;
+
+  if (booking.paidAmount > 0) {
+    setError('Cannot delete booking with payments. Cancel payments first.');
+    setTimeout(() => setError(null), 3000);
+    return;
+  }
+
+  setSelectedBookingId(bookingId);
+  setShowDeleteModal(true);
+};
+
+const confirmDeleteBooking = async () => {
+  if (!selectedBookingId) return;
+
+  try {
+    const response = await bookingAPI.delete(selectedBookingId);
+    if (response.data.success) {
+      setSuccess('Booking deleted successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+      loadBookings();
+      loadSummary();
+    }
+  } catch (err: any) {
+    setError(err.error?.message || 'Failed to delete booking');
+  } finally {
+    setShowDeleteModal(false);
+    setSelectedBookingId(null);
+  }
+};
+
   // Form handlers
   const handleFormChange = (name: string, value: any) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -313,6 +391,9 @@ const Booking: React.FC = () => {
     const errors: Record<string, string> = {};
     if (!formData.bookingDate) {
       errors.bookingDate = 'Booking date is required';
+    }
+    if (!formData.supplierName) {
+      errors.supplierName = 'Supplier name is required';
     }
     if (!formData.tankerCapacity || formData.tankerCapacity <= 0) {
       errors.tankerCapacity = 'Tanker capacity must be greater than 0';
@@ -336,10 +417,12 @@ const Booking: React.FC = () => {
       
       const bookingData = {
         bookingDate: formData.bookingDate,
+        oilType: formData.oilType,
         tankerCapacity: formData.tankerCapacity,
         rate: formData.rate,
         bookingAmount: formData.bookingAmount,
         remarks: formData.remarks || undefined,
+        supplierName: formData.supplierName || undefined,
       };
 
       let response;
@@ -446,10 +529,9 @@ const Booking: React.FC = () => {
   };
 
   // Calculate summary stats from summary data or fallback to filtered bookings
-  const totalBookings = summary?.totalBookings || filteredBookings.length;
-  const totalBookingAmount = summary?.totalBookingAmount || filteredBookings.reduce((sum, b) => sum + b.bookingAmount, 0);
-  const totalPendingAmount = summary?.totalPendingAmount || filteredBookings.reduce((sum, b) => sum + b.pendingAmount, 0);
-
+  const totalBookings = summary?.totalBookings;
+  const totalBookingAmount = summary?.totalBookingAmount;
+  const totalPendingAmount = summary?.totalPendingAmount;
   if (showForm) {
     return (
       <div className="form-page">
@@ -474,7 +556,21 @@ const Booking: React.FC = () => {
                       {field.label}
                       {field.required && <span style={{ color: '#e74c3c' }}> *</span>}
                     </label>
-                    {field.type === 'textarea' ? (
+                    {field.type === 'select' ? (
+                      <select
+                        id={field.name}
+                        value={formData.oilType || "SOYBEAN_OIL"}
+                        onChange={(e) => handleFormChange(field.name, e.target.value)}
+                      >
+                        <option value="" disabled>Select Oil Type</option>
+
+                        {Object.entries(OilTypeLabels).map(([key, label]) => (
+                          <option key={key} value={key}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.type === 'textarea' ? (
                       <textarea
                         id={field.name}
                         value={formData[field.name as keyof typeof formData] || ''}
@@ -493,6 +589,10 @@ const Booking: React.FC = () => {
                         min={field.min}
                         step={field.step}
                         required={field.required}
+                        disabled={
+                      editingBooking && 
+                      ['bookingAmount', 'rate', 'tankerCapacity'].includes(field.name)
+                    }
                       />
                     )}
                     {formErrors[field.name] && (
@@ -579,11 +679,11 @@ const Booking: React.FC = () => {
         </div>
         <div className="card">
           <h3>Total Booking Amount</h3>
-          <p className="card-value">₹{totalBookingAmount.toLocaleString()}</p>
+          <p className="card-value">₹{totalBookingAmount?.toLocaleString()}</p>
         </div>
         <div className="card" style={{ borderLeftColor: '#e74c3c' }}>
           <h3>Total Pending Amount</h3>
-          <p className="card-value" style={{ color: '#e74c3c' }}>₹{totalPendingAmount.toLocaleString()}</p>
+          <p className="card-value" style={{ color: '#e74c3c' }}>₹{totalPendingAmount?.toLocaleString()}</p>
         </div>
       </div>
 
@@ -693,6 +793,18 @@ const Booking: React.FC = () => {
           loading={loading}
           rowKey="_id"
         />
+        <ConfirmModal
+              isOpen={showDeleteModal}
+              title="Delete Booking"
+              message="Are you sure you want to delete this booking? This action cannot be undone."
+              onConfirm={confirmDeleteBooking}
+              onCancel={() => {
+                setShowDeleteModal(false);
+                setSelectedBookingId(null);
+              }}
+              confirmText="Delete"
+              cancelText="Cancel"
+            />
       </div>
     </div>
   );

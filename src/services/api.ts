@@ -43,8 +43,8 @@ export interface BookingSummary {
 }
 
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
-    const baseURL =  'https://swastya-oil-backend.vercel.app/api';
-//  const baseURL =  'http://localhost:5000/api';
+  //  / const baseURL =  'https://swastya-oil-backend.vercel.app/api';
+  const baseURL =  'http://localhost:5000/api';
 
 
 // Create axios instance
@@ -181,8 +181,8 @@ export interface OilPurchase {
 export interface PackagingPurchase {
   _id: string;
   supplierName: string;
-  skuSize: '500g' | '1L' | '5L' | '10L' | '15L';
-  packagingType: 'Can' | 'Bag';
+  skuSize: '500g' | '1KG' | '5KG' | '10KG' | '15KG';
+  packagingType: '5L Can' | '10L Can' | '12L Can' | '14L Can' | 'Polythene Bundle' | 'Tap';
   quantity: number;
   ratePerUnit: number;
   totalAmount: number;
@@ -320,7 +320,7 @@ export const packagingPurchaseAPI = {
     return api.get<ApiResponse<{ purchase: PackagingPurchase; packagingInventory?: any }>>(`/procurement/packaging-purchases/${id}`);
   },
 
-  // Create new packaging purchase
+  // Create new packaging purchase (single or bulk)
   create: (purchaseData: {
     supplierName: string;
     skuSize: string;
@@ -331,8 +331,18 @@ export const packagingPurchaseAPI = {
     invoiceNumber: string;
     invoiceDate: string;
     deliveryDate: string;
-  }) => {
-    return api.post<ApiResponse<{ packagingPurchase: PackagingPurchase; packagingInventory: any }>>('/procurement/packaging-purchases', purchaseData);
+  } | Array<{
+    supplierName: string;
+    skuSize: string;
+    packagingType: string;
+    quantity: number;
+    ratePerUnit: number;
+    paymentMode: string;
+    invoiceNumber: string;
+    invoiceDate: string;
+    deliveryDate: string;
+  }>) => {
+    return api.post<ApiResponse<{ packagingPurchase: PackagingPurchase | PackagingPurchase[]; packagingInventory: any }>>('/procurement/packaging-purchases', purchaseData);
   },
 
   // Update payment status

@@ -372,32 +372,94 @@
   overflow: hidden;
 }
 
-/* Responsive Design */
+/* Packaging Cards Styles */
+.packaging-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.packaging-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.packaging-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.packaging-card-header {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.packaging-card-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.packaging-card-body {
+  padding: 1.5rem;
+}
+
+.packaging-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f2f6;
+}
+
+.packaging-stat:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-weight: 500;
+  color: #7f8c8d;
+  font-size: 0.95rem;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.packaging-stat .stat-value {
+  color: #27ae60;
+}
+
+/* Responsive adjustments for packaging cards */
 @media (max-width: 768px) {
-  .dashboard-stats {
+  .packaging-cards-grid {
     grid-template-columns: 1fr;
+    padding: 1rem;
   }
   
-  .dashboard-content {
-    grid-template-columns: 1fr;
+  .packaging-card-header {
+    padding: 1.25rem;
   }
   
-  .stat-card {
-    padding: 1.5rem;
+  .packaging-card-header h3 {
+    font-size: 1.2rem;
   }
   
-  .stat-value {
-    font-size: 1.5rem;
+  .packaging-card-body {
+    padding: 1.25rem;
   }
-  
-  .module-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-  
-  .module-actions {
-    justify-content: center;
+}
   }
   
   .filters-row {

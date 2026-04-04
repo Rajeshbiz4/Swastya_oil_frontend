@@ -32,16 +32,19 @@ const Inventory: React.FC = () => {
   ];
 
   const packagingColumns = [
+    { key: 'skuSize', title: 'SKU Size', sortable: true },
     { key: 'packagingType', title: 'Packaging Type', sortable: true },
-    { key: 'quantity', title: 'Quantity', sortable: true, render: (value: number | undefined) => value ? value.toLocaleString() : '-' },
-    { key: 'ratePerUnit', title: 'Rate/Unit', sortable: true, render: (value: number | undefined) => value ? `₹${value.toFixed(2)}` : '-' },
+    { key: 'quantity', title: 'Current Stock', sortable: true, render: (value: number | undefined) => value ? value.toLocaleString() : '-' },
+    { key: 'ratePerUnit', title: 'Avg Rate/Unit', sortable: true, render: (value: number | undefined) => value ? `₹${value.toFixed(2)}` : '-' },
     { 
       key: 'totalValue', 
       title: 'Total Value', 
       render: (_: any, record: any) => record.quantity && record.ratePerUnit ? `₹${(record.quantity * record.ratePerUnit).toLocaleString()}` : '-'
     },
-    { key: 'invoiceNumber', title: 'Invoice #', sortable: true },
-    { key: 'invoiceDate', title: 'Invoice Date', sortable: true, render: (value: string) => value ? new Date(value).toLocaleDateString() : '-' },
+    { key: 'totalPurchasedQuantity', title: 'Total Purchased', sortable: true, render: (value: number | undefined) => value ? value.toLocaleString() : '-' },
+    { key: 'totalCost', title: 'Total Cost', sortable: true, render: (value: number | undefined) => value ? `₹${value.toLocaleString()}` : '-' },
+    { key: 'invoiceNumber', title: 'Last Invoice #', sortable: true },
+    { key: 'invoiceDate', title: 'Last Invoice Date', sortable: true, render: (value: string) => value ? new Date(value).toLocaleDateString() : '-' },
     { key: 'lastUpdated', title: 'Last Updated', sortable: true, render: (value: string) => value ? new Date(value).toLocaleDateString() : '-' },
   ];
 
@@ -60,6 +63,7 @@ const Inventory: React.FC = () => {
     { key: 'isActive', title: 'Status', render: (value: boolean) => value ? '✅ Active' : '❌ Inactive' },
   ];
 
+  console.log('Packaging Inventory Data:', packaging);
   // Calculate summary statistics
   const calculateSummary = () => {
     const rawOilSummary = {
@@ -70,7 +74,13 @@ const Inventory: React.FC = () => {
 
     const packagingSummary = {
       totalStock: packaging.reduce((sum, item) => sum + (item.quantity || 0), 0),
-      totalTypes: packaging.length,
+      totalPurchased: packaging.reduce((sum, item) => sum + (item.totalPurchasedQuantity || 0), 0),
+      totalCost: packaging.reduce((sum, item) => sum + ((item.totalPurchasedQuantity || 0) * (item.ratePerUnit || 0)), 0),
+      totalTypes: Object.keys(packaging.reduce((acc, item) => {
+        const key = item.packagingType;
+        acc[key] = true;
+        return acc;
+      }, {} as Record<string, boolean>)).length,
       lowStockItems: packaging.filter(item => (item.quantity || 0) < 100).length,
     };
 
@@ -84,13 +94,37 @@ const Inventory: React.FC = () => {
   };
 
   const { rawOilSummary, packagingSummary, finishedGoodsSummary } = calculateSummary();
-
+// console.log('Raw Oil Summary:', rawOilSummary);
+console.log('Packaging Summary:', packagingSummary);
+// console.log('Finished Goods Summary:', finishedGoodsSummary);
   const getCurrentData = () => {
     switch (activeTab) {
       case 'raw-oil':
         return rawOil;
       case 'packaging':
-        return packaging;
+        // For packaging, show grouped data by packaging type
+        const groupedPackaging = packaging.reduce((acc, item) => {
+          const key = item.packagingType; // Since skuSize is now packagingType
+          if (!acc[key]) {
+            acc[key] = {
+              _id: key,
+              packagingType: key,
+              totalPurchased: 0,
+              averageRate: 0,
+              totalCost: 0,
+              itemCount: 0
+            };
+          }
+          acc[key].totalPurchased += item.totalPurchasedQuantity || 0;
+          acc[key].totalCost += ((item.totalPurchasedQuantity || 0) * (item.ratePerUnit || 0));
+          acc[key].itemCount += 1;
+          // Calculate weighted average rate from purchase history
+          if (acc[key].totalPurchased > 0) {
+            acc[key].averageRate = acc[key].totalCost / acc[key].totalPurchased;
+          }
+          return acc;
+        }, {} as Record<string, any>);
+        return Object.values(groupedPackaging);
       case 'finished-goods':
         return finishedGoods;
       default:
@@ -103,7 +137,13 @@ const Inventory: React.FC = () => {
       case 'raw-oil':
         return rawOilColumns;
       case 'packaging':
-        return packagingColumns;
+        return [
+          { key: 'packagingType', title: 'Packaging Type', sortable: true },
+          { key: 'totalPurchased', title: 'Total Purchased', sortable: true, render: (value: number) => value.toLocaleString() },
+          { key: 'averageRate', title: 'Average Rate/Unit', sortable: true, render: (value: number) => `₹${value.toFixed(2)}` },
+          { key: 'totalCost', title: 'Total Cost', sortable: true, render: (value: number) => `₹${value.toLocaleString()}` },
+          { key: 'itemCount', title: 'Inventory Items', sortable: true, render: (value: number) => `${value} item${value !== 1 ? 's' : ''}` },
+        ];
       case 'finished-goods':
         return finishedGoodsColumns;
       default:
@@ -130,23 +170,29 @@ const Inventory: React.FC = () => {
             </div>
           </div>
         );
-      // case 'packaging':
-      //   return (
-      //     <div className="inventory-summary">
-      //       <div className="summary-card">
-      //         <h4>Total Stock</h4>
-      //         <div className="summary-value">{packagingSummary.totalStock.toLocaleString()}</div>
-      //       </div>
-      //       <div className="summary-card">
-      //         <h4>SKU Types</h4>
-      //         <div className="summary-value">{packagingSummary.totalTypes}</div>
-      //       </div>
-      //       <div className="summary-card">
-      //         <h4>Low Stock Items</h4>
-      //         <div className="summary-value">{packagingSummary.lowStockItems}</div>
-      //       </div>
-      //     </div>
-      //   );
+      case 'packaging':
+        return (
+          <div className="inventory-summary">
+            {/* <div className="summary-card">
+              <h4>Total Remaining</h4>
+              <div className="summary-value">{packagingSummary.totalPurchased.toLocaleString()}</div>
+            </div>
+            <div className="summary-card">
+              <h4>Total Inventory Value</h4>
+              <div className="summary-value">₹{packagingSummary.totalCost.toLocaleString()}</div>
+            </div>
+            <div className="summary-card">
+              <h4>Unique Packaging Types</h4>
+              <div className="summary-value">{packagingSummary.totalTypes}</div>
+            </div>
+            <div className="summary-card">
+              <h4>Low Stock Items</h4>
+              <div className="summary-value" style={{ color: packagingSummary.lowStockItems > 0 ? '#e74c3c' : '#27ae60' }}>
+                {packagingSummary.lowStockItems}
+              </div>
+            </div> */}
+          </div>
+        );
       case 'finished-goods':
         return (
           <div className="inventory-summary">
@@ -209,7 +255,7 @@ const Inventory: React.FC = () => {
               className={activeTab === 'packaging' ? 'primary-button' : 'secondary-button'}
               onClick={() => setActiveTab('packaging')}
             >
-              Packaging Inventory
+              Packaging Summary
             </button>
             <button
               className={activeTab === 'finished-goods' ? 'primary-button' : 'secondary-button'}
@@ -222,12 +268,39 @@ const Inventory: React.FC = () => {
           {getSummaryCards()}
         </div>
 
-        <DataTable
-          data={getCurrentData()}
-          columns={getCurrentColumns()}
-          loading={isLoading}
-          rowKey="_id"
-        />
+        {activeTab === 'packaging' ? (
+          <div className="packaging-cards-grid">
+            {packaging?.map((item: any) => (
+              <div key={item._id} className="packaging-card">
+                <div className="packaging-card-header">
+                  <h3>{item.packagingType}</h3>
+                </div>
+                <div className="packaging-card-body">
+                  <div className="packaging-stat">
+                 
+                    <span className="stat-label">Total Remaining:</span>
+                    <span className="stat-value">{item.totalPurchased?.toLocaleString() || 0}</span>
+                  </div>
+                  <div className="packaging-stat">
+                    <span className="stat-label">Avg Rate:</span>
+                    <span className="stat-value">₹{item.ratePerUnit?.toFixed(2) || '0.00'}</span>
+                  </div>
+                  {/* <div className="packaging-stat">
+                    <span className="stat-label">Total Value:</span>
+                    <span className="stat-value">₹{item.totalCost?.toLocaleString() || '0'}</span>
+                  </div> */}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <DataTable
+            data={getCurrentData()}
+            columns={getCurrentColumns()}
+            loading={isLoading}
+            rowKey="_id"
+          />
+        )}
       </div>
     </div>
   );

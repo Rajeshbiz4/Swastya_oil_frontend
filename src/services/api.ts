@@ -323,7 +323,6 @@ export const packagingPurchaseAPI = {
   // Create new packaging purchase (single or bulk)
   create: (purchaseData: {
     supplierName: string;
-    skuSize: string;
     packagingType: string;
     quantity: number;
     ratePerUnit: number;
@@ -333,7 +332,6 @@ export const packagingPurchaseAPI = {
     deliveryDate: string;
   } | Array<{
     supplierName: string;
-    skuSize: string;
     packagingType: string;
     quantity: number;
     ratePerUnit: number;

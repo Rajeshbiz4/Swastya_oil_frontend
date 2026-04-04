@@ -15,9 +15,12 @@ interface RawOilInventory {
 
 interface PackagingInventory {
   _id: string;
+  skuSize: string;
   packagingType: string;
   quantity: number;
   ratePerUnit: number;
+  totalPurchasedQuantity?: number;
+  totalCost?: number;
   invoiceNumber: string;
   invoiceDate: string;
   lastUpdated?: string;

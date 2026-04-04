@@ -16,7 +16,6 @@ const ProcurementPackaging: React.FC = () => {
   // ✅ COMMON FIELDS (no packagingType here now)
   const [formData, setFormData] = useState({
     supplierName: '',
-    skuSize: '',
     paymentMode: 'Cash',
     deliveryDate: new Date().toISOString().split('T')[0],
     invoiceNumber: '',
@@ -86,7 +85,6 @@ const ProcurementPackaging: React.FC = () => {
 
       const payload = formData.items.map(item => ({
         supplierName: formData.supplierName,
-        skuSize: formData.skuSize,
         packagingType: item.packagingType,
         quantity: item.quantity,
         ratePerUnit: item.ratePerUnit,
@@ -103,7 +101,6 @@ const ProcurementPackaging: React.FC = () => {
 
       setFormData({
         supplierName: '',
-        skuSize: '',
         paymentMode: 'Cash',
         deliveryDate: new Date().toISOString().split('T')[0],
         invoiceNumber: '',
@@ -347,22 +344,6 @@ const ProcurementPackaging: React.FC = () => {
                     </select>
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>SKU Size</label>
-                    <input
-                      type="text"
-                      placeholder="e.g., 5L, 10L"
-                      value={formData.skuSize}
-                      onChange={(e) => handleChange('skuSize', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
                 </div>
               </div>
 

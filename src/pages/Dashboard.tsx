@@ -56,7 +56,7 @@ const Dashboard: React.FC = () => {
     
     const totalRawOil = rawOil.reduce((sum, item) => sum + item.currentQuantity, 0);
     const totalRawOilValue = rawOil.reduce((sum, item) => sum + (item.currentQuantity * item.costPerLiter), 0);
-    const totalPackaging = packaging.reduce((sum, item) => sum + item.currentStock, 0);
+    const totalPackaging = packaging.reduce((sum, item) => sum + (item.quantity || item.currentStock || 0), 0);
     const totalFinishedGoods = finishedGoods.reduce((sum, item) => sum + item.quantity, 0);
     const totalFinishedGoodsValue = finishedGoods.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
 

@@ -15,13 +15,13 @@ interface RawOilInventory {
 
 interface PackagingInventory {
   _id: string;
-  skuSize: string;
   packagingType: string;
-  openingStock: number;
-  totalPurchased: number;
-  totalUsed: number;
-  currentStock: number;
-  lastUpdated: string;
+  quantity: number;
+  ratePerUnit: number;
+  invoiceNumber: string;
+  invoiceDate: string;
+  lastUpdated?: string;
+  currentStock?: number; // Virtual field, may not always be present
 }
 
 interface FinishedGoodsInventory {

@@ -32,13 +32,17 @@ const Inventory: React.FC = () => {
   ];
 
   const packagingColumns = [
-    { key: 'skuSize', title: 'SKU Size', sortable: true },
-    { key: 'packagingType', title: 'Type', sortable: true },
-    { key: 'openingStock', title: 'Opening Stock', sortable: true, render: (value: number) => value.toLocaleString() },
-    { key: 'totalPurchased', title: 'Purchased', sortable: true, render: (value: number) => value.toLocaleString() },
-    { key: 'totalUsed', title: 'Used', sortable: true, render: (value: number) => value.toLocaleString() },
-    { key: 'currentStock', title: 'Current Stock', sortable: true, render: (value: number) => value.toLocaleString() },
-    { key: 'lastUpdated', title: 'Last Updated', sortable: true, render: (value: string) => new Date(value).toLocaleDateString() },
+    { key: 'packagingType', title: 'Packaging Type', sortable: true },
+    { key: 'quantity', title: 'Quantity', sortable: true, render: (value: number | undefined) => value ? value.toLocaleString() : '-' },
+    { key: 'ratePerUnit', title: 'Rate/Unit', sortable: true, render: (value: number | undefined) => value ? `₹${value.toFixed(2)}` : '-' },
+    { 
+      key: 'totalValue', 
+      title: 'Total Value', 
+      render: (_: any, record: any) => record.quantity && record.ratePerUnit ? `₹${(record.quantity * record.ratePerUnit).toLocaleString()}` : '-'
+    },
+    { key: 'invoiceNumber', title: 'Invoice #', sortable: true },
+    { key: 'invoiceDate', title: 'Invoice Date', sortable: true, render: (value: string) => value ? new Date(value).toLocaleDateString() : '-' },
+    { key: 'lastUpdated', title: 'Last Updated', sortable: true, render: (value: string) => value ? new Date(value).toLocaleDateString() : '-' },
   ];
 
   const finishedGoodsColumns = [
@@ -65,9 +69,9 @@ const Inventory: React.FC = () => {
     };
 
     const packagingSummary = {
-      totalStock: packaging.reduce((sum, item) => sum + item.currentStock, 0),
+      totalStock: packaging.reduce((sum, item) => sum + (item.quantity || 0), 0),
       totalTypes: packaging.length,
-      lowStockItems: packaging.filter(item => item.currentStock < 100).length,
+      lowStockItems: packaging.filter(item => (item.quantity || 0) < 100).length,
     };
 
     const finishedGoodsSummary = {

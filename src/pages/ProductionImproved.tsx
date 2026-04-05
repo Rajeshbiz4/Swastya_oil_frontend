@@ -21,10 +21,12 @@ interface OilInventory {
 
 interface PackagingInventory {
   _id: string;
-  skuSize: '500g' | '1L' | '5L' | '10L' | '15L';
-  packagingType: 'Can' | 'Bag';
-  currentStock: number;
-  unitCost: number;
+  packagingType: string;
+  quantity: number;
+  ratePerUnit: number;
+  invoiceNumber: string;
+  invoiceDate: string;
+  currentStock?: number; // Virtual field
 }
 
 interface ProductionOutput {
@@ -361,8 +363,8 @@ const ProductionImproved: React.FC = () => {
               }}>
                 <option value="">-- Add Packaging --</option>
                 {availablePackaging.map((pkg, idx) => (
-                  <option key={idx} value={`${pkg.skuSize}|${pkg.packagingType}`}>
-                    {pkg.skuSize} {pkg.packagingType} ({pkg.currentStock} available)
+                  <option key={idx} value={pkg.packagingType}>
+                    {pkg.packagingType} ({pkg.quantity || pkg.currentStock || 0} available)
                   </option>
                 ))}
               </select>

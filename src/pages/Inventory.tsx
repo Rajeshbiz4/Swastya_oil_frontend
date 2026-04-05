@@ -1,34 +1,95 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../store';
-import { fetchRawOilInventory, fetchPackagingInventory, fetchFinishedGoodsInventory } from '../store/slices/inventorySlice';
+import { fetchOilInventory, fetchPackagingInventory, fetchFinishedGoodsInventory, fetchOilPurchases, fetchRawOilInventory } from '../store/slices/inventorySlice';
 import DataTable from '../components/UI/DataTable';
 import './Pages.css';
 
 const Inventory: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'raw-oil' | 'packaging' | 'finished-goods'>('raw-oil');
-  const { rawOil, packaging, finishedGoods, isLoading, error } = useAppSelector((state) => state.inventory);
+  const { rawOil, oilInventory, oilPurchases, packaging, finishedGoods, isLoading, error } = useAppSelector((state) => state.inventory);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
     // Fetch all inventory data
     dispatch(fetchRawOilInventory());
+    dispatch(fetchOilInventory());
+    dispatch(fetchOilPurchases());
     dispatch(fetchPackagingInventory());
     dispatch(fetchFinishedGoodsInventory());
   }, [dispatch]);
 
-  // Table columns for different inventory types
   const rawOilColumns = [
     { key: 'batchNumber', title: 'Batch Number', sortable: true },
-    { key: 'initialQuantity', title: 'Initial Qty (L)', sortable: true, render: (value: number) => value.toLocaleString() },
-    { key: 'currentQuantity', title: 'Current Qty (L)', sortable: true, render: (value: number) => value.toLocaleString() },
-    { key: 'costPerLiter', title: 'Cost/L', sortable: true, render: (value: number) => `₹${value.toFixed(2)}` },
+    { key: 'oilType', title: 'Oil Type', sortable: true, render: (value: string) => value ? value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) : '-' },
+    { key: 'oilWeight', title: 'Oil Weight (kg)', sortable: true, render: (value: number) => value != null ? value.toLocaleString() : '-' },
+    { key: 'initialQuantity', title: 'Initial Qty (L)', sortable: true, render: (value: number) => value != null ? value.toLocaleString() : '-' },
+    { key: 'currentQuantity', title: 'Current Qty (L)', sortable: true, render: (value: number) => value != null ? value.toLocaleString() : '-' },
+    { key: 'costPerLiter', title: 'Cost/L', sortable: true, render: (value: number) => value != null ? `₹${value.toFixed(2)}` : '-' },
+    { key: 'costPerKg', title: 'Cost/Kg', sortable: true, render: (value: number) => value != null ? `₹${value.toFixed(2)}` : '-' },
+    { key: 'totalOilPurchases', title: 'Total Purchased (L)', sortable: true, render: (value: number) => value != null ? value.toLocaleString() : '-' },
+    { key: 'averageRate', title: 'Avg Rate/L', sortable: true, render: (value: number) => value != null ? `₹${value.toFixed(2)}` : '-' },
     { 
       key: 'totalValue', 
       title: 'Total Value', 
-      render: (_: any, record: any) => `₹${(record.currentQuantity * record.costPerLiter).toLocaleString()}`
+      render: (_: any, record: any) => {
+        const qty = record.currentQuantity ?? 0;
+        const cost = record.costPerLiter ?? 0;
+        return `₹${(qty * cost).toLocaleString()}`;
+      }
     },
-    { key: 'purchaseDate', title: 'Purchase Date', sortable: true, render: (value: string) => new Date(value).toLocaleDateString() },
+    { key: 'purchaseDate', title: 'Purchase Date', sortable: true, render: (value: string) => value ? new Date(value).toLocaleDateString() : '-' },
     { key: 'isActive', title: 'Status', render: (value: boolean) => value ? '✅ Active' : '❌ Inactive' },
+  ];
+
+  const oilPurchaseColumns = [
+    { 
+      key: 'invoiceNumber', 
+      title: 'Invoice #', 
+      sortable: true,
+      render: (value: string) => value || '-'
+    },
+    { 
+      key: 'supplierName', 
+      title: 'Supplier', 
+      sortable: true,
+      render: (value: string) => value || '-'
+    },
+    { 
+      key: 'quantity', 
+      title: 'Quantity (L)', 
+      sortable: true,
+      render: (value: number) => value ? value.toLocaleString() : '-'
+    },
+    { 
+      key: 'ratePerLiter', 
+      title: 'Rate/L', 
+      render: (value: number) => value ? `₹${value.toFixed(2)}` : '-'
+    },
+    {
+      key: 'totalAmount',
+      title: 'Total Amount',
+      render: (_: any, record: any) => `₹${(record.totalAmount || 0).toLocaleString()}`
+    },
+    { 
+      key: 'invoiceDate',
+      title: 'Invoice Date', 
+      render: (value: string) => value ? new Date(value).toLocaleDateString() : '-'
+    },
+    { 
+      key: 'deliveryDate',
+      title: 'Delivery Date', 
+      render: (value: string) => value ? new Date(value).toLocaleDateString() : '-'
+    },
+    { 
+      key: 'paymentMode', 
+      title: 'Payment Mode', 
+      render: (value: string) => value || '-'
+    },
+    { 
+      key: 'isPaid', 
+      title: 'Paid', 
+      render: (value: boolean) => value ? '✅ Yes' : '❌ No'
+    },
   ];
 
   const packagingColumns = [
@@ -63,13 +124,33 @@ const Inventory: React.FC = () => {
     { key: 'isActive', title: 'Status', render: (value: boolean) => value ? '✅ Active' : '❌ Inactive' },
   ];
 
-  console.log('Packaging Inventory Data:', packaging);
   // Calculate summary statistics
   const calculateSummary = () => {
+    // Group raw oil by oil type
+    const rawOilByType = rawOil.reduce((acc, item) => {
+      const type = item.oilType || 'UNKNOWN';
+      if (!acc[type]) {
+        acc[type] = {
+          oilType: type,
+          totalBatches: 0,
+          totalQuantity: 0,
+          totalValue: 0,
+          activeBatches: 0
+        };
+      }
+      acc[type].totalBatches += 1;
+      acc[type].totalQuantity += item.currentQuantity || 0;
+      acc[type].totalValue += (item.currentQuantity || 0) * (item.costPerLiter || 0);
+      if (item.isActive) acc[type].activeBatches += 1;
+      return acc;
+    }, {} as Record<string, any>);
+
     const rawOilSummary = {
-      totalQuantity: rawOil.reduce((sum, item) => sum + item.currentQuantity, 0),
-      totalValue: rawOil.reduce((sum, item) => sum + (item.currentQuantity * item.costPerLiter), 0),
-      activeBatches: rawOil.filter(item => item.isActive).length,
+      totalItems: rawOil.length,
+      totalQuantity: rawOil.reduce((sum, item) => sum + (item.currentQuantity || 0), 0),
+      totalValue: rawOil.reduce((sum, item) => sum + ((item.currentQuantity || 0) * (item.costPerLiter || 0)), 0),
+      activeItems: rawOil.filter(item => item.isActive).length,
+      byType: Object.values(rawOilByType)
     };
 
     const packagingSummary = {
@@ -94,17 +175,14 @@ const Inventory: React.FC = () => {
   };
 
   const { rawOilSummary, packagingSummary, finishedGoodsSummary } = calculateSummary();
-// console.log('Raw Oil Summary:', rawOilSummary);
-console.log('Packaging Summary:', packagingSummary);
-// console.log('Finished Goods Summary:', finishedGoodsSummary);
+
   const getCurrentData = () => {
     switch (activeTab) {
       case 'raw-oil':
         return rawOil;
       case 'packaging':
-        // For packaging, show grouped data by packaging type
         const groupedPackaging = packaging.reduce((acc, item) => {
-          const key = item.packagingType; // Since skuSize is now packagingType
+          const key = item.packagingType;
           if (!acc[key]) {
             acc[key] = {
               _id: key,
@@ -118,7 +196,6 @@ console.log('Packaging Summary:', packagingSummary);
           acc[key].totalPurchased += item.totalPurchasedQuantity || 0;
           acc[key].totalCost += ((item.totalPurchasedQuantity || 0) * (item.ratePerUnit || 0));
           acc[key].itemCount += 1;
-          // Calculate weighted average rate from purchase history
           if (acc[key].totalPurchased > 0) {
             acc[key].averageRate = acc[key].totalCost / acc[key].totalPurchased;
           }
@@ -156,18 +233,11 @@ console.log('Packaging Summary:', packagingSummary);
       case 'raw-oil':
         return (
           <div className="inventory-summary">
-            <div className="summary-card">
-              <h4>Total Quantity</h4>
-              <div className="summary-value">{rawOilSummary.totalQuantity.toLocaleString()} L</div>
-            </div>
-            <div className="summary-card">
-              <h4>Total Value</h4>
-              <div className="summary-value">₹{rawOilSummary.totalValue.toLocaleString()}</div>
-            </div>
-            <div className="summary-card">
-              <h4>Active Batches</h4>
-              <div className="summary-value">{rawOilSummary.activeBatches}</div>
-            </div>
+            {rawOilSummary.byType.map((typeData: any) => (
+              <div key={typeData.oilType} className="summary-card">
+                
+              </div>
+            ))}
           </div>
         );
       case 'packaging':
@@ -226,7 +296,7 @@ console.log('Packaging Summary:', packagingSummary);
           <button 
             className="secondary-button"
             onClick={() => {
-              dispatch(fetchRawOilInventory());
+              dispatch(fetchOilInventory());
               dispatch(fetchPackagingInventory());
               dispatch(fetchFinishedGoodsInventory());
             }}
@@ -268,9 +338,9 @@ console.log('Packaging Summary:', packagingSummary);
           {getSummaryCards()}
         </div>
 
-        {activeTab === 'packaging' ? (
+        {activeTab === 'packaging' && (
           <div className="packaging-cards-grid">
-            {packaging?.map((item: any) => (
+            {packaging?.map((item: any) => (  
               <div key={item._id} className="packaging-card">
                 <div className="packaging-card-header">
                   <h3>{item.packagingType}</h3>
@@ -293,13 +363,6 @@ console.log('Packaging Summary:', packagingSummary);
               </div>
             ))}
           </div>
-        ) : (
-          <DataTable
-            data={getCurrentData()}
-            columns={getCurrentColumns()}
-            loading={isLoading}
-            rowKey="_id"
-          />
         )}
       </div>
     </div>

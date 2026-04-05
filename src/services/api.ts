@@ -167,6 +167,11 @@ export interface OilPurchase {
   invoiceNumber: string;
   invoiceDate: string;
   deliveryDate: string;
+  oilType: string;
+  brokerage?: number;
+  actualWeight?: number;
+  tankerTransport?: number;
+  extraCharges?: number;
   isPaid: boolean;
   createdBy: {
     _id: string;
@@ -264,6 +269,11 @@ export const oilPurchaseAPI = {
     invoiceNumber: string;
     invoiceDate: string;
     deliveryDate: string;
+    oilType: string;
+    brokerage?: number;
+    actualWeight?: number;
+    tankerTransport?: number;
+    extraCharges?: number;
   }) => {
     return api.post<ApiResponse<{ oilPurchase: OilPurchase; rawOilInventory: any }>>('/procurement/oil-purchases', purchaseData);
   },

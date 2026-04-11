@@ -6,6 +6,7 @@ import { OilPurchase, PurchaseSummary, TankerBooking } from '../services/api';
 import { oilPurchaseAPI, bookingAPI } from '../services/api';
 import { FormField, PaymentMode } from '../types';
 import './Pages.css';
+import { OilTypes } from '../types/enums';
 
 const ProcurementOil: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
@@ -25,6 +26,7 @@ const ProcurementOil: React.FC = () => {
   const [formData, setFormData] = useState({
     bookingId: '',
     supplierName: '',
+    oilType: '',
     quantity: 0,
     ratePerLiter: 0,
     paymentMode: '',
@@ -117,11 +119,14 @@ const ProcurementOil: React.FC = () => {
     setFormData((prev) => ({
       ...prev,
       bookingId,
-       supplierName: booking?.supplierName || '', 
+      supplierName: booking?.supplierName || '',
+      oilType: booking?.oilType || '',
       quantity: booking ? booking.tankerCapacity : 0,
       ratePerLiter: booking ? booking.rate : 0,
       deliveryDate: booking ? new Date(booking.bookingDate).toISOString().split('T')[0] : prev.deliveryDate,
     }));
+    console.log('Selected booking:', booking.oilType);
+    console.log("oiltypes", OilTypes);
   };
 
   // form configuration for FormBuilder
@@ -140,23 +145,7 @@ const ProcurementOil: React.FC = () => {
       ],
     },
     { name: 'supplierName', label: 'Supplier Name', type: 'text', required: true, },
-    {
-      name: 'oilType',
-      label: 'Oil Type',
-      type: 'select',
-      required: true,
-      options: [
-        { value: 'VEGETABLE_OIL', label: 'Vegetable Oil' },
-        { value: 'SUNFLOWER_OIL', label: 'Sunflower Oil' },
-        { value: 'MUSTARD_OIL', label: 'Mustard Oil' },
-        { value: 'OLIVE_OIL', label: 'Olive Oil' },
-        { value: 'COCONUT_OIL', label: 'Coconut Oil' },
-        { value: 'GROUNDNUT_OIL', label: 'Groundnut Oil' },
-        { value: 'SOYBEAN_OIL', label: 'Soybean Oil' },
-        { value: 'PALM_OIL', label: 'Palm Oil' },
-        { value: 'SESAME_OIL', label: 'Sesame Oil' },
-      ],
-    },
+    { name: 'oilType', label: 'Oil Type', type: 'select', required: true, options: Object.keys(OilTypes).map((key) => ({ value: key, label: OilTypes[key] })) },
      { name: 'actualWeight', label: 'Actual Weight (kg)', type: 'number', required: true },
       { name: 'tankerTransport', label: 'Tanker Transport charges', type: 'number', required: true },
     { name: 'quantity', label: 'booking Quantity (KG)', type: 'number', required: true, min: '10000' },
@@ -195,6 +184,7 @@ const ProcurementOil: React.FC = () => {
         setFormData({
           bookingId: '',
           supplierName: '',
+          oilType: '',
           quantity: 0,
           ratePerLiter: 0,
           paymentMode: '',

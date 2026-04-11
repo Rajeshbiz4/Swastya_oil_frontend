@@ -4,23 +4,12 @@ import { FormField } from '../types';
 import ConfirmModal from '../components/common/confirm';
 import { bookingAPI, TankerBooking, BookingSummary } from '../services/api';
 import './Pages.css';
+import { OilTypes } from '../types/enums';
 
 // Utility functions
 const getTodayDate = (): string => {
   const today = new Date();
   return today.toISOString().split('T')[0];
-};
-
-export const OilTypeLabels = {
-  VEGETABLE_OIL: "Vegetable Oil",
-  SUNFLOWER_OIL: "Sunflower Oil",
-  MUSTARD_OIL: "Mustard Oil",
-  OLIVE_OIL: "Olive Oil",
-  COCONUT_OIL: "Coconut Oil",
-  GROUNDNUT_OIL: "Groundnut Oil",
-  SOYBEAN_OIL: "Soybean Oil",
-  PALM_OIL: "Palm Oil",
-  SESAME_OIL: "Sesame Oil"
 };
 
 
@@ -77,7 +66,7 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   // Form data with default current date
   const [formData, setFormData] = useState({
     bookingDate: getTodayDate(),
-    oilType: OilTypeLabels.SOYBEAN_OIL,
+    oilType: OilTypes.SOYBEAN_OIL,
     supplierName: '',
     tankerCapacity: 0,
     rate: 0,
@@ -564,7 +553,7 @@ const confirmDeleteBooking = async () => {
                       >
                         <option value="" disabled>Select Oil Type</option>
 
-                        {Object.entries(OilTypeLabels).map(([key, label]) => (
+                        {Object.entries(OilTypes).map(([key, label]) => (
                           <option key={key} value={key}>
                             {label}
                           </option>

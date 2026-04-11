@@ -26,7 +26,6 @@ const ProcurementOil: React.FC = () => {
   const [formData, setFormData] = useState({
     bookingId: '',
     supplierName: '',
-    oilType: '',
     quantity: 0,
     ratePerLiter: 0,
     paymentMode: '',
@@ -184,7 +183,6 @@ const ProcurementOil: React.FC = () => {
         setFormData({
           bookingId: '',
           supplierName: '',
-          oilType: '',
           quantity: 0,
           ratePerLiter: 0,
           paymentMode: '',

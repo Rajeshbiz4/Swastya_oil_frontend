@@ -459,7 +459,6 @@
     padding: 1.25rem;
   }
 }
-  }
   
   .filters-row {
     flex-direction: column;
@@ -468,7 +467,6 @@
   .filter-group {
     min-width: auto;
   }
-}
 
 @media (max-width: 480px) {
   .dashboard-header h1 {

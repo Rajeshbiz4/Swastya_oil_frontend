@@ -66,7 +66,7 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   // Form data with default current date
   const [formData, setFormData] = useState({
     bookingDate: getTodayDate(),
-    oilType: OilTypes.SOYBEAN_OIL,
+    oilType: OilTypes.SOYABEAN_OIL,
     supplierName: '',
     tankerCapacity: 0,
     rate: 0,
@@ -135,7 +135,7 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
         // Populate form with existing booking data
         setFormData({
           bookingDate: editingBooking.bookingDate.split('T')[0], // Convert to YYYY-MM-DD format
-          oilType: "SOYBEAN_OIL",
+          oilType: "SOYABEAN_OIL",
           tankerCapacity: editingBooking.tankerCapacity,
           rate: editingBooking.rate,
           bookingAmount: editingBooking.bookingAmount,
@@ -146,7 +146,7 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
         // Reset form for new booking
         setFormData({
           bookingDate: getTodayDate(),
-          oilType: "SOYBEAN_OIL",
+          oilType: "SOYABEAN_OIL",
           tankerCapacity: 0,
           rate: 0,
           bookingAmount: 0,
@@ -548,7 +548,7 @@ const confirmDeleteBooking = async () => {
                     {field.type === 'select' ? (
                       <select
                         id={field.name}
-                        value={formData.oilType || "SOYBEAN_OIL"}
+                        value={formData.oilType || "SOYABEAN_OIL"}
                         onChange={(e) => handleFormChange(field.name, e.target.value)}
                       >
                         <option value="" disabled>Select Oil Type</option>

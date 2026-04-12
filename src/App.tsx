@@ -16,9 +16,9 @@ import Dashboard from './pages/Dashboard';
 import Booking from './pages/Booking';
 import ProcurementOil from './pages/ProcurementOil';
 import ProcurementPackaging from './pages/ProcurementPackaging';
+import OilBatchProcessing from './pages/OilBatchProcessing';
 import Inventory from './pages/Inventory';
 import ProductionImproved from './pages/ProductionImproved';
-import Batch from './pages/batch';
 import Invoices from './pages/invoices';
 import Sales from './pages/Sales';
 import Reports from './pages/Reports';
@@ -111,6 +111,14 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="procurement/batch"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+                <OilBatchProcessing />
+              </ProtectedRoute>
+            }
+          />
           <Route path="reports" element={
             <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
               <Reports />
@@ -134,11 +142,7 @@ const AppContent: React.FC = () => {
               <ProductionImproved />
             </ProtectedRoute>
           } />
-           <Route path="batch" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
-              <Batch />
-            </ProtectedRoute>
-          } />
+          
           <Route path="workers" element={
             <ProtectedRoute requiredRoles={[UserRole.USER]}>
               <Worker />

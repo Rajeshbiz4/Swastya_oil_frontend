@@ -35,6 +35,7 @@ const navigationItems: NavItem[] = [
     children: [
       { label: 'Oil Purchases', path: '/procurement/oil', roles: [UserRole.ADMIN] },
       { label: 'Packaging Purchases', path: '/procurement/packaging', roles: [UserRole.ADMIN] },
+      { label: 'Batch Processing', path: '/procurement/batch', roles: [UserRole.ADMIN] },
     ],
   },
   //    { 

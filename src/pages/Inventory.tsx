@@ -346,14 +346,14 @@ const Inventory: React.FC = () => {
                         <span className="stat-label">Total Batches:</span>
                         <span className="stat-value">{item.totalBatches || 0}</span>
                       </div>
-                      {/* <div className="packaging-stat">
-                        <span className="stat-label">Total Quantity (L):</span>
+                       <div className="packaging-stat">
+                        <span className="stat-label">Total Quantity (kg):</span>
                         <span className="stat-value">{(item.totalQuantity || 0).toLocaleString()}</span>
-                      </div> */}
-                      <div className="packaging-stat">
+                      </div> 
+                      {/* <div className="packaging-stat">
                         <span className="stat-label">Total Weight (kg):</span>
                         <span className="stat-value">{(item.totalWeight || 0).toLocaleString()}</span>
-                      </div>
+                      </div> */}
                       <div className="packaging-stat">
                         <span className="stat-label">Avg Cost:</span>
                         <span className="stat-value">₹{(item.averageCostPerKg || 0).toFixed(2)}</span>

@@ -268,6 +268,51 @@ const OilBatchProcessing: React.FC = () => {
     }
   };
 
+  const updateFinishedGoodsInventory = async (
+    oilType: string,
+    packagingType: string,
+    quantity: number,
+    batchId: string
+  ): Promise<void> => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.warn('Auth token missing for finished goods update');
+        return;
+      }
+
+      const response = await fetch('/api/inventory/finished-goods/upsert', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          oilType,
+          packagingType,
+          quantity,
+          unitCost: 0, // you can improve later (optional)
+          productionDate: new Date(),
+          expiryDate: new Date(new Date().setMonth(new Date().getMonth() + 6)), // default 6 months
+          batchId
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        console.error('Failed to update finished goods inventory:', data);
+        return;
+      }
+
+      console.log('Finished goods inventory updated successfully');
+
+    } catch (err) {
+      console.error('Error updating finished goods inventory:', err);
+      // Don't break main flow
+    }
+  };
+
   const updatePackagingInventory = async (packagingType: string, quantity: number, batchId: string): Promise<void> => {
     try {
       const token = localStorage.getItem('authToken');
@@ -372,6 +417,13 @@ const OilBatchProcessing: React.FC = () => {
 
       // Update packaging inventory after batch creation
       await updatePackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);
+      // ✅ Update finished goods inventory
+      await updateFinishedGoodsInventory(
+        selectedProductType.code,
+        selectedProductType.type, // IMPORTANT: use `type` not packagingType
+        formData.quantity,
+        createdBatch._id
+      );
     } catch (err: unknown) {
       const anyErr = err as Error;
       setModalError(anyErr.message || 'Failed to create batch');

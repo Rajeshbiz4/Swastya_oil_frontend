@@ -268,6 +268,47 @@ const OilBatchProcessing: React.FC = () => {
     }
   };
 
+  const updatePackagingInventory = async (packagingType: string, quantity: number, batchId: string): Promise<void> => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.warn('Authentication token is missing for packaging inventory update');
+        return;
+      }
+
+      // Consume packaging inventory using the packaging consume endpoint
+      const response = await fetch('/api/inventory/packaging/consume', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          skuSize: '1KG', // Default SKU size - can be adjusted based on requirements
+          packagingType: packagingType,
+          quantity: quantity,
+          productionBatchId: batchId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to consume packaging inventory:', errorData);
+        return;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        console.log('Packaging inventory consumed successfully');
+      } else {
+        console.error('Failed to consume packaging inventory:', data);
+      }
+    } catch (err) {
+      console.error('Error consuming packaging inventory:', err);
+      // Don't throw error as this is a secondary operation
+    }
+  };
+
   const submitForm = async () => {
     if (!validateForm()) return;
     
@@ -328,6 +369,9 @@ const OilBatchProcessing: React.FC = () => {
         quantity: 0,
       });
       setAvailableQuantity(null); // Clear available quantity on success
+
+      // Update packaging inventory after batch creation
+      await updatePackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);
     } catch (err: unknown) {
       const anyErr = err as Error;
       setModalError(anyErr.message || 'Failed to create batch');

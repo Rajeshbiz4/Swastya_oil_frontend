@@ -72,7 +72,7 @@ export const fetchWorkerById = createAsyncThunk(
 
 export const createWorker = createAsyncThunk(
   'worker/createWorker',
-  async (data: { employeeId: string; name: string; phone: string; dailyWage: number }, { rejectWithValue }) => {
+  async (data: any, { rejectWithValue }) => {
     try {
       const response = await api.post('/workers', data);
       return response.data.data;

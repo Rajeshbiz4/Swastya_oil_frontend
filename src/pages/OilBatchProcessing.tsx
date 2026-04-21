@@ -274,11 +274,12 @@ const OilBatchProcessing: React.FC = () => {
     quantity: number,
     batchId: string
   ): Promise<void> => {
+    let isSuccess: boolean = false;
     try {
       const token = localStorage.getItem('authToken');
       if (!token) {
         console.warn('Auth token missing for finished goods update');
-        return;
+        return isSuccess;
       }
 
       const response = await fetch('/api/inventory/finished-goods/upsert', {
@@ -302,23 +303,114 @@ const OilBatchProcessing: React.FC = () => {
 
       if (!response.ok || !data.success) {
         console.error('Failed to update finished goods inventory:', data);
-        return;
+        return isSuccess;
       }
 
       console.log('Finished goods inventory updated successfully');
-
+      isSuccess = true;
+      return isSuccess;
     } catch (err) {
       console.error('Error updating finished goods inventory:', err);
+      return isSuccess;
       // Don't break main flow
     }
   };
 
-  const updatePackagingInventory = async (packagingType: string, quantity: number, batchId: string): Promise<void> => {
+  const updateRawOilInventory = async (code: string, consumptionAmount: number): Promise<boolean> => {
+    let isSuccess:boolean = true;
     try {
       const token = localStorage.getItem('authToken');
       if (!token) {
         console.warn('Authentication token is missing for packaging inventory update');
-        return;
+        isSuccess= false;
+      }
+      debugger;
+      // Consume packaging inventory using the packaging consume endpoint
+      const response = await fetch('/api/inventory/raw-oil/reduceRawOilInventory', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          code: code,
+          totalWeight: consumptionAmount,
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to consume raw oil inventory:', errorData);
+        isSuccess= false;
+        return isSuccess;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        console.log('raw oil inventory consumed successfully');
+      } else {
+        isSuccess= false;
+        console.error('Failed to update raw oil inventory:', data);
+      }
+    } catch (err) {
+      console.error('Error consuming raw oil inventory:', err);
+      isSuccess= false;
+      // Don't throw error as this is a secondary operation
+    }
+    return isSuccess;
+  };
+
+   const revertRawOilInventory = async (code: string, consumptionAmount: number): Promise<boolean> => {
+    let isSuccess:boolean = true;
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.warn('Authentication token is missing for revert raw oil inventory');
+        isSuccess= false;
+      }
+      debugger;
+      // Consume packaging inventory using the packaging consume endpoint
+      const response = await fetch('/api/inventory/raw-oil/revert', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          oilType: code,
+          quantity: consumptionAmount,
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to revert raw oil inventory:', errorData);
+        isSuccess= false;
+        return isSuccess;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        console.log('raw oil inventory revert successfully');
+      } else {
+        isSuccess= false;
+        console.error('Failed to revert raw oil inventory:', data);
+      }
+    } catch (err) {
+      console.error('Error revert raw oil inventory:', err);
+      isSuccess= false;
+      // Don't throw error as this is a secondary operation
+    }
+    return isSuccess;
+  };
+
+  const updatePackagingInventory = async (packagingType: string, quantity: number, batchId: string): Promise<boolean> => {
+    let isSuccess:boolean = false;
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.warn('Authentication token is missing for packaging inventory update');
+        return isSuccess;
       }
 
       // Consume packaging inventory using the packaging consume endpoint
@@ -339,31 +431,80 @@ const OilBatchProcessing: React.FC = () => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Failed to consume packaging inventory:', errorData);
-        return;
+        return isSuccess;
       }
 
       const data = await response.json();
       if (data.success) {
+        isSuccess = true;
         console.log('Packaging inventory consumed successfully');
+        return isSuccess;
       } else {
-        console.error('Failed to consume packaging inventory:', data);
+        console.error('Failed to update packaging inventory:', data);
       }
     } catch (err) {
       console.error('Error consuming packaging inventory:', err);
       // Don't throw error as this is a secondary operation
     }
+    return isSuccess;
+  };
+
+   const revertPackagingInventory = async (packagingType: string, quantity: number, batchId: string): Promise<boolean> => {
+    let isSuccess:boolean = false;
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.warn('Authentication token is missing for revert packaging inventory');
+        return isSuccess;
+      }
+
+      // Consume packaging inventory using the packaging consume endpoint
+      const response = await fetch('/api/inventory/packaging/revert', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          skuSize: '1KG', // Default SKU size - can be adjusted based on requirements
+          packagingType: packagingType,
+          quantity: quantity,
+          productionBatchId: batchId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to revert packaging inventory:', errorData);
+        return isSuccess;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        isSuccess = true;
+        console.log('Packaging inventory revert successfully');
+        return isSuccess;
+      } else {
+        console.error('Failed to revert packaging inventory:', data);
+      }
+    } catch (err) {
+      console.error('Error revert packaging inventory:', err);
+      // Don't throw error as this is a secondary operation
+    }
+    return isSuccess;
   };
 
   const submitForm = async () => {
     if (!validateForm()) return;
-    
-    try {
-      setFormLoading(true);
-      const token = localStorage.getItem('authToken');
+    let createdBatch: BatchRecord = {} as BatchRecord;
+    const token = localStorage.getItem('authToken');
       if (!token) {
         setModalError('Authentication token is missing. Please login again.');
         return;
       }
+    try {
+      setFormLoading(true);
+     
 
       const selectedProductType = PRODUCT_TYPES.find((productType) => productType.value === formData.productTypeId);
       if (!selectedProductType) {
@@ -402,8 +543,9 @@ const OilBatchProcessing: React.FC = () => {
         throw new Error(message);
       }
 
-      const createdBatch = data.data as BatchRecord;
+      createdBatch = data.data as BatchRecord;
       setBatches((prev) => [createdBatch, ...prev]);
+
       setSuccess('Oil batch created successfully');
       setModalError(null); // Clear modal error on success
       setShowForm(false);
@@ -414,19 +556,51 @@ const OilBatchProcessing: React.FC = () => {
         quantity: 0,
       });
       setAvailableQuantity(null); // Clear available quantity on success
-
-      // Update packaging inventory after batch creation
-      await updatePackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);
-      // ✅ Update finished goods inventory
-      await updateFinishedGoodsInventory(
+      debugger;
+      const totalWeight = formData.quantity * (selectedProductType.weight / 1000);
+      //Update raw oil inventory stock after created batch
+      let rawInvUpdated:boolean = await updateRawOilInventory(selectedProductType.code,totalWeight );
+      if(rawInvUpdated){
+        // Update packaging inventory after batch creation
+      let packagingInvUpdated= await updatePackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);
+      if(packagingInvUpdated){
+// ✅ Update finished goods inventory
+      let finishedInvUpdated = await updateFinishedGoodsInventory(
         selectedProductType.code,
         selectedProductType.type, // IMPORTANT: use `type` not packagingType
         formData.quantity,
         createdBatch._id
       );
+      if(!finishedInvUpdated){
+        // revert packaging inventory
+        await revertPackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);
+        // revert raw oil inventory
+        await revertRawOilInventory(selectedProductType.code,totalWeight);
+      }
+      }
+      else {
+        // revert raw oil inventory
+        await revertRawOilInventory(selectedProductType.code,totalWeight);
+      }
+      
+      }
+    
+      
     } catch (err: unknown) {
       const anyErr = err as Error;
-      setModalError(anyErr.message || 'Failed to create batch');
+      console.error('Post-processing failed:', err);
+
+      // Mark batch as FAILED
+      await fetch(`/api/oil-batches/${createdBatch._id}/status`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'failed' })
+      });
+
+      setModalError(anyErr.message || 'Batch failed during processing. Marked as FAILED.');
     } finally {
       setFormLoading(false);
     }

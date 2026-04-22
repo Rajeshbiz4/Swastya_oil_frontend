@@ -470,6 +470,131 @@ const OilBatchProcessing: React.FC = () => {
     }
   };
 
+  const updateFinishedGoodsInventory = async (
+  oilType: string,
+  packagingType: string,
+  quantity: number,
+  batchId: string
+): Promise<boolean> => {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.warn('Auth token missing for finished goods update');
+      return false;
+    }
+
+    const response = await fetch('/api/inventory/finished-goods/upsert', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        oilType,
+        packagingType,
+        quantity,
+        unitCost: 0, // you can improve later (optional)
+        productionDate: new Date(),
+        expiryDate: new Date(new Date().setMonth(new Date().getMonth() + 6)), // default 6 months
+        batchId
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      console.error('Failed to update finished goods inventory:', data);
+      return false;
+    }
+
+    console.log('Finished goods inventory updated successfully');
+    return true;
+
+  } catch (err) {
+    console.error('Error updating finished goods inventory:', err);
+    // Don't break main flow
+    return false;
+  }
+};
+
+ const updateRawOilInventory = async (
+  code: string,
+  totalWeight: number
+): Promise<boolean> => {
+  try {
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      console.warn("Auth token missing for raw oil reduction");
+      return false;
+    }
+
+    const response = await fetch("/api/inventory/raw-oil/reduceRawOilInventory", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code,
+        totalWeight,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      console.error("Failed to reduce raw oil inventory:", data);
+      return false;
+    }
+
+    console.log("Raw oil inventory reduced successfully");
+    return true;
+  } catch (err) {
+    console.error("Error reducing raw oil inventory:", err);
+    // Do not break main flow
+    return false;
+  }
+};
+
+const revertRawOilInventory = async (
+  oilType: string,
+  quantity: number
+): Promise<void> => {
+  try {
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      console.warn("Auth token missing for raw oil revert");
+      return;
+    }
+
+    const response = await fetch("/api/inventory/raw-oil/revert", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        oilType,
+        quantity,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      console.error("Failed to revert raw oil inventory:", data);
+      return;
+    }
+
+    console.log("Raw oil inventory reverted successfully");
+  } catch (err) {
+    console.error("Error reverting raw oil inventory:", err);
+    // Do not break main flow
+  }
+};
+
   return (
     <div className="module-page">
       <div className="module-header">

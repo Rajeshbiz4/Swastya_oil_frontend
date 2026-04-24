@@ -26,12 +26,11 @@ const ProcurementOil: React.FC = () => {
   const [formData, setFormData] = useState({
     bookingId: '',
     supplierName: '',
-    oilType: '',
     quantity: 0,
     ratePerLiter: 0,
     paymentMode: '',
     invoiceNumber: '',
-    oilType: 'SOYBEAN_OIL',
+    oilType: 'SOYABEAN_OIL',
     actualWeight: 0,
     brokerage: 0,
     extraCharges: 0,
@@ -125,8 +124,7 @@ const ProcurementOil: React.FC = () => {
       ratePerLiter: booking ? booking.rate : 0,
       deliveryDate: booking ? new Date(booking.bookingDate).toISOString().split('T')[0] : prev.deliveryDate,
     }));
-    console.log('Selected booking:', booking.oilType);
-    console.log("oiltypes", OilTypes);
+
   };
 
   // form configuration for FormBuilder
@@ -184,12 +182,11 @@ const ProcurementOil: React.FC = () => {
         setFormData({
           bookingId: '',
           supplierName: '',
-          oilType: '',
           quantity: 0,
           ratePerLiter: 0,
           paymentMode: '',
           invoiceNumber: '',
-          oilType: 'SOYBEAN_OIL',
+          oilType: 'SOYABEAN_OIL',
           actualWeight: 0,
           brokerage: 0,
           extraCharges: 0,

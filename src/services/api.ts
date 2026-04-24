@@ -15,6 +15,8 @@ export interface ApiResponse<T = unknown> {
 export interface TankerBooking {
   _id: string;
   bookingDate: string;
+  supplierName: string;
+  oilType: string;
   tankerCapacity: number;
   rate: number;
   bookingAmount: number;

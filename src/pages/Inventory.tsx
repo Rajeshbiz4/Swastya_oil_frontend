@@ -232,13 +232,7 @@ const Inventory: React.FC = () => {
     switch (activeTab) {
       case 'raw-oil':
         return (
-          <div className="inventory-summary">
-            {rawOilSummary.byType.map((typeData: any) => (
-              <div key={typeData.oilType} className="summary-card">
-                
-              </div>
-            ))}
-          </div>
+          <span ></span>
         );
       case 'packaging':
         return (
@@ -337,6 +331,75 @@ const Inventory: React.FC = () => {
 
           {getSummaryCards()}
         </div>
+
+        {activeTab === 'raw-oil' && (
+          <div className="packaging-cards-grid">
+            {rawOil?.map((item: any) => (
+              <div key={item._id || item.oilType} className="packaging-card">
+                <div className="packaging-card-header">
+                  <h3>{item._id ? item._id.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()) : item.oilType?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}</h3>
+                </div>
+                <div className="packaging-card-body">
+                  {item.batches ? (
+                    <>
+                      <div className="packaging-stat">
+                        <span className="stat-label">Total Batches:</span>
+                        <span className="stat-value">{item.totalBatches || 0}</span>
+                      </div>
+                      {/* <div className="packaging-stat">
+                        <span className="stat-label">Total Quantity (L):</span>
+                        <span className="stat-value">{(item.totalQuantity || 0).toLocaleString()}</span>
+                      </div> */}
+                      <div className="packaging-stat">
+                        <span className="stat-label">Total Weight (kg):</span>
+                        <span className="stat-value">{(item.totalWeight || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="packaging-stat">
+                        <span className="stat-label">Avg Cost:</span>
+                        <span className="stat-value">₹{(item.averageCostPerKg || 0).toFixed(2)}</span>
+                      </div>
+                      {/* <div className="packaging-stat">
+                        <span className="stat-label">Min Cost/L:</span>
+                        <span className="stat-value">₹{(item.minCostPerLiter || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="packaging-stat">
+                        <span className="stat-label">Max Cost/L:</span>
+                        <span className="stat-value">₹{(item.maxCostPerLiter || 0).toFixed(2)}</span>
+                      </div> */}
+                    </>
+                  ) : (
+                    <>
+                      <div className="packaging-stat">
+                        <span className="stat-label">Batch:</span>
+                        <span className="stat-value">{item.batchNumber}</span>
+                      </div>
+                      <div className="packaging-stat">
+                        <span className="stat-label">Current Qty (L):</span>
+                        <span className="stat-value">{(item.currentQuantity || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="packaging-stat">
+                        <span className="stat-label">Weight (kg):</span>
+                        <span className="stat-value">{(item.oilWeight || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="packaging-stat">
+                        <span className="stat-label">Cost/L:</span>
+                        <span className="stat-value">₹{(item.costPerLiter || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="packaging-stat">
+                        <span className="stat-label">Cost/Kg:</span>
+                        <span className="stat-value">₹{(item.costPerKg || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="packaging-stat">
+                        <span className="stat-label">Status:</span>
+                        <span className="stat-value">{item.isActive ? '✅ Active' : '❌ Inactive'}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {activeTab === 'packaging' && (
           <div className="packaging-cards-grid">

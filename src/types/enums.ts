@@ -5,7 +5,7 @@ export const OilTypes = {
   OLIVE_OIL: "Olive Oil",
   COCONUT_OIL: "Coconut Oil",
   GROUNDNUT_OIL: "Groundnut Oil",
-  SOYBEAN_OIL: "Soybean Oil",
+  SOYABEAN_OIL: "Soybean Oil",
   PALM_OIL: "Palm Oil",
   SESAME_OIL: "Sesame Oil"
 };

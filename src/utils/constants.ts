@@ -54,6 +54,23 @@ export const BUSINESS_CONSTANTS = {
   PAYMENT_MODES: Object.values(PaymentMode),
 };
 
+export const PRODUCT_TYPES = [
+  { value: 'coconut-oil-500ml-bottle', label: 'Coconut Oil 500ml Bottle', packagingType: 'Coconut Oil 500ml Bottle', weight: 450.0, code: 'COCONUT_OIL' },
+  { value: 'sunflower-oil-1l-can', label: 'Sunflower Oil 1L Can', packagingType: 'Sunflower Oil 1L Can', weight: 910.0, code: 'SUNFLOWER_OIL' },
+  { value: 'soyabean-oil-1l-can', label: 'Soyabean Oil 1L Can', packagingType: 'Soyabean Oil 1L Can', weight: 910.0, code: 'SOYABEAN_OIL' },
+  { value: 'mustard-oil-2l-drum', label: 'Mustard Oil 2L Drum', packagingType: 'Mustard Oil 2L Drum', weight: 1820.0, code: 'MUSTARD_OIL' },
+  { value: 'groundnut-oil-500ml-bottle', label: 'Groundnut Oil 500ml Bottle', packagingType: 'Groundnut Oil 500ml Bottle', weight: 450.0, code: 'GROUNDNUT_OIL' },
+  { value: 'olive-oil-1l-bottle', label: 'Olive Oil 1L Bottle', packagingType: 'Olive Oil 1L Bottle', weight: 910.0, code: 'OLIVE_OIL' },
+  { value: 'soyabean-oil-5l-can', label: 'Soyabean Oil 5L Can', packagingType: 'Soyabean Oil 5L Can', weight: 4550.0, code: 'SOYABEAN_OIL' },
+  { value: 'soyabean-oil-10l-can', label: 'Soyabean Oil 10L Can', packagingType: 'Soyabean Oil 10L Can', weight: 9100.0, code: 'SOYABEAN_OIL' },
+  { value: 'soyabean-oil-12l-can', label: 'Soyabean Oil 12L Can', packagingType: 'Soyabean Oil 12L Can', weight: 10920.0, code: 'SOYABEAN_OIL' },
+  { value: 'soyabean-oil-15l-can', label: 'Soyabean Oil 15L Can', packagingType: 'Soyabean Oil 15L Can', weight: 13650.0, code: 'SOYABEAN_OIL' },
+  { value: 'palm-oil-15l-can', label: 'Palm Oil 15L Can', packagingType: 'Palm Oil 15L Can', weight: 13650.0, code: 'PALM_OIL' },
+  { value: 'palm-oil-25l-can', label: 'Palm Oil 25L Can', packagingType: 'Palm Oil 25L Can', weight: 22750.0, code: 'PALM_OIL' },
+  { value: 'palm-oil-50l-can', label: 'Palm Oil 50L Can', packagingType: 'Palm Oil 50L Can', weight: 45500.0, code: 'PALM_OIL' },
+
+];
+
 // UI constants
 export const UI_CONSTANTS = {
   PAGINATION: {

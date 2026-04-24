@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import FormBuilder from '../components/UI/FormBuilder';
 import DataTable from '../components/UI/DataTable';
+import Popup from '../components/UI/Popup';
 import { FormField } from '../types';
 import { OilTypes } from '../types/enums';
 import { PRODUCT_TYPES } from '../utils/constants';
@@ -28,6 +29,16 @@ const OilBatchProcessing: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [modalError, setModalError] = useState<string | null>(null);
   const [availableQuantity, setAvailableQuantity] = useState<number | null>(null);
+  const [popup, setPopup] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title?: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    message: ''
+  });
 
   const [formData, setFormData] = useState({
     batchNumber: '',
@@ -423,7 +434,7 @@ const OilBatchProcessing: React.FC = () => {
       debugger;
       const totalWeight = formData.quantity * (selectedProductType.weight / 1000);
       //Update raw oil inventory stock after created batch
-      let rawInvUpdated:boolean = await updateRawOilInventory(selectedProductType.code,totalWeight );
+      let rawInvUpdated:boolean = await updateRawOilInventory(selectedProductType.code+'1',totalWeight );
       if(rawInvUpdated){
         // Update packaging inventory after batch creation
       let packagingInvUpdated= await updatePackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);
@@ -440,20 +451,29 @@ const OilBatchProcessing: React.FC = () => {
         await revertPackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);
         // revert raw oil inventory
         await revertRawOilInventory(selectedProductType.code,totalWeight);
+        throw new Error('Failed to update finished goods inventory.');
       }
       }
       else {
         // revert raw oil inventory
         await revertRawOilInventory(selectedProductType.code,totalWeight);
+        throw new Error('Failed to update finished goods inventory.');
       }
       
       }
-    
-      
+      else {
+        throw new Error('Batch created but failed to update inventory. Please check inventory levels and update manually if needed.');
+      }
+     setPopup({
+          isOpen: true,
+          type: 'success',
+          title: 'Batch Created Successfully',
+          message: 'Batch created and inventory updated successfully.'
+        });
+      fetchOilBatches();
     } catch (err: unknown) {
       const anyErr = err as Error;
       console.error('Post-processing failed:', err);
-
       // Mark batch as FAILED
       await fetch(`/api/oil-batches/${createdBatch._id}/status`, {
         method: 'PATCH',
@@ -463,7 +483,13 @@ const OilBatchProcessing: React.FC = () => {
         },
         body: JSON.stringify({ status: 'failed' })
       });
-
+       setPopup({
+          isOpen: true,
+          type: 'warning',
+          title: 'Partial Failure',
+          message: 'Batch created but failed to update packaging inventory. Please check inventory levels and update manually if needed.'
+        });
+      fetchOilBatches();
       setModalError(anyErr.message || 'Batch failed during processing. Marked as FAILED.');
     } finally {
       setFormLoading(false);
@@ -684,6 +710,14 @@ const revertRawOilInventory = async (
           </div>
         )}
       </div>
+
+      <Popup
+        isOpen={popup.isOpen}
+        type={popup.type}
+        title={popup.title}
+        message={popup.message}
+        onClose={() => setPopup({ ...popup, isOpen: false })}
+      />
     </div>
   );
 };

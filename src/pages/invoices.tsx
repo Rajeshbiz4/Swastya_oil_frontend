@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useAppSelector } from '../store';
 import jsPDF from "jspdf";
 import logo from './src/assets/logo.jpeg';
-
+import { appConfig  } from "../config/appConfig";
 import {
   fetchInvoices,
   createInvoice,
@@ -206,136 +206,136 @@ const handlePrintPreview = () => {
 //   } catch (e) {}
 
   // 🔹 Company Info
-doc.setFontSize(16);
-// Set maroon color
-doc.setTextColor(128, 0, 0);
-doc.text("Swastya Shakti Gold Pvt Ltd", 10, 15);
+// doc.setFontSize(16);
+// // Set maroon color
+// doc.setTextColor(128, 0, 0);
+// doc.text(appConfig.company.name, 10, 15);
 
-// Reset to black for other texts if needed
-doc.setTextColor(0, 0, 0);
+// // Reset to black for other texts if needed
+// doc.setTextColor(0, 0, 0);
+
+//   doc.setFontSize(9);
+//   doc.text(appConfig.company.address, 10, 21);
+//   doc.text(appConfig.company.contact, 10, 26);
+//   doc.text(appConfig.company.email, 10, 31);
+//   doc.text("Website: www.swastya.com", 10, 36);
+
+// ================= HEADER =================
+  doc.setFontSize(14);
+  doc.setTextColor(128, 0, 0);
+  doc.text(appConfig.company.name, 105, 12, { align: "center" });
+
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(8);
+  doc.text(appConfig.company.address, 103, 17, { align: "center" });
+  doc.text(`Contact: ${appConfig.company.contact} , ${appConfig.company.contact2}`, 30, 21, { align: "left" });
+  doc.text(`(Email-Id): ${appConfig.company.email}`, 90, 21, { align: "left" });
+  doc.text(`PAN: ${appConfig.company.PAN}`, 150, 21, { align: "left" });
+  doc.text(`GSTIN: ${appConfig.company.gstNumber} / FSSAI NO: ${appConfig.company.FSSAI_LIC_NO}`, 105, 25, { align: "center" });
+
+   // Invoice Title
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold"); 
+  doc.text("TAX INVOICE", 105, 32, { align: "center" });
+  doc.setFont("helvetica", "normal"); 
+ 
+  // ================= CUSTOMER + BILL =================
+  doc.setFontSize(9);
+
+  doc.rect(10, 36, 95, 30); // left box
+  doc.rect(105, 36, 95, 30); // right box
+
+  doc.setFont("helvetica", "bold");  
+  doc.text("NAME OF CUSTOMER", 12, 41);
+  doc.setFont("helvetica", "normal");  
+  doc.text(customerName || "-", 12, 46);
+  doc.text(address || "-", 12, 51);
+  doc.text(`GSTIN: ${gstNo || "-"}`, 12, 56);
+
+  doc.setFont("helvetica", "bold");  
+  doc.text("DELIVERED TO", 107, 41);
+  doc.setFont("helvetica", "normal");  
+  doc.text(customerName || "-", 107, 46);
+  doc.text(address || "-", 107, 51);
+
+  // ================= BILL INFO =================
+  doc.rect(10, 66, 190, 12);
+  doc.text(`Bill No: ${invoiceNumber}`, 12, 73);
+  doc.text(`Date: ${new Date(date).toLocaleDateString()}`, 80, 73);
+  doc.text(`Contact: ${contact || "-"}`, 140, 73);
+
+ // ================= TABLE =================
+  let startY = 80;
+
+  const headers = ["Sr", "Item Details", "Qty", "Rate", "Amount"];
+  const colX = [10, 25, 120, 145, 170];
+
+  doc.setFillColor(230, 230, 230);
+  doc.rect(10, startY, 190, 8, "F");
 
   doc.setFontSize(9);
-  doc.text("Address: Pune, Maharashtra, India", 10, 21);
-  doc.text("Mobile: +91 9876543210", 10, 26);
-  doc.text("Email: info@swastya.com", 10, 31);
-  doc.text("Website: www.swastya.com", 10, 36);
-
-  // 🔹 Invoice Title
-  doc.setFontSize(20);
-  doc.setTextColor(128, 0, 0);
-  doc.text("INVOICE", 150, 18);
-doc.setTextColor(0, 0, 0);
-  doc.setFontSize(10);
-  doc.text(`Invoice #: ${invoiceNumber}`, 150, 28);
-
-  const formatDate = (dateStr: string) => {
-  const d = new Date(dateStr);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
-  const year = d.getFullYear();
-  return `${day}-${month}-${year}`; // DD-MM-YYYY
-};
-
-// Usage
-doc.text(`Date: ${formatDate(date)}`, 150, 34);
-
-//   doc.text(`Date: ${date}`, 150, 34);
-
-  // 🔹 Bill To
-  doc.setFontSize(10);
-  doc.text("Bill To:", 10, 55);
-  doc.text(customerName || "-", 10, 62);
-  doc.text(`Contact: ${contact || "-"}`, 10, 68);
-  doc.text(`Address: ${address || "-"}`, 10, 74);
-
-  // ===== TABLE =====
- let startY = 90;
-
-const colX = {
-  item: 10,
-  desc: 35,
-  qty: 90,
-  rate: 110,
-  discount: 140,
-  total: 170
-};
-
-// Set light blue background color
-doc.setFillColor(173, 216, 230); // light blue
-
-// Draw header background
-doc.rect(10, startY, 190, 8, "F"); // "F" = fill only
-
-// Set bold font for header
-doc.setFont("helvetica", "bold");
-doc.setFontSize(9);
-
-// Header text
-doc.text("Item #", colX.item + 2, startY + 6);
-doc.text("Description", colX.desc + 2, startY + 6);
-doc.text("Qty", colX.qty + 2, startY + 6);
-doc.text("Unit price", colX.rate + 2, startY + 6);
-doc.text("Discount", colX.discount + 2, startY + 6);
-doc.text("Price", colX.total + 2, startY + 6);
-
-// Reset font to normal for table rows
-doc.setFont("helvetica", "normal");
-
-  // Column lines (only for header + rows)
-  let tableHeight = products.length * 8 + 8;
-  Object.values(colX).forEach((x) => {
-    doc.line(x, startY, x, startY + tableHeight);
+  headers.forEach((h, i) => {
+    doc.text(h, colX[i] + 2, startY + 6);
   });
 
-  // Rows (ONLY actual records ✅)
   let y = startY + 8;
 
   products.forEach((p, i) => {
     doc.rect(10, y, 190, 8);
-
-    doc.text(`A00${i + 1}`, colX.item + 2, y + 6);
-    doc.text(p.type || "-", colX.desc + 2, y + 6);
-    doc.text(String(p.qty || 0), colX.qty + 2, y + 6);
-    doc.text(String(p.rate || 0), colX.rate + 2, y + 6);
-    doc.text("-", colX.discount + 2, y + 6);
-    doc.text(String(p.total || 0), colX.total + 2, y + 6);
+    doc.text(String(i + 1), colX[0] + 2, y + 6);
+    doc.text(p.type || "-", colX[1] + 2, y + 6);
+    doc.text(String(p.qty || 0), colX[2] + 2, y + 6);
+    doc.text(`${p.rate || 0}`, colX[3] + 2, y + 6);
+    doc.text(`${p.total || 0}`, colX[4] + 2, y + 6);
 
     y += 8;
   });
 
   // ===== TOTAL SECTION =====
   let boxY = y + 10;
+ // ================= TOTAL =================
+  const taxable = grandTotal;
+  const cgst = taxable * 0.025;
+  const sgst = taxable * 0.025;
+  const finalTotal = taxable + cgst + sgst;
 
+  doc.rect(110, y + 5, 90, 35);
 
+  doc.text(`Taxable: ${taxable.toFixed(2)}`, 115, y + 12);
+  doc.text(`CGST (2.5%): ${cgst.toFixed(2)}`, 115, y + 18);
+  doc.text(`SGST (2.5%): ${sgst.toFixed(2)}`, 115, y + 24);
 
-  doc.setFontSize(9);
+  doc.setFontSize(10);
+  doc.text(`TOTAL: ${finalTotal.toFixed(2)}`, 115, y + 32);
 
-  doc.text("Invoice Subtotal", 122, boxY + 8);
- doc.text(`Rs. ${grandTotal}`, 170, boxY + 8);
-
- // Draw bottom border for Subtotal row
-doc.setLineWidth(0.2); // optional: line thickness
-doc.line(120, boxY + 10, 200, boxY + 10); // x1,y1 to x2,y2
-
-  doc.text("Tax Rate", 122, boxY + 16);
-  doc.text("0.00%", 170, boxY + 16);
-
-  doc.setLineWidth(0.2); // line thickness
-doc.line(120, boxY + 20, 200, boxY + 20); // x1, y1, x2, y2
-
-  doc.text("Sales Tax", 122, boxY + 24);
-  doc.text(`Rs. ${grandTotal * 0.00}`, 170, boxY + 24);
-
-    // Draw a line below Sales Tax
-doc.setLineWidth(0.2); // line thickness
-doc.line(120, boxY + 28, 200, boxY + 28); // x1, y1, x2, y2
-
-  doc.text("TOTAL", 122, boxY + 32);
-  doc.text(`Rs. ${grandTotal}`, 170, boxY + 32);
 
   // Draw a line below Sales Tax
-doc.setLineWidth(0.5); // line thickness
-doc.line(120, boxY + 36, 200, boxY + 36); // x1, y1, x2, y2
+  doc.setLineWidth(0.5); // line thickness
+  doc.line(120, boxY + 36, 200, boxY + 36); // x1, y1, x2, y2
+
+  // ================= BANK =================
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");   // Bold text
+  doc.text("BANK DETAILS:", 10, y + 12);
+  doc.setFont("helvetica", "normal"); // Back to normal
+  doc.text(`A/C Name: ${appConfig.bank.name}`, 10, y + 16);
+  doc.text(`Bank: ${appConfig.bank.bank}`, 10, y + 20);
+  doc.text(`A/C No: ${appConfig.bank.account}`, 10, y + 24);
+  doc.text(`IFSC: ${appConfig.bank.ifsc}`, 10, y + 28);
+
+  // ================= TERMS =================
+  doc.setFontSize(7);
+  doc.text("Terms & Conditions:", 10, y + 38);
+
+  appConfig.terms.forEach((t: string, i: number) => {
+    doc.text(`${i + 1}. ${t}`, 10, y + 42 + i * 4);
+  });
+
+   // ================= SIGNATURE =================
+   y = 260;
+  doc.setFontSize(9);
+  doc.text("For " + appConfig.company.name, 140, y);
+  doc.text("Authorized Signatory", 140, y + 20);
 
   // Footer
   doc.setFontSize(8);

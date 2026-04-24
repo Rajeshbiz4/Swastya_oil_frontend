@@ -18,11 +18,11 @@ const navigationItems: NavItem[] = [
     roles: [UserRole.ADMIN, UserRole.USER, UserRole.SALES_PERSON] // All roles can access dashboard
   },
   // Admin-only navigation
-  { 
-    label: 'User Management', 
-    path: '/users',
-    roles: [UserRole.ADMIN]
-  },
+  // { 
+  //   label: 'User Management', 
+  //   path: '/users',
+  //   roles: [UserRole.ADMIN]
+  // },
   { 
     label: 'Booking', 
     path: '/booking',
@@ -38,16 +38,12 @@ const navigationItems: NavItem[] = [
       { label: 'Batch Processing', path: '/procurement/batch', roles: [UserRole.ADMIN] },
     ],
   },
-  // { 
+  //    { 
   //   label: 'Batch', 
-  //   path: '/batch',
+  //   path: '/Batch',
   //   roles: [UserRole.ADMIN]
   // },
-  { 
-    label: 'Employee Management', 
-    path: '/employee-management',
-    roles: [UserRole.ADMIN]
-  },
+  
     { 
     label: 'Production', 
     path: '/production',
@@ -70,21 +66,21 @@ const navigationItems: NavItem[] = [
   },
   // User-only navigation
 
-  // {
-  //   label: 'Workers',
-  //   path: '/workers',
-  //   roles: [UserRole.ADMIN]
-  // },
-  // {
-  //   label: 'Attendance',
-  //   path: '/attendance',
-  //   roles: [UserRole.ADMIN]
-  // },
-  // {
-  //   label: 'Payroll',
-  //   path: '/payroll',
-  //   roles: [UserRole.ADMIN]
-  // },
+  {
+    label: 'Workers',
+    path: '/workers',
+    roles: [UserRole.USER]
+  },
+  {
+    label: 'Attendance',
+    path: '/attendance',
+    roles: [UserRole.USER]
+  },
+  {
+    label: 'Payroll',
+    path: '/payroll',
+    roles: [UserRole.USER]
+  },
   // SalesPerson-only navigation
   { 
     label: 'Sales', 
@@ -104,7 +100,7 @@ const Sidebar: React.FC = () => {
 
   const hasAccess = (item: NavItem): boolean => {
     if (!user || !item.roles) return true;
-    return item.roles.some((role) => role === user.role);
+    return item.roles.includes(user.role);
   };
 
   return (

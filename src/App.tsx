@@ -27,8 +27,6 @@ import Attendance from './pages/Attendance';
 import Payment from './pages/Payment';
 import UserManagement from './pages/UserManagement';
 import Profile from './pages/Profile';
-import EmployeeManagement from './pages/EmployeeManagement';
-import Batch from './pages/OilBatchProcessing';
 
 // Placeholder components for future implementation
 const NotFound = () => <div className="page-placeholder">Page Not Found</div>;
@@ -144,29 +142,19 @@ const AppContent: React.FC = () => {
               <ProductionImproved />
             </ProtectedRoute>
           } />
-           <Route path="batch" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
-              <Batch />
-            </ProtectedRoute>
-          } />
-          <Route path="employee-management" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
-              <EmployeeManagement />
-            </ProtectedRoute>
-          } />
           
           <Route path="workers" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
+            <ProtectedRoute requiredRoles={[UserRole.USER]}>
               <Worker />
             </ProtectedRoute>
           } />
           <Route path="attendance" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
+            <ProtectedRoute requiredRoles={[UserRole.USER]}>
               <Attendance />
             </ProtectedRoute>
           } />
           <Route path="payroll" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
+            <ProtectedRoute requiredRoles={[UserRole.USER]}>
               <Payment />
             </ProtectedRoute>
           } />

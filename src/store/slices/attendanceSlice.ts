@@ -258,6 +258,49 @@ const attendanceSlice = createSlice({
       state.loading = false;
       state.error = action.payload as string;
     });
+
+    // Update attendance
+    builder.addCase(updateAttendance.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(updateAttendance.fulfilled, (state, action: PayloadAction<Attendance>) => {
+      state.loading = false;
+      const index = state.attendance.findIndex((a) => a._id === action.payload._id);
+      if (index !== -1) {
+        state.attendance[index] = action.payload;
+      }
+    });
+    builder.addCase(updateAttendance.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Bulk record attendance
+    builder.addCase(bulkRecordAttendance.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(bulkRecordAttendance.fulfilled, (state) => {
+      state.loading = false;
+    });
+    builder.addCase(bulkRecordAttendance.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Get monthly attendance
+    builder.addCase(getMonthlyAttendance.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(getMonthlyAttendance.fulfilled, (state) => {
+      state.loading = false;
+    });
+    builder.addCase(getMonthlyAttendance.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
   }
 });
 

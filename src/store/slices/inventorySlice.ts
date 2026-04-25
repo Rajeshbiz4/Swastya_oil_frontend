@@ -103,7 +103,6 @@ export const fetchRawOilInventory = createAsyncThunk<RawOilInventory[]>(
   'inventory/fetchRawOil',
   async (_, { rejectWithValue }) => {
     try {
-      debugger;
       const response = await api.get<ApiResponse<{ inventory: RawOilInventory[]; pagination: any }>>('/inventory/raw-oil');
       if (response.data.success && response.data.data) {
         return response.data.data.inventory || [];

@@ -26,6 +26,8 @@ import Worker from './pages/Worker';
 import Attendance from './pages/Attendance';
 import Payment from './pages/Payment';
 import UserManagement from './pages/UserManagement';
+import EmployeeManagement from './pages/EmployeeManagement';
+import Maintenance from './pages/Maintenance';
 import Profile from './pages/Profile';
 
 // Placeholder components for future implementation
@@ -143,6 +145,11 @@ const AppContent: React.FC = () => {
             </ProtectedRoute>
           } />
           
+          <Route path="employees" element={
+            <ProtectedRoute requiredRoles={[UserRole.USER, UserRole.ADMIN]}>
+              <EmployeeManagement />
+            </ProtectedRoute>
+          } />
           <Route path="workers" element={
             <ProtectedRoute requiredRoles={[UserRole.USER]}>
               <Worker />
@@ -168,6 +175,13 @@ const AppContent: React.FC = () => {
           
           {/* Profile route for all authenticated users */}
           <Route path="profile" element={<Profile />} />
+
+          {/* Maintenance */}
+          <Route path="maintenance" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
+              <Maintenance />
+            </ProtectedRoute>
+          } />
         </Route>
         
         {/* Catch all route */}

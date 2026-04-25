@@ -3,9 +3,17 @@ import api from '../../services/api';
 
 interface WorkerPayment {
   _id: string;
-  workerId: string;
+  workerId: string | { _id: string; name: string; employeeId: string };
   paymentDate: string;
   paymentMonth: string;
+  monthlySalary: number;
+  presentDays: number;
+  weeklyOffDays: number;
+  paidLeaveDays: number;
+  unpaidLeaveDays: number;
+  holidayDays: number;
+  absentDays: number;
+  perDayRate: number;
   basicWage: number;
   bonusAmount: number;
   deductions: number;

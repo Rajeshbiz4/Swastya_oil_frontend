@@ -203,7 +203,29 @@ const Inventory: React.FC = () => {
         }, {} as Record<string, any>);
         return Object.values(groupedPackaging);
       case 'finished-goods':
-        return finishedGoods;
+        const groupedFinishedGoods = finishedGoods.reduce((acc, item) => {
+          const key = item.packagingType;
+          if (!acc[key]) {
+            acc[key] = {
+              _id: key,
+              packagingType: key,
+              totalQuantity: 0,
+              totalValue: 0,
+              averageCost: 0,
+              itemCount: 0,
+              costs: []
+            };
+          }
+          acc[key].totalQuantity += item.quantity || 0;
+          acc[key].totalValue += (item.quantity * item.unitCost) || 0;
+          acc[key].costs.push(item.unitCost || 0);
+          acc[key].itemCount += 1;
+          if (acc[key].costs.length > 0) {
+            acc[key].averageCost = acc[key].costs.reduce((sum, cost) => sum + cost, 0) / acc[key].costs.length;
+          }
+          return acc;
+        }, {} as Record<string, any>);
+        return Object.values(groupedFinishedGoods);
       default:
         return [];
     }
@@ -260,18 +282,22 @@ const Inventory: React.FC = () => {
       case 'finished-goods':
         return (
           <div className="inventory-summary">
-            {/* <div className="summary-card">
+            <div className="summary-card">
               <h4>Total Quantity</h4>
               <div className="summary-value">{finishedGoodsSummary.totalQuantity.toLocaleString()}</div>
             </div>
             <div className="summary-card">
-              <h4>Total Value</h4>
-              <div className="summary-value">₹{finishedGoodsSummary.totalValue.toLocaleString()}</div>
-            </div>
-            <div className="summary-card">
               <h4>Active Batches</h4>
               <div className="summary-value">{finishedGoodsSummary.activeBatches}</div>
-            </div> */}
+            </div>
+            <div className="summary-card">
+              <h4>Packaging Types</h4>
+              <div className="summary-value">{Object.keys(finishedGoods.reduce((acc, item) => {
+                const key = item.packagingType;
+                acc[key] = true;
+                return acc;
+              }, {} as Record<string, boolean>)).length}</div>
+            </div>
           </div>
         );
       default:
@@ -427,25 +453,21 @@ const Inventory: React.FC = () => {
             ))}
           </div>
         )}
+
         {activeTab === 'finished-goods' && (
           <div className="packaging-cards-grid">
-            {(() => {
-              const byType = finishedGoods.reduce((acc, item) => {
-                const type = (item as any).oilType || 'Unknown';
-                if (!acc[type]) {
-                  acc[type] = { oilType: type, totalQty: 0, items: [] as typeof finishedGoods };
+            {finishedGoods.length > 0 ? (
+              Object.entries(finishedGoods.reduce((acc, item) => {
+                const key = (item as any).oilType || 'Unknown';
+                if (!acc[key]) {
+                  acc[key] = { oilType: key, totalQty: 0, items: [] as typeof finishedGoods };
                 }
-                acc[type].totalQty += item.quantity || 0;
-                acc[type].items.push(item);
+                acc[key].totalQty += item.quantity || 0;
+                acc[key].items.push(item);
                 return acc;
-              }, {} as Record<string, { oilType: string; totalQty: number; items: typeof finishedGoods }>);
-
-              const groups = Object.values(byType);
-              if (groups.length === 0) {
-                return <div className="empty-state" style={{ gridColumn: '1/-1' }}>No finished goods inventory found</div>;
-              }
-              return groups.map((group) => (
-                <div key={group.oilType} className="packaging-card">
+              }, {} as Record<string, { oilType: string; totalQty: number; items: typeof finishedGoods }>))
+              .map(([key, group]) => (
+                <div key={key} className="packaging-card">
                   <div className="packaging-card-header">
                     <h3>{group.oilType.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}</h3>
                   </div>
@@ -462,11 +484,14 @@ const Inventory: React.FC = () => {
                     ))}
                   </div>
                 </div>
-              ));
-            })()}
+              ))
+            ) : (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: '#999' }}>
+                No finished goods inventory found
+              </div>
+            )}
           </div>
         )}
-
       </div>
     </div>
   );

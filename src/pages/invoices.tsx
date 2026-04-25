@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../components/UI/DataTable';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../store';
+import api, { ApiResponse } from '../services/api';
 import jsPDF from "jspdf";
 import logo from './src/assets/logo.jpeg';
 import { appConfig  } from "../config/appConfig";
@@ -12,6 +13,7 @@ import {
   deleteInvoice,
   Invoice
 } from '../store/slices/invoiceSlice';
+import { fetchFinishedGoodsInventory } from '../store/slices/inventorySlice';
 import './Pages.css';
 
 const styles = {
@@ -87,6 +89,10 @@ const InvoicePage: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState(null);
 
   const { invoices, loading, error } = useAppSelector((state: any) => state.invoice);
+  const finishedGoods = useAppSelector((state: any) => state.inventory?.finishedGoods || []) as Array<{ packagingType: string; oilType: string }>;
+  const packagingTypes = Array.from(new Set(finishedGoods.map((item) => item.packagingType).filter(Boolean) as string[])).sort() as string[];
+  const oilTypes = Array.from(new Set(finishedGoods.map((item) => item.oilType).filter(Boolean) as string[])).sort() as string[];
+  const [packagingRateCache, setPackagingRateCache] = useState<Record<string, number>>({});
 //    console.log("Invoices from store:", invoices);
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -103,13 +109,14 @@ const InvoicePage: React.FC = () => {
     remarks: '',
   });
 
-  // Load invoices
+  // Load invoices and finished goods inventory for packaging type options
   useEffect(() => {
     dispatch(fetchInvoices());
+    dispatch(fetchFinishedGoodsInventory());
   }, [dispatch]);
 
-   const [products, setProducts] = useState([
-    { type: "", rate: "", qty: "", total: 0 }
+  const [products, setProducts] = useState<ProductRow[]>([
+    { oilType: "", type: "", rate: "", qty: "", total: 0 }
   ]);
 
   useEffect(() => {
@@ -117,24 +124,68 @@ const InvoicePage: React.FC = () => {
     setDate(new Date().toISOString().split("T")[0]);
   }, []);
 
-  const handleProductChange = (index, field, value) => {
-    const updated = [...products];
-    updated[index][field] = value;
+  type ProductRow = {
+    oilType: string;
+    type: string;
+    rate: number | string;
+    qty: string;
+    total: number;
+  };
 
-    if (field === "rate" || field === "qty") {
-      const rate = parseFloat(updated[index].rate) || 0;
-      const qty = parseFloat(updated[index].qty) || 0;
-      updated[index].total = rate * qty;
+  const fetchPackagingTypeRate = async (packagingType: string): Promise<number> => {
+    if (!packagingType) return 0;
+    if (packagingRateCache[packagingType] !== undefined) {
+      return packagingRateCache[packagingType];
     }
 
+    try {
+      const response = await api.get<ApiResponse<{ packagingType: string; ratePerUnit: number; averageRate: number; totalRate: number }>>(
+        `/inventory/packaging/rate/${encodeURIComponent(packagingType)}`
+      );
+
+      if (response.data && response.data.data) {
+        const totalRate = response.data.data.totalRate || 0;
+        setPackagingRateCache((prev) => ({ ...prev, [packagingType]: totalRate }));
+        return totalRate;
+      }
+    } catch (error: any) {
+      console.error('Error fetching packaging rate:', error);
+    }
+
+    return 0;
+  };
+
+  const handleProductChange = async (
+    index: number,
+    field: keyof ProductRow,
+    value: string
+  ) => {
+    const updated = [...products];
+    const row = { ...updated[index] };
+
+    if (field === "oilType" || field === "type" || field === "qty") {
+      row[field] = value;
+    } else if (field === "rate") {
+      row.rate = value;
+    }
+
+    if (field === "type") {
+      const totalRate = await fetchPackagingTypeRate(value);
+      row.rate = totalRate;
+    }
+
+    const rate = parseFloat(row.rate as string) || Number(row.rate) || 0;
+    const qty = parseFloat(row.qty || "") || 0;
+    row.total = rate * qty;
+    updated[index] = row;
     setProducts(updated);
   };
 
   const addRow = () => {
-    setProducts([...products, { type: "", rate: "", qty: "", total: 0 }]);
+    setProducts([...products, { oilType: "", type: "", rate: "", qty: "", total: 0 }]);
   };
 
-  const removeRow = (index) => {
+  const removeRow = (index: number) => {
     setProducts(products.filter((_, i) => i !== index));
   };
 
@@ -153,6 +204,7 @@ const InvoicePage: React.FC = () => {
       address,
       gstNo,
       products: products.map(p => ({
+        oilType: p.oilType,
         type: p.type,
         rate: Number(p.rate),
         qty: Number(p.qty)
@@ -170,8 +222,8 @@ const InvoicePage: React.FC = () => {
     setCustomerName("");
     setContact("");
     setAddress("");
-    setGstNo("");
-    setProducts([{ type: "", rate: "", qty: "", total: 0 }]);
+    setGstNo(appConfig.company.gstNumber);
+    setProducts([{ oilType: "", type: "", rate: "", qty: "", total: 0 }]);
     setNote("");
 
     setShowForm(false);
@@ -250,7 +302,7 @@ const handlePrintPreview = () => {
   doc.setFont("helvetica", "normal");  
   doc.text(customerName || "-", 12, 46);
   doc.text(address || "-", 12, 51);
-  doc.text(`GSTIN: ${gstNo || "-"}`, 12, 56);
+  doc.text(`GSTIN: ${appConfig.company.gstNumber || "-"}`, 12, 56);
 
   doc.setFont("helvetica", "bold");  
   doc.text("DELIVERED TO", 107, 41);
@@ -267,8 +319,8 @@ const handlePrintPreview = () => {
  // ================= TABLE =================
   let startY = 80;
 
-  const headers = ["Sr", "Item Details", "Qty", "Rate", "Amount"];
-  const colX = [10, 25, 120, 145, 170];
+  const headers = ["Sr", "Oil Type", "Packaging Type", "Qty", "Rate", "Amount"];
+  const colX = [10, 20, 50, 120, 145, 170];
 
   doc.setFillColor(230, 230, 230);
   doc.rect(10, startY, 190, 8, "F");
@@ -283,10 +335,11 @@ const handlePrintPreview = () => {
   products.forEach((p, i) => {
     doc.rect(10, y, 190, 8);
     doc.text(String(i + 1), colX[0] + 2, y + 6);
-    doc.text(p.type || "-", colX[1] + 2, y + 6);
-    doc.text(String(p.qty || 0), colX[2] + 2, y + 6);
-    doc.text(`${p.rate || 0}`, colX[3] + 2, y + 6);
-    doc.text(`${p.total || 0}`, colX[4] + 2, y + 6);
+    doc.text(p.oilType || "-", colX[1] + 2, y + 6);
+    doc.text(p.type || "-", colX[2] + 2, y + 6);
+    doc.text(String(p.qty || 0), colX[3] + 2, y + 6);
+    doc.text(`${p.rate || 0}`, colX[4] + 2, y + 6);
+    doc.text(`${p.total || 0}`, colX[5] + 2, y + 6);
 
     y += 8;
   });
@@ -454,7 +507,7 @@ const handlePrintPreview = () => {
             setCustomerName(row.customerName);
             setContact(row.contact);
             setAddress(row.address);
-            setGstNo(row.gstNo);
+            setGstNo(appConfig.company.gstNumber);
             setNote(row.note);
             handlePrintPreview();
             
@@ -484,14 +537,15 @@ const handlePrintPreview = () => {
 
       <div style={styles.row}>
         <input style={styles.input} placeholder="Address" value={address} onChange={(e) => setAddress(e.target.value)} />
-        <input style={styles.input} placeholder="GST No (optional)" value={gstNo} onChange={(e) => setGstNo(e.target.value)} />
+        <input style={styles.input} placeholder="GST No (optional)" value={appConfig.company.gstNumber} onChange={(e) => setGstNo(e.target.value)} readOnly />
       </div>
 
       <h3>Product Details</h3>
       <table style={styles.table}>
         <thead>
           <tr>
-            <th style={styles.th}>Type</th>
+            <th style={styles.th}>Oil Type</th>
+            <th style={styles.th}>Packaging Type</th>
             <th style={styles.th}>Rate</th>
             <th style={styles.th}>Qty</th>
             <th style={styles.th}>Total</th>
@@ -502,10 +556,40 @@ const handlePrintPreview = () => {
           {products.map((item, index) => (
             <tr key={index}>
               <td style={styles.td}>
-                <input style={styles.input} value={item.type} onChange={(e) => handleProductChange(index, "type", e.target.value)} />
+                <select
+                  style={styles.input}
+                  value={item.oilType}
+                  onChange={(e) => handleProductChange(index, "oilType", e.target.value)}
+                >
+                  <option value="">Select Oil Type</option>
+                  {oilTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
               </td>
               <td style={styles.td}>
-                <input style={styles.input} type="number" value={item.rate} onChange={(e) => handleProductChange(index, "rate", e.target.value)} />
+                <select
+                  style={styles.input}
+                  value={item.type}
+                  onChange={(e) => handleProductChange(index, "type", e.target.value)}
+                >
+                  <option value="">Select Packaging Type</option>
+                  {packagingTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </td>
+              <td style={styles.td}>
+                <input
+                  style={styles.input}
+                  type="number"
+                  value={item.rate}
+                  readOnly
+                />
               </td>
               <td style={styles.td}>
                 <input style={styles.input} type="number" value={item.qty} onChange={(e) => handleProductChange(index, "qty", e.target.value)} />
@@ -674,7 +758,8 @@ const handlePrintPreview = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#eee', textAlign: 'left' }}>
-              <th style={{ padding: '6px', border: '1px solid #ccc' }}>Type</th>
+              <th style={{ padding: '6px', border: '1px solid #ccc' }}>Oil Type</th>
+              <th style={{ padding: '6px', border: '1px solid #ccc' }}>Packaging Type</th>
               <th style={{ padding: '6px', border: '1px solid #ccc' }}>Qty</th>
               <th style={{ padding: '6px', border: '1px solid #ccc' }}>Rate</th>
               <th style={{ padding: '6px', border: '1px solid #ccc' }}>Total</th>
@@ -683,6 +768,7 @@ const handlePrintPreview = () => {
           <tbody>
             {invoice.products.map((p, idx) => (
               <tr key={idx}>
+                <td style={{ padding: '6px', border: '1px solid #ccc' }}>{p.oilType}</td>
                 <td style={{ padding: '6px', border: '1px solid #ccc' }}>{p.type}</td>
                 <td style={{ padding: '6px', border: '1px solid #ccc' }}>{p.qty}</td>
                 <td style={{ padding: '6px', border: '1px solid #ccc' }}>₹{p.rate}</td>

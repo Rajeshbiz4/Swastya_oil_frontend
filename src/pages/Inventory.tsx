@@ -203,7 +203,29 @@ const Inventory: React.FC = () => {
         }, {} as Record<string, any>);
         return Object.values(groupedPackaging);
       case 'finished-goods':
-        return finishedGoods;
+        const groupedFinishedGoods = finishedGoods.reduce((acc, item) => {
+          const key = item.packagingType;
+          if (!acc[key]) {
+            acc[key] = {
+              _id: key,
+              packagingType: key,
+              totalQuantity: 0,
+              totalValue: 0,
+              averageCost: 0,
+              itemCount: 0,
+              costs: []
+            };
+          }
+          acc[key].totalQuantity += item.quantity || 0;
+          acc[key].totalValue += (item.quantity * item.unitCost) || 0;
+          acc[key].costs.push(item.unitCost || 0);
+          acc[key].itemCount += 1;
+          if (acc[key].costs.length > 0) {
+            acc[key].averageCost = acc[key].costs.reduce((sum, cost) => sum + cost, 0) / acc[key].costs.length;
+          }
+          return acc;
+        }, {} as Record<string, any>);
+        return Object.values(groupedFinishedGoods);
       default:
         return [];
     }
@@ -265,12 +287,16 @@ const Inventory: React.FC = () => {
               <div className="summary-value">{finishedGoodsSummary.totalQuantity.toLocaleString()}</div>
             </div>
             <div className="summary-card">
-              <h4>Total Value</h4>
-              <div className="summary-value">₹{finishedGoodsSummary.totalValue.toLocaleString()}</div>
-            </div>
-            <div className="summary-card">
               <h4>Active Batches</h4>
               <div className="summary-value">{finishedGoodsSummary.activeBatches}</div>
+            </div>
+            <div className="summary-card">
+              <h4>Packaging Types</h4>
+              <div className="summary-value">{Object.keys(finishedGoods.reduce((acc, item) => {
+                const key = item.packagingType;
+                acc[key] = true;
+                return acc;
+              }, {} as Record<string, boolean>)).length}</div>
             </div>
           </div>
         );
@@ -425,6 +451,54 @@ const Inventory: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {activeTab === 'finished-goods' && (
+          <div className="packaging-cards-grid">
+            {finishedGoods.length > 0 ? (
+              Object.entries(finishedGoods.reduce((acc, item) => {
+                const key = item.packagingType;
+                if (!acc[key]) {
+                  acc[key] = {
+                    packagingType: key,
+                    totalQuantity: 0,
+                    totalValue: 0,
+                    averageCost: 0,
+                    costs: [],
+                    itemCount: 0
+                  };
+                }
+                acc[key].totalQuantity += item.quantity || 0;
+                acc[key].totalValue += (item.quantity * item.unitCost) || 0;
+                acc[key].costs.push(item.unitCost || 0);
+                acc[key].itemCount += 1;
+                if (acc[key].costs.length > 0) {
+                  acc[key].averageCost = acc[key].costs.reduce((sum, cost) => sum + cost, 0) / acc[key].costs.length;
+                }
+                return acc;
+              }, {} as Record<string, any>)).map(([key, item]: any) => (
+                <div key={key} className="packaging-card">
+                  <div className="packaging-card-header">
+                    <h3>{item.packagingType}</h3>
+                  </div>
+                  <div className="packaging-card-body">
+                    <div className="packaging-stat">
+                      <span className="stat-label">Total Quantity:</span>
+                      <span className="stat-value">{item.totalQuantity.toLocaleString()}</span>
+                    </div>
+                    <div className="packaging-stat">
+                      <span className="stat-label">Batches:</span>
+                      <span className="stat-value">{item.itemCount}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: '#999' }}>
+                No finished goods inventory found
+              </div>
+            )}
           </div>
         )}
       </div>

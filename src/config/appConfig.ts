@@ -5,7 +5,7 @@ export const appConfig = {
     email: 'swasthyashaktigold@gmail.com',
     contact: '+917743979251',
     contact2: '+917020375656',
-    gstNumber: '11525037000384',
+    gstNumber: 'XXAAAAA0000X000',
     PAN:'ABPCS4591P',
     FSSAI_LIC_NO:'11525037000384'
   },

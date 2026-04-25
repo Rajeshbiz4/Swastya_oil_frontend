@@ -132,20 +132,22 @@ const InvoicePage: React.FC = () => {
     total: number;
   };
 
-  const fetchPackagingTypeRate = async (packagingType: string): Promise<number> => {
-    if (!packagingType) return 0;
-    if (packagingRateCache[packagingType] !== undefined) {
-      return packagingRateCache[packagingType];
+  const fetchPackagingTypeRate = async (packagingType: string, oilType: string): Promise<number> => {
+    if (!packagingType || !oilType) return 0;
+
+    const cacheKey = `${packagingType}-${oilType}`;
+    if (packagingRateCache[cacheKey] !== undefined) {
+      return packagingRateCache[cacheKey];
     }
 
     try {
-      const response = await api.get<ApiResponse<{ packagingType: string; ratePerUnit: number; averageRate: number; totalRate: number }>>(
-        `/inventory/packaging/rate/${encodeURIComponent(packagingType)}`
+      const response = await api.get<ApiResponse<{ packagingType: string; oilType: string; ratePerUnit: number; averageRate: number; totalRate: number }>>(
+        `/inventory/packaging/rate/${encodeURIComponent(packagingType)}/${encodeURIComponent(oilType)}`
       );
 
       if (response.data && response.data.data) {
         const totalRate = response.data.data.totalRate || 0;
-        setPackagingRateCache((prev) => ({ ...prev, [packagingType]: totalRate }));
+        setPackagingRateCache((prev) => ({ ...prev, [cacheKey]: totalRate }));
         return totalRate;
       }
     } catch (error: any) {
@@ -170,8 +172,15 @@ const InvoicePage: React.FC = () => {
     }
 
     if (field === "type") {
-      const totalRate = await fetchPackagingTypeRate(value);
-      row.rate = totalRate;
+      if (row.oilType && value) {
+        const totalRate = await fetchPackagingTypeRate(value, row.oilType);
+        row.rate = totalRate;
+      }
+    } else if (field === "oilType") {
+      if (row.type && value) {
+        const totalRate = await fetchPackagingTypeRate(row.type, value);
+        row.rate = totalRate;
+      }
     }
 
     const rate = parseFloat(row.rate as string) || Number(row.rate) || 0;

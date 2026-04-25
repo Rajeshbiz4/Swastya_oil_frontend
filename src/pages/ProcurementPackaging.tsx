@@ -113,8 +113,35 @@ const ProcurementPackaging: React.FC = () => {
     }
   };
 
-  // Calculate statistics
-  const stats = {
+  // Calculate statistics by packaging type
+  const statsByPackagingType = packagingPurchases.reduce((acc, purchase) => {
+    const type = purchase.packagingType || 'Unknown';
+    if (!acc[type]) {
+      acc[type] = {
+        totalQuantity: 0,
+        totalValue: 0,
+        count: 0,
+        rates: []
+      };
+    }
+    acc[type].totalQuantity += purchase.quantity || 0;
+    acc[type].totalValue += (purchase.quantity || 0) * (purchase.ratePerUnit || 0);
+    acc[type].count += 1;
+    acc[type].rates.push(purchase.ratePerUnit || 0);
+    return acc;
+  }, {} as Record<string, { totalQuantity: number; totalValue: number; count: number; rates: number[] }>);
+
+  // Calculate average rate for each packaging type
+  const packagingTypeStats = Object.entries(statsByPackagingType).map(([type, data]) => ({
+    type,
+    totalQuantity: data.totalQuantity,
+    averageRate: data.rates.length > 0 ? data.rates.reduce((sum, rate) => sum + rate, 0) / data.rates.length : 0,
+    totalValue: data.totalValue,
+    purchaseCount: data.count
+  }));
+
+  // Overall stats
+  const overallStats = {
     totalPurchases: packagingPurchases.length,
     totalQuantity: packagingPurchases.reduce((sum, p) => sum + (p.quantity || 0), 0),
     totalValue: packagingPurchases.reduce((sum, p) => sum + ((p.quantity || 0) * (p.ratePerUnit || 0)), 0),
@@ -184,21 +211,67 @@ const ProcurementPackaging: React.FC = () => {
         </button>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="stats-grid" style={{ marginBottom: '2rem' }}>
-        <div className="stat-card">
-          <h4>Total Purchases</h4>
-          <div className="stat-value">{stats.totalPurchases}</div>
+      {/* Packaging Type Statistics */}
+      {packagingTypeStats.length > 0 && (
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ marginBottom: '1rem', color: '#2c3e50', fontSize: '1.2rem', fontWeight: '600' }}>
+            📦 Packaging Type Breakdown
+          </h3>
+          <div className="packaging-tiles-grid">
+            {packagingTypeStats.map((stat) => (
+              <div key={stat.type} className="packaging-tile-card">
+                <div className="tile-icon">
+                  📦
+                </div>
+                <h4 style={{
+                  marginBottom: '0.5rem',
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  textTransform: 'capitalize'
+                }}>
+                  {stat.type.replace(/_/g, ' ')}
+                </h4>
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.25rem' }}>
+                    Total Quantity
+                  </div>
+                  <div style={{
+                    fontSize: '1.8rem',
+                    fontWeight: '700',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {stat.totalQuantity.toLocaleString()} Units
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.25rem' }}>
+                    Average Rate
+                  </div>
+                  <div style={{
+                    fontSize: '1.4rem',
+                    fontWeight: '600'
+                  }}>
+                    ₹{stat.averageRate.toFixed(2)}
+                  </div>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '1rem',
+                  paddingTop: '1rem',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                  <span style={{ fontSize: '0.85rem', opacity: 0.8 }}>
+                    {stat.purchaseCount} purchase{stat.purchaseCount !== 1 ? 's' : ''}
+                  </span>
+                  <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                    ₹{stat.totalValue.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="stat-card">
-          <h4>Total Quantity</h4>
-          <div className="stat-value">{stats.totalQuantity.toLocaleString()} Units</div>
-        </div>
-        <div className="stat-card">
-          <h4>Total Value</h4>
-          <div className="stat-value" style={{ color: '#27ae60' }}>₹{stats.totalValue.toLocaleString()}</div>
-        </div>
-      </div>
+      )}
 
       {/* Search Bar */}
       <div className="search-section" style={{ marginBottom: '1.5rem' }}>

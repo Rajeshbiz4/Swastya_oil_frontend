@@ -112,7 +112,7 @@ const OilBatchProcessing: React.FC = () => {
     { key: 'packagingType', title: 'Packaging Type', sortable: true },
     { key: 'code', title: 'Product Code', sortable: true },
     { key: 'weight', title: 'Weight', sortable: true, render: (value: number) => value ? `${value.toLocaleString()} g` : '-' },
-    { key: 'quantity', title: 'Quantity (L)', sortable: true, render: (value: number) => value.toLocaleString() },
+    { key: 'quantity', title: 'Quantity', sortable: true, render: (value: number) => value.toLocaleString() },
     { 
       key: 'status', 
       title: 'Status', 
@@ -121,7 +121,8 @@ const OilBatchProcessing: React.FC = () => {
           'pending': '#f39c12',
           'processing': '#3498db',
           'completed': '#27ae60',
-          'cancelled': '#e74c3c'
+          'cancelled': '#e74c3c',
+          'failed': '#e74c3c'
         };
         return <span style={{ color: statusColors[value] || '#95a5a6' }}>● {value || 'pending'}</span>;
       }
@@ -166,7 +167,7 @@ const OilBatchProcessing: React.FC = () => {
     },
     { 
       name: 'quantity', 
-      label: 'Quantity (L)', 
+      label: 'Quantity', 
       type: 'number', 
       required: true,
       min: '1'
@@ -190,7 +191,8 @@ const OilBatchProcessing: React.FC = () => {
       if (name === 'productTypeId' && value) {
         const selectedProductType = PRODUCT_TYPES.find((productType) => productType.value === value);
         if (selectedProductType) {
-          newData.oilType = selectedProductType.code;
+          // Map the product code to the display value from OilTypes enum
+          newData.oilType = OilTypes[selectedProductType.code as keyof typeof OilTypes] || selectedProductType.code;
           // Fetch available quantity for this oil type
           fetchAvailableQuantity(selectedProductType.code);
         }
@@ -266,7 +268,7 @@ const OilBatchProcessing: React.FC = () => {
         .reduce((sum: number, item: any) => sum + item.totalQuantity, 0);
 
       if (totalAvailableQuantity < requiredQuantity) {
-        setModalError(`Insufficient stock. Available: ${totalAvailableQuantity.toLocaleString()}L, Required: ${requiredQuantity.toLocaleString()}L`);
+        setModalError(`Insufficient stock. Available: ${totalAvailableQuantity.toLocaleString()}Kg, Required: ${requiredQuantity.toLocaleString()}Kg`);
         return false;
       }
 
@@ -434,7 +436,7 @@ const OilBatchProcessing: React.FC = () => {
       debugger;
       const totalWeight = formData.quantity * (selectedProductType.weight / 1000);
       //Update raw oil inventory stock after created batch
-      let rawInvUpdated:boolean = await updateRawOilInventory(selectedProductType.code+'1',totalWeight );
+      let rawInvUpdated:boolean = await updateRawOilInventory(selectedProductType.code,totalWeight );
       if(rawInvUpdated){
         // Update packaging inventory after batch creation
       let packagingInvUpdated= await updatePackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);

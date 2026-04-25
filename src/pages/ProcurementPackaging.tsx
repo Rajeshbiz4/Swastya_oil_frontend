@@ -5,6 +5,7 @@ import { PackagingPurchase } from '../services/api';
 import { packagingPurchaseAPI } from '../services/api';
 import { PackagingType, FormField } from '../types';
 import './Pages.css';
+import { appConfig } from '../config/appConfig';
 
 const ProcurementPackaging: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
@@ -83,16 +84,22 @@ const ProcurementPackaging: React.FC = () => {
     try {
       setFormLoading(true);
 
-      const payload = formData.items.map(item => ({
-        supplierName: formData.supplierName,
-        packagingType: item.packagingType,
-        quantity: item.quantity,
-        ratePerUnit: item.ratePerUnit,
-        paymentMode: formData.paymentMode,
-        invoiceNumber: formData.invoiceNumber,
-        invoiceDate: formData.invoiceDate,
-        deliveryDate: formData.deliveryDate
-      }));
+      const payload = formData.items.map(item => {
+        const isBundle = item.packagingType === PackagingType.POLYTHENE_BUNDLE;
+        const adjustedQuantity = isBundle ? item.quantity * (appConfig.packaging?.bundles?.[PackagingType.POLYTHENE_BUNDLE]?.quantity ?? 210) : item.quantity;
+        const adjustedRatePerUnit = isBundle ? item.ratePerUnit / (appConfig.packaging?.bundles?.[PackagingType.POLYTHENE_BUNDLE]?.quantity ?? 210) : item.ratePerUnit;
+
+        return {
+          supplierName: formData.supplierName,
+          packagingType: item.packagingType,
+          quantity: adjustedQuantity,
+          ratePerUnit: adjustedRatePerUnit,
+          paymentMode: formData.paymentMode,
+          invoiceNumber: formData.invoiceNumber,
+          invoiceDate: formData.invoiceDate,
+          deliveryDate: formData.deliveryDate
+        };
+      });
 
       await packagingPurchaseAPI.create(payload);
 
@@ -214,9 +221,6 @@ const ProcurementPackaging: React.FC = () => {
       {/* Packaging Type Statistics */}
       {packagingTypeStats.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ marginBottom: '1rem', color: '#2c3e50', fontSize: '1.2rem', fontWeight: '600' }}>
-            📦 Packaging Type Breakdown
-          </h3>
           <div className="packaging-tiles-grid">
             {packagingTypeStats.map((stat) => (
               <div key={stat.type} className="packaging-tile-card">

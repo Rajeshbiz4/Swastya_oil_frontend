@@ -50,5 +50,14 @@ export const appConfig = {
       OLIVE_OIL: '15091000',
       PALM_OIL: '15119010'
     }
+  },
+
+  packaging: {
+    bundles: {
+      'Polythene Bundle': {
+        quantity: 200,
+        unit: 'Polythene Bag'
+      }
+    }
   }
 };

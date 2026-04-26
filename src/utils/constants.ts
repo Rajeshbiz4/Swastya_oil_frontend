@@ -55,12 +55,12 @@ export const BUSINESS_CONSTANTS = {
 };
 
 export const PRODUCT_TYPES = [
-  { value: 'coconut-oil-500ml-bottle', label: 'Coconut Oil 500ml Packet', packagingType: 'Coconut Oil 500ml Packet', weight: 450.0, code: 'COCONUT_OIL', type: 'Polythene'},
-  { value: 'sunflower-oil-1l-can', label: 'Sunflower Oil 1L Packet', packagingType: 'Sunflower Oil 1L Packet', weight: 910.0, code: 'SUNFLOWER_OIL', type: 'Polythene' },
-  { value: 'soyabean-oil-1l-can', label: 'Soyabean Oil 1L Packet', packagingType: 'Soyabean Oil 1L Packet', weight: 910.0, code: 'SOYABEAN_OIL', type: 'Polythene' },
+  { value: 'coconut-oil-500ml-bottle', label: 'Coconut Oil 500ml Packet', packagingType: 'Coconut Oil 500ml Packet', weight: 450.0, code: 'COCONUT_OIL', type: 'Polythene Bundle' },
+  { value: 'sunflower-oil-1l-can', label: 'Sunflower Oil 1L Packet', packagingType: 'Sunflower Oil 1L Packet', weight: 910.0, code: 'SUNFLOWER_OIL', type: 'Polythene Bundle' },
+  { value: 'soyabean-oil-1l-can', label: 'Soyabean Oil 1L Packet', packagingType: 'Soyabean Oil 1L Packet', weight: 910.0, code: 'SOYABEAN_OIL', type: 'Polythene Bundle' },
   { value: 'mustard-oil-2l-drum', label: 'Mustard Oil 2L Drum', packagingType: 'Mustard Oil 2L Drum', weight: 1820.0, code: 'MUSTARD_OIL', type: '2L Drum' },
-  { value: 'groundnut-oil-500ml-bottle', label: 'Groundnut Oil 500ml Packet', packagingType: 'Groundnut Oil 500ml Packet', weight: 450.0, code: 'GROUNDNUT_OIL', type: 'Polythene' },
-  { value: 'olive-oil-1l-bottle', label: 'Olive Oil 1L Packet', packagingType: 'Olive Oil 1L Packet', weight: 910.0, code: 'OLIVE_OIL', type: 'Polythene' },
+  { value: 'groundnut-oil-500ml-bottle', label: 'Groundnut Oil 500ml Packet', packagingType: 'Groundnut Oil 500ml Packet', weight: 450.0, code: 'GROUNDNUT_OIL', type: 'Polythene Bundle' },
+  { value: 'olive-oil-1l-bottle', label: 'Olive Oil 1L Packet', packagingType: 'Olive Oil 1L Packet', weight: 910.0, code: 'OLIVE_OIL', type: 'Polythene Bundle' },
   { value: 'soyabean-oil-5l-can', label: 'Soyabean Oil 5L Can', packagingType: 'Soyabean Oil 5L Can', weight: 4550.0, code: 'SOYABEAN_OIL', type: '5L Can' },
   { value: 'soyabean-oil-10l-can', label: 'Soyabean Oil 10L Can', packagingType: 'Soyabean Oil 10L Can', weight: 9100.0, code: 'SOYABEAN_OIL', type: '10L Can' },
   { value: 'soyabean-oil-12l-can', label: 'Soyabean Oil 12L Can', packagingType: 'Soyabean Oil 12L Can', weight: 10920.0, code: 'SOYABEAN_OIL', type: '12L Can' },

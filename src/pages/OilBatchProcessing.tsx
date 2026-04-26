@@ -444,7 +444,7 @@ const OilBatchProcessing: React.FC = () => {
 // ✅ Update finished goods inventory
       let finishedInvUpdated = await updateFinishedGoodsInventory(
         selectedProductType.code,
-        selectedProductType.type, // IMPORTANT: use `type` not packagingType
+        selectedProductType.packagingType, // IMPORTANT: use `packagingType` not type for finished goods
         formData.quantity,
         createdBatch._id
       );

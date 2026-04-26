@@ -279,27 +279,7 @@ const Inventory: React.FC = () => {
             </div> */}
           </div>
         );
-      case 'finished-goods':
-        return (
-          <div className="inventory-summary">
-            <div className="summary-card">
-              <h4>Total Quantity</h4>
-              <div className="summary-value">{finishedGoodsSummary.totalQuantity.toLocaleString()}</div>
-            </div>
-            <div className="summary-card">
-              <h4>Active Batches</h4>
-              <div className="summary-value">{finishedGoodsSummary.activeBatches}</div>
-            </div>
-            <div className="summary-card">
-              <h4>Packaging Types</h4>
-              <div className="summary-value">{Object.keys(finishedGoods.reduce((acc, item) => {
-                const key = item.packagingType;
-                acc[key] = true;
-                return acc;
-              }, {} as Record<string, boolean>)).length}</div>
-            </div>
-          </div>
-        );
+
       default:
         return null;
     }
@@ -458,30 +438,35 @@ const Inventory: React.FC = () => {
           <div className="packaging-cards-grid">
             {finishedGoods.length > 0 ? (
               Object.entries(finishedGoods.reduce((acc, item) => {
-                const key = (item as any).oilType || 'Unknown';
+                const key = item.packagingType;
                 if (!acc[key]) {
-                  acc[key] = { oilType: key, totalQty: 0, items: [] as typeof finishedGoods };
+                  acc[key] = { packagingType: key, totalQty: 0 };
                 }
                 acc[key].totalQty += item.quantity || 0;
-                acc[key].items.push(item);
                 return acc;
-              }, {} as Record<string, { oilType: string; totalQty: number; items: typeof finishedGoods }>))
+              }, {} as Record<string, { packagingType: string; totalQty: number }>))
               .map(([key, group]) => (
-                <div key={key} className="packaging-card">
-                  <div className="packaging-card-header">
-                    <h3>{group.oilType.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}</h3>
+                <div key={key} className="packaging-tile-card">
+                  <div className="tile-icon">
+                    📦
                   </div>
-                  <div className="packaging-card-body">
-                    <div className="packaging-stat">
-                      <span className="stat-label">Total Qty:</span>
-                      <span className="stat-value" style={{ color: '#27ae60', fontWeight: 700 }}>{group.totalQty.toLocaleString()}</span>
+                  <h4 style={{
+                    marginBottom: '0.5rem',
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    textTransform: 'capitalize'
+                  }}>
+                    {group.packagingType.replace(/_/g, ' ')}
+                  </h4>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div style={{
+                      fontSize: '4.5rem',
+                      fontWeight: '700',
+                      marginBottom: '0.5rem',
+                      color: '#27ae60'
+                    }}>
+                      {group.totalQty.toLocaleString()}
                     </div>
-                    {group.items.map((item) => (
-                      <div key={item._id} className="packaging-stat">
-                        <span className="stat-label">{item.packagingType}:</span>
-                        <span className="stat-value">{(item.quantity || 0).toLocaleString()}</span>
-                      </div>
-                    ))}
                   </div>
                 </div>
               ))

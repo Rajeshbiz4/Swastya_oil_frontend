@@ -95,6 +95,51 @@
   font-size: 0.85rem;
 }
 
+/* Packaging Type Tiles Grid */
+.packaging-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .packaging-tiles-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.packaging-tile-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.packaging-tile-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.packaging-tile-card .tile-icon {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
 .dashboard-content {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -296,7 +341,6 @@
 .filters-section {
   padding: 1.5rem;
   background-color: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
 }
 
 .filters-row {
@@ -372,33 +416,94 @@
   overflow: hidden;
 }
 
-/* Responsive Design */
+/* Packaging Cards Styles */
+.packaging-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.packaging-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.packaging-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.packaging-card-header {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.packaging-card-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.packaging-card-body {
+  padding: 1.5rem;
+}
+
+.packaging-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f2f6;
+}
+
+.packaging-stat:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-weight: 500;
+  color: #7f8c8d;
+  font-size: 0.95rem;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.packaging-stat .stat-value {
+  color: #27ae60;
+}
+
+/* Responsive adjustments for packaging cards */
 @media (max-width: 768px) {
-  .dashboard-stats {
+  .packaging-cards-grid {
     grid-template-columns: 1fr;
+    padding: 1rem;
   }
   
-  .dashboard-content {
-    grid-template-columns: 1fr;
+  .packaging-card-header {
+    padding: 1.25rem;
   }
   
-  .stat-card {
-    padding: 1.5rem;
+  .packaging-card-header h3 {
+    font-size: 1.2rem;
   }
   
-  .stat-value {
-    font-size: 1.5rem;
+  .packaging-card-body {
+    padding: 1.25rem;
   }
-  
-  .module-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-  
-  .module-actions {
-    justify-content: center;
-  }
+}
   
   .filters-row {
     flex-direction: column;
@@ -407,7 +512,6 @@
   .filter-group {
     min-width: auto;
   }
-}
 
 @media (max-width: 480px) {
   .dashboard-header h1 {
@@ -453,6 +557,29 @@
   font-size: 1.5rem;
   font-weight: 700;
   color: #2c3e50;
+}
+
+.summary-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.detail-label {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #2c3e50;
+  font-weight: 600;
 }
 
 /* Tab Buttons */
@@ -1252,4 +1379,184 @@
 .btn-danger {
   background-color: #dc3545;
   color: white;
+}
+/* ================= MODAL ================= */
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: #ffffff;
+  width: 90%;
+  max-width: 900px;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ================= HEADER ================= */
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.close-btn {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* ================= TABLE ================= */
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.custom-table thead {
+  background: #1f2937;
+  color: #ffffff;
+}
+
+.custom-table th {
+  padding: 10px;
+  font-weight: 500;
+  font-size: 14px;
+  text-align: left;
+}
+
+.custom-table td {
+  padding: 10px;
+  vertical-align: middle;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Inputs inside table */
+.custom-table input,
+.custom-table select {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  padding: 6px;
+  font-size: 14px;
+}
+
+/* ================= AMOUNT ================= */
+
+.amount-cell {
+  font-weight: 600;
+  color: #16a34a;
+  background: #f0fdf4;
+  text-align: center;
+  border-radius: 6px;
+}
+
+/* ================= ADD ROW ================= */
+
+.btn-add-row {
+  margin-top: 12px;
+  border: 1px dashed #3b82f6;
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-add-row:hover {
+  background: #dbeafe;
+}
+
+/* ================= DELETE ================= */
+
+.btn-delete {
+  border: none;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.btn-delete:hover {
+  background: #fecaca;
+}
+
+/* ================= ACTION BUTTONS ================= */
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+/* ================= TOTAL ================= */
+
+.total-box {
+  text-align: right;
+  font-weight: 600;
+  margin-top: 10px;
+  font-size: 16px;
 }

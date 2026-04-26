@@ -44,8 +44,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Check role-based access
-   console.log('ProtectedRoute - checking roles:', user.role);
-  if (requiredRoles.length > 0 && !requiredRoles.includes(user?.role)) {
+  console.log('ProtectedRoute - checking roles:', user.role);
+  if (requiredRoles.length > 0 && !requiredRoles.some((role) => role === user?.role)) {
     return (
       <div className="access-denied">
         <h2>Access Denied</h2>

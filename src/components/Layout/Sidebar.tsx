@@ -35,6 +35,7 @@ const navigationItems: NavItem[] = [
     children: [
       { label: 'Oil Purchases', path: '/procurement/oil', roles: [UserRole.ADMIN] },
       { label: 'Packaging Purchases', path: '/procurement/packaging', roles: [UserRole.ADMIN] },
+      { label: 'Batch Processing', path: '/procurement/batch', roles: [UserRole.ADMIN] },
     ],
   },
   //    { 
@@ -66,19 +67,14 @@ const navigationItems: NavItem[] = [
   // User-only navigation
 
   {
-    label: 'Workers',
-    path: '/workers',
-    roles: [UserRole.USER]
+    label: 'Employee Management',
+    path: '/employees',
+    roles: [UserRole.USER, UserRole.ADMIN]
   },
   {
-    label: 'Attendance',
-    path: '/attendance',
-    roles: [UserRole.USER]
-  },
-  {
-    label: 'Payroll',
-    path: '/payroll',
-    roles: [UserRole.USER]
+    label: 'Maintenance',
+    path: '/maintenance',
+    roles: [UserRole.ADMIN, UserRole.USER]
   },
   // SalesPerson-only navigation
   { 

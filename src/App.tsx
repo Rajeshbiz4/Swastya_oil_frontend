@@ -16,9 +16,9 @@ import Dashboard from './pages/Dashboard';
 import Booking from './pages/Booking';
 import ProcurementOil from './pages/ProcurementOil';
 import ProcurementPackaging from './pages/ProcurementPackaging';
+import OilBatchProcessing from './pages/OilBatchProcessing';
 import Inventory from './pages/Inventory';
 import ProductionImproved from './pages/ProductionImproved';
-import Batch from './pages/batch';
 import Invoices from './pages/invoices';
 import Sales from './pages/Sales';
 import Reports from './pages/Reports';
@@ -26,6 +26,8 @@ import Worker from './pages/Worker';
 import Attendance from './pages/Attendance';
 import Payment from './pages/Payment';
 import UserManagement from './pages/UserManagement';
+import EmployeeManagement from './pages/EmployeeManagement';
+import Maintenance from './pages/Maintenance';
 import Profile from './pages/Profile';
 
 // Placeholder components for future implementation
@@ -111,6 +113,14 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="procurement/batch"
+            element={
+              <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+                <OilBatchProcessing />
+              </ProtectedRoute>
+            }
+          />
           <Route path="reports" element={
             <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
               <Reports />
@@ -134,9 +144,10 @@ const AppContent: React.FC = () => {
               <ProductionImproved />
             </ProtectedRoute>
           } />
-           <Route path="batch" element={
-            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
-              <Batch />
+          
+          <Route path="employees" element={
+            <ProtectedRoute requiredRoles={[UserRole.USER, UserRole.ADMIN]}>
+              <EmployeeManagement />
             </ProtectedRoute>
           } />
           <Route path="workers" element={
@@ -164,6 +175,13 @@ const AppContent: React.FC = () => {
           
           {/* Profile route for all authenticated users */}
           <Route path="profile" element={<Profile />} />
+
+          {/* Maintenance */}
+          <Route path="maintenance" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN, UserRole.USER]}>
+              <Maintenance />
+            </ProtectedRoute>
+          } />
         </Route>
         
         {/* Catch all route */}

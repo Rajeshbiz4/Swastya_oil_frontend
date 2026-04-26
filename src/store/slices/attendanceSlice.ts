@@ -4,10 +4,12 @@ import api from '../../services/api';
 interface Attendance {
   _id: string;
   workerId: string;
-  attendanceDate: string;
-  status: 'Present' | 'Absent' | 'Leave';
+  date: string;
+  status: 'Present' | 'Absent' | 'Leave' | 'WeeklyOff' | 'Holiday';
   hoursWorked: number;
+  overtimeHours: number;
   notes?: string;
+  isManualOverride: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -17,7 +19,10 @@ interface AttendanceSummary {
   presentDays: number;
   absentDays: number;
   leaveDays: number;
+  weeklyOffDays: number;
+  holidayDays: number;
   totalHours: number;
+  totalOvertime: number;
 }
 
 interface AttendanceState {
@@ -47,15 +52,17 @@ export const recordAttendance = createAsyncThunk(
   async (
     data: {
       workerId: string;
-      attendanceDate: string;
-      status: 'Present' | 'Absent' | 'Leave';
+      date: string;
+      status: 'Present' | 'Absent' | 'Leave' | 'WeeklyOff' | 'Holiday';
       hoursWorked?: number;
+      overtimeHours?: number;
       notes?: string;
+      isManualOverride?: boolean;
     },
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.post('/workers/attendance', data);
+      const response = await api.post('/attendance', data);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error?.message || 'Failed to record attendance');
@@ -70,7 +77,7 @@ export const getWorkerAttendance = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.get(`/workers/attendance/worker/${workerId}`, {
+      const response = await api.get(`/attendance/worker/${workerId}`, {
         params: { startDate, endDate }
       });
       return response.data.data.attendance;
@@ -87,10 +94,10 @@ export const getAttendanceSummary = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.get(`/workers/attendance/worker/${workerId}/summary`, {
+      const response = await api.get(`/attendance/summary/${workerId}`, {
         params: { startDate, endDate }
       });
-      return response.data.data.summary;
+      return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error?.message || 'Failed to fetch attendance summary');
     }
@@ -111,10 +118,69 @@ export const getAllAttendance = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.get('/workers/attendance', { params });
+      const response = await api.get('/attendance', { params });
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error?.message || 'Failed to fetch attendance records');
+    }
+  }
+);
+
+export const bulkRecordAttendance = createAsyncThunk(
+  'attendance/bulkRecordAttendance',
+  async (
+    data: { records: Array<{
+      workerId: string;
+      date: string;
+      status: 'Present' | 'Absent' | 'Leave' | 'WeeklyOff' | 'Holiday';
+      hoursWorked?: number;
+      overtimeHours?: number;
+      notes?: string;
+      isManualOverride?: boolean;
+    }> },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.post('/attendance/bulk', data);
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error?.message || 'Failed to bulk record attendance');
+    }
+  }
+);
+
+export const getMonthlyAttendance = createAsyncThunk(
+  'attendance/getMonthlyAttendance',
+  async (
+    { workerId, year, month }: { workerId: string; year: number; month: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.get(`/attendance/monthly/${workerId}/${year}/${month}`);
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error?.message || 'Failed to fetch monthly attendance');
+    }
+  }
+);
+
+export const updateAttendance = createAsyncThunk(
+  'attendance/updateAttendance',
+  async (
+    { id, data }: { id: string; data: Partial<{
+      status: 'Present' | 'Absent' | 'Leave' | 'WeeklyOff' | 'Holiday';
+      hoursWorked: number;
+      overtimeHours: number;
+      notes: string;
+      isManualOverride: boolean;
+    }> },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.put(`/attendance/${id}`, data);
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error?.message || 'Failed to update attendance');
     }
   }
 );
@@ -189,6 +255,49 @@ const attendanceSlice = createSlice({
       state.pagination = action.payload.pagination;
     });
     builder.addCase(getAllAttendance.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Update attendance
+    builder.addCase(updateAttendance.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(updateAttendance.fulfilled, (state, action: PayloadAction<Attendance>) => {
+      state.loading = false;
+      const index = state.attendance.findIndex((a) => a._id === action.payload._id);
+      if (index !== -1) {
+        state.attendance[index] = action.payload;
+      }
+    });
+    builder.addCase(updateAttendance.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Bulk record attendance
+    builder.addCase(bulkRecordAttendance.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(bulkRecordAttendance.fulfilled, (state) => {
+      state.loading = false;
+    });
+    builder.addCase(bulkRecordAttendance.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Get monthly attendance
+    builder.addCase(getMonthlyAttendance.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(getMonthlyAttendance.fulfilled, (state) => {
+      state.loading = false;
+    });
+    builder.addCase(getMonthlyAttendance.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     });

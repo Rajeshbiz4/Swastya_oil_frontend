@@ -29,9 +29,11 @@ interface OilInventory {
 }
 
 interface PackagingInventory {
-  skuSize: '500g' | '1L' | '5L' | '10L' | '15L';
-  packagingType: 'Can' | 'Bag';
-  currentStock: number;
+  _id: string;
+  packagingType: string;
+  quantity: number;
+  ratePerUnit: number;
+  currentStock?: number; // Virtual field
 }
 
 interface OilConsumption {
@@ -743,18 +745,14 @@ const Production: React.FC = () => {
                 <div style={{ marginTop: '0.5rem', color: '#555', fontSize: '0.9rem' }}>
                   {availablePackaging && availablePackaging.length > 0 && (
                     <div>
-                      <strong>Available packaging (grouped):</strong>
+                      <strong>Available packaging:</strong>
                       <div style={{ marginTop: '0.25rem' }}>
-                        {Object.entries(availablePackaging.reduce((acc: any, item) => {
-                          const key = item.skuSize;
-                          acc[key] = acc[key] || {};
-                          acc[key][item.packagingType] = (acc[key][item.packagingType] || 0) + (item.currentStock || 0);
-                          return acc;
-                        }, {})).map(([sku, types]: any) => (
-                          <div key={sku} style={{ marginBottom: '0.25rem' }}>
-                            {sku}: {Object.entries(types).map(([t, qty]: any) => `${t} ${qty}`).join(', ')}
+                        {availablePackaging.map((item) => (
+                          <div key={item._id} style={{ marginBottom: '0.25rem' }}>
+                            {item.packagingType}: {item.quantity || item.currentStock || 0} units
                           </div>
                         ))}
+                      </div>
                       </div>
                     </div>
                   )}

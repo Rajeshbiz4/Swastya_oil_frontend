@@ -332,9 +332,9 @@ const DailyReports: React.FC<DailyReportsProps> = ({ onError, reportType: propRe
     ];
 
     const packagingColumns = [
-      { key: 'skuSize', title: 'SKU Size', sortable: true },
-      { key: 'packagingType', title: 'Type', sortable: true },
-      { key: 'currentStock', title: 'Current Stock', sortable: true },
+      { key: 'packagingType', title: 'Packaging Type', sortable: true },
+      { key: 'quantity', title: 'Quantity', sortable: true, render: (value: number) => value.toLocaleString() },
+      { key: 'ratePerUnit', title: 'Rate/Unit', sortable: true, render: (value: number) => `₹${value?.toFixed(2)}` },
     ];
 
     const finishedGoodsColumns = [

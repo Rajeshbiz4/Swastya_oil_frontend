@@ -4,23 +4,12 @@ import { FormField } from '../types';
 import ConfirmModal from '../components/common/confirm';
 import { bookingAPI, TankerBooking, BookingSummary } from '../services/api';
 import './Pages.css';
+import { OilTypes } from '../types/enums';
 
 // Utility functions
 const getTodayDate = (): string => {
   const today = new Date();
   return today.toISOString().split('T')[0];
-};
-
-export const OilTypeLabels = {
-  VEGETABLE_OIL: "Vegetable Oil",
-  SUNFLOWER_OIL: "Sunflower Oil",
-  MUSTARD_OIL: "Mustard Oil",
-  OLIVE_OIL: "Olive Oil",
-  COCONUT_OIL: "Coconut Oil",
-  GROUNDNUT_OIL: "Groundnut Oil",
-  SOYBEAN_OIL: "Soybean Oil",
-  PALM_OIL: "Palm Oil",
-  SESAME_OIL: "Sesame Oil"
 };
 
 
@@ -77,7 +66,7 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   // Form data with default current date
   const [formData, setFormData] = useState({
     bookingDate: getTodayDate(),
-    oilType: OilTypeLabels.SOYBEAN_OIL,
+    oilType: OilTypes.SOYABEAN_OIL,
     supplierName: '',
     tankerCapacity: 0,
     rate: 0,
@@ -146,7 +135,7 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
         // Populate form with existing booking data
         setFormData({
           bookingDate: editingBooking.bookingDate.split('T')[0], // Convert to YYYY-MM-DD format
-          oilType: "SOYBEAN_OIL",
+          oilType: "SOYABEAN_OIL",
           tankerCapacity: editingBooking.tankerCapacity,
           rate: editingBooking.rate,
           bookingAmount: editingBooking.bookingAmount,
@@ -157,7 +146,7 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
         // Reset form for new booking
         setFormData({
           bookingDate: getTodayDate(),
-          oilType: "SOYBEAN_OIL",
+          oilType: "SOYABEAN_OIL",
           tankerCapacity: 0,
           rate: 0,
           bookingAmount: 0,
@@ -559,12 +548,12 @@ const confirmDeleteBooking = async () => {
                     {field.type === 'select' ? (
                       <select
                         id={field.name}
-                        value={formData.oilType || "SOYBEAN_OIL"}
+                        value={formData.oilType || "SOYABEAN_OIL"}
                         onChange={(e) => handleFormChange(field.name, e.target.value)}
                       >
                         <option value="" disabled>Select Oil Type</option>
 
-                        {Object.entries(OilTypeLabels).map(([key, label]) => (
+                        {Object.entries(OilTypes).map(([key, label]) => (
                           <option key={key} value={key}>
                             {label}
                           </option>

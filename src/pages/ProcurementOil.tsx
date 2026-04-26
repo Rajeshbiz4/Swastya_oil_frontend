@@ -6,6 +6,7 @@ import { OilPurchase, PurchaseSummary, TankerBooking } from '../services/api';
 import { oilPurchaseAPI, bookingAPI } from '../services/api';
 import { FormField, PaymentMode } from '../types';
 import './Pages.css';
+import { OilTypes } from '../types/enums';
 
 const ProcurementOil: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
@@ -29,9 +30,11 @@ const ProcurementOil: React.FC = () => {
     ratePerLiter: 0,
     paymentMode: '',
     invoiceNumber: '',
-      brokerage: 0,
-      extraCharges: 0,
-      tankerTransport: 0,
+    oilType: 'SOYABEAN_OIL',
+    actualWeight: 0,
+    brokerage: 0,
+    extraCharges: 0,
+    tankerTransport: 0,
     invoiceDate: new Date().toISOString().split('T')[0],
     deliveryDate: new Date().toISOString().split('T')[0],
   });
@@ -115,11 +118,13 @@ const ProcurementOil: React.FC = () => {
     setFormData((prev) => ({
       ...prev,
       bookingId,
-       supplierName: booking?.supplierName || '', 
+      supplierName: booking?.supplierName || '',
+      oilType: booking?.oilType || '',
       quantity: booking ? booking.tankerCapacity : 0,
       ratePerLiter: booking ? booking.rate : 0,
       deliveryDate: booking ? new Date(booking.bookingDate).toISOString().split('T')[0] : prev.deliveryDate,
     }));
+
   };
 
   // form configuration for FormBuilder
@@ -138,6 +143,7 @@ const ProcurementOil: React.FC = () => {
       ],
     },
     { name: 'supplierName', label: 'Supplier Name', type: 'text', required: true, },
+    { name: 'oilType', label: 'Oil Type', type: 'select', required: true, options: Object.keys(OilTypes).map((key) => ({ value: key, label: OilTypes[key] })) },
      { name: 'actualWeight', label: 'Actual Weight (kg)', type: 'number', required: true },
       { name: 'tankerTransport', label: 'Tanker Transport charges', type: 'number', required: true },
     { name: 'quantity', label: 'booking Quantity (KG)', type: 'number', required: true, min: '10000' },
@@ -180,6 +186,8 @@ const ProcurementOil: React.FC = () => {
           ratePerLiter: 0,
           paymentMode: '',
           invoiceNumber: '',
+          oilType: 'SOYABEAN_OIL',
+          actualWeight: 0,
           brokerage: 0,
           extraCharges: 0,
           tankerTransport: 0,
@@ -198,6 +206,7 @@ const ProcurementOil: React.FC = () => {
   const oilColumns = [
     { key: 'invoiceNumber', title: 'Invoice #', sortable: true },
     { key: 'supplierName', title: 'Supplier', sortable: true },
+    { key: 'oilType', title: 'Oil Type', sortable: true, render: (value: string) => value ? value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) : '-' },
     { key: 'quantity', title: 'Quantity (L)', sortable: true },
     { key: 'ratePerLiter', title: 'Rate/L', sortable: true },
     { key: 'totalAmount', title: 'Total Amount', sortable: true, render: (val: number) => `₹${val?.toLocaleString()}` },

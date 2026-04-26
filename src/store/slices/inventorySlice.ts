@@ -9,19 +9,61 @@ interface RawOilInventory {
   initialQuantity: number;
   currentQuantity: number;
   costPerLiter: number;
+  oilWeight: number;
+  costPerKg: number;
+  totalOilPurchases?: number;
+  averageRate?: number;
   purchaseDate: string;
+  oilType: string;
   isActive: boolean;
 }
 
-interface PackagingInventory {
+interface OilInventory {
   _id: string;
   skuSize: string;
   packagingType: string;
   openingStock: number;
   totalPurchased: number;
   totalUsed: number;
-  currentStock: number;
-  lastUpdated: string;
+  ratePerUnit?: number;
+  totalCost?: number;
+  invoiceNumber?: string;
+  invoiceDate?: string;
+  lastUpdated?: string;
+  quantity?: number;
+}
+
+interface OilPurchase {
+  _id: string;
+  supplierName: string;
+  quantity: number;
+  ratePerLiter: number;
+  paymentMode: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  deliveryDate: string;
+  oilType: string;
+  brokerage: number;
+  actualWeight: number;
+  tankerTransport: number;
+  extraCharges: number;
+  totalAmount: number;
+  isPaid: boolean;
+  createdAt: string;
+}
+
+interface PackagingInventory {
+  _id: string;
+  skuSize: string;
+  packagingType: string;
+  quantity: number;
+  ratePerUnit: number;
+  totalPurchasedQuantity?: number;
+  totalCost?: number;
+  invoiceNumber: string;
+  invoiceDate: string;
+  lastUpdated?: string;
+  currentStock?: number; // Virtual field, may not always be present
 }
 
 interface FinishedGoodsInventory {
@@ -38,6 +80,8 @@ interface FinishedGoodsInventory {
 
 interface InventoryState {
   rawOil: RawOilInventory[];
+  oilInventory: OilInventory[];
+  oilPurchases: OilPurchase[];
   packaging: PackagingInventory[];
   finishedGoods: FinishedGoodsInventory[];
   isLoading: boolean;
@@ -46,6 +90,8 @@ interface InventoryState {
 
 const initialState: InventoryState = {
   rawOil: [],
+  oilInventory: [],
+  oilPurchases: [],
   packaging: [],
   finishedGoods: [],
   isLoading: false,
@@ -59,12 +105,26 @@ export const fetchRawOilInventory = createAsyncThunk<RawOilInventory[]>(
     try {
       const response = await api.get<ApiResponse<{ inventory: RawOilInventory[]; pagination: any }>>('/inventory/raw-oil');
       if (response.data.success && response.data.data) {
-        // Extract the inventory array from the nested structure
         return response.data.data.inventory || [];
       }
       throw new Error('Failed to fetch raw oil inventory');
     } catch (error: any) {
       return rejectWithValue(error.error?.message || 'Failed to fetch raw oil inventory');
+    }
+  }
+);
+
+export const fetchOilInventory = createAsyncThunk<OilInventory[]>(
+  'inventory/fetchOilInventory',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get<ApiResponse<{ inventory: OilInventory[]; pagination: any }>>('/inventory/oil');
+      if (response.data.success && response.data.data) {
+        return response.data.data.inventory || [];
+      }
+      throw new Error('Failed to fetch oil inventory');
+    } catch (error: any) {
+      return rejectWithValue(error.error?.message || 'Failed to fetch oil inventory');
     }
   }
 );
@@ -75,7 +135,6 @@ export const fetchPackagingInventory = createAsyncThunk<PackagingInventory[]>(
     try {
       const response = await api.get<ApiResponse<{ inventory: PackagingInventory[]; pagination: any }>>('/inventory/packaging');
       if (response.data.success && response.data.data) {
-        // Extract the inventory array from the nested structure
         return response.data.data.inventory || [];
       }
       throw new Error('Failed to fetch packaging inventory');
@@ -91,12 +150,26 @@ export const fetchFinishedGoodsInventory = createAsyncThunk<FinishedGoodsInvento
     try {
       const response = await api.get<ApiResponse<{ inventory: FinishedGoodsInventory[]; pagination: any }>>('/inventory/finished-goods');
       if (response.data.success && response.data.data) {
-        // Extract the inventory array from the nested structure
         return response.data.data.inventory || [];
       }
       throw new Error('Failed to fetch finished goods inventory');
     } catch (error: any) {
       return rejectWithValue(error.error?.message || 'Failed to fetch finished goods inventory');
+    }
+  }
+);
+
+export const fetchOilPurchases = createAsyncThunk<OilPurchase[]>(
+  'inventory/fetchOilPurchases',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get<ApiResponse<{ purchases: OilPurchase[]; pagination: any }>>('/procurement/oil-purchases');
+      if (response.data.success && response.data.data) {
+        return response.data.data.purchases || [];
+      }
+      throw new Error('Failed to fetch oil purchases');
+    } catch (error: any) {
+      return rejectWithValue(error.error?.message || 'Failed to fetch oil purchases');
     }
   }
 );
@@ -124,6 +197,18 @@ const inventorySlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
+      .addCase(fetchOilInventory.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchOilInventory.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.oilInventory = action.payload;
+      })
+      .addCase(fetchOilInventory.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
       // Packaging Inventory
       .addCase(fetchPackagingInventory.pending, (state) => {
         state.isLoading = true;
@@ -147,6 +232,19 @@ const inventorySlice = createSlice({
         state.finishedGoods = action.payload;
       })
       .addCase(fetchFinishedGoodsInventory.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Oil Purchases
+      .addCase(fetchOilPurchases.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchOilPurchases.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.oilPurchases = action.payload;
+      })
+      .addCase(fetchOilPurchases.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

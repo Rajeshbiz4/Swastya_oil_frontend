@@ -23,16 +23,24 @@ export enum PaymentMode {
 }
 
 export enum PackagingType {
-  CAN = 'Can',
-  BAG = 'Bag'
+  CAN_5L = '5L Can',
+  CAN_10L = '10L Can',
+  CAN_12L = '12L Can',
+  CAN_14L = '14L Can',
+  CAN_15L = '15L Can',
+  CAN_20L = '20L Can',
+  CAN_25L = '25L Can',
+  CAN_50L = '50L Can',
+  POLYTHENE_BUNDLE = 'Polythene Bundle',
+  TAP = 'Tap'
 }
 
 export enum SKUSize {
   SIZE_500G = '500g',
-  SIZE_1L = '1KG',
-  SIZE_5L = '5KG',
-  SIZE_10L = '10KG',
-  SIZE_15L = '15KG'
+  SIZE_1KG = '1KG',
+  SIZE_5KG = '5KG',
+  SIZE_10KG = '10KG',
+  SIZE_15KG = '15KG'
 }
 
 export enum OrderStatus {

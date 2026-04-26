@@ -1,406 +1,432 @@
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
-import { recordAttendance, getWorkerAttendance, getAttendanceSummary, getAllAttendance } from '../store/slices/attendanceSlice';
+import {
+  recordAttendance,
+  getWorkerAttendance,
+  getAttendanceSummary,
+  getAllAttendance,
+  bulkRecordAttendance,
+  getMonthlyAttendance,
+  updateAttendance
+} from '../store/slices/attendanceSlice';
+import {
+  applyLeave,
+  getEmployeeLeaves,
+  getPendingLeaves,
+  approveLeave,
+  rejectLeave,
+  cancelLeave,
+  getLeaveSummary
+} from '../store/slices/leaveSlice';
 import { fetchWorkers } from '../store/slices/workerSlice';
 import './Pages.css';
+import './Attendance.css';
+
+type AttendanceStatus = 'Present' | 'Absent' | 'Leave' | 'WeeklyOff' | 'Holiday';
+type TimePeriod = 'day' | 'week' | 'month';
 
 const Attendance: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { attendance, summary, loading, error, pagination } = useAppSelector((state) => state.attendance);
+  const {
+    attendance,
+    summary,
+    loading,
+    error,
+    pagination
+  } = useAppSelector((state) => state.attendance);
+  const { leaves, summary: leaveSummary } = useAppSelector((state) => state.leave);
   const { workers } = useAppSelector((state) => state.worker);
 
-  const [showForm, setShowForm] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<string>('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [activeTab, setActiveTab] = useState<'record' | 'view' | 'summary'>('record');
-
-  const [formData, setFormData] = useState({
-    workerId: '',
-    attendanceDate: new Date().toISOString().split('T')[0],
-    status: 'Present' as 'Present' | 'Absent' | 'Leave',
-    hoursWorked: '8',
-    notes: ''
-  });
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('month');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [monthlyData, setMonthlyData] = useState<any>(null);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<AttendanceStatus>('Present');
 
   useEffect(() => {
     dispatch(fetchWorkers({ isActive: true }));
   }, [dispatch]);
 
+  // Load monthly attendance data for calendar
   useEffect(() => {
-    if (activeTab === 'view' && selectedWorker) {
-      dispatch(getWorkerAttendance({ workerId: selectedWorker, startDate, endDate }));
-    } else if (activeTab === 'summary' && selectedWorker) {
-      dispatch(getAttendanceSummary({ workerId: selectedWorker, startDate, endDate }));
-    } else if (activeTab === 'record') {
-      dispatch(getAllAttendance({}));
+    if (selectedWorker) {
+      loadMonthlyAttendance();
     }
-  }, [dispatch, activeTab, selectedWorker, startDate, endDate]);
+  }, [selectedWorker, currentMonth, currentYear]);
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'hoursWorked' ? parseFloat(value) || '' : value
-    }));
+  const loadMonthlyAttendance = async () => {
+    if (!selectedWorker) return;
+
+    setCalendarLoading(true);
+    try {
+      const result = await dispatch(getMonthlyAttendance({
+        workerId: selectedWorker,
+        year: currentYear,
+        month: currentMonth + 1 // API expects 1-based month
+      })).unwrap();
+      setMonthlyData(result);
+    } catch (error) {
+      console.error('Failed to load monthly attendance:', error);
+    } finally {
+      setCalendarLoading(false);
+    }
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.workerId) {
-      alert('Please select a worker');
+  const handleDateClick = async (date: Date) => {
+    if (!selectedWorker) {
+      alert('Please select a worker first');
       return;
     }
 
-    try {
-      await dispatch(
-        recordAttendance({
-          workerId: formData.workerId,
-          attendanceDate: formData.attendanceDate,
-          status: formData.status,
-          hoursWorked: parseInt(formData.hoursWorked as string, 10),
-          notes: formData.notes
-        })
-      );
-      // Reset form
-      setFormData({
-        workerId: '',
-        attendanceDate: new Date().toISOString().split('T')[0],
-        status: 'Present',
-        hoursWorked: '8',
-        notes: ''
-      });
-      alert('Attendance recorded successfully');
-    } catch (error) {
-      console.error('Form submission error:', error);
+    const dateStr = date.toISOString().split('T')[0];
+    const existingAttendance = monthlyData?.attendance?.[dateStr];
+
+    if (existingAttendance) {
+      // Update existing attendance
+      try {
+        await dispatch(updateAttendance({
+          id: existingAttendance._id,
+          data: {
+            status: selectedStatus,
+            hoursWorked: selectedStatus === 'Present' ? 8 : 0,
+            overtimeHours: 0
+          }
+        })).unwrap();
+        loadMonthlyAttendance(); // Reload data
+      } catch (error: any) {
+        alert(`Error updating attendance: ${error}`);
+      }
+    } else {
+      // Create new attendance
+      try {
+        await dispatch(recordAttendance({
+          workerId: selectedWorker,
+          date: dateStr,
+          status: selectedStatus,
+          hoursWorked: selectedStatus === 'Present' ? 8 : 0,
+          overtimeHours: 0
+        })).unwrap();
+        loadMonthlyAttendance(); // Reload data
+      } catch (error: any) {
+        alert(`Error recording attendance: ${error}`);
+      }
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
     switch (status) {
-      case 'Present':
-        return '#4CAF50';
-      case 'Absent':
-        return '#f44336';
-      case 'Leave':
-        return '#FF9800';
-      default:
-        return '#999';
+      case 'Present': return 'status-present';
+      case 'Absent': return 'status-absent';
+      case 'Leave': return 'status-leave';
+      case 'WeeklyOff': return 'status-weeklyoff';
+      case 'Holiday': return 'status-holiday';
+      default: return 'status-default';
     }
+  };
+
+  const getStatusLabel = (status?: string) => {
+    switch (status) {
+      case 'Present': return 'P';
+      case 'Absent': return 'A';
+      case 'Leave': return 'L';
+      case 'WeeklyOff': return 'WO';
+      case 'Holiday': return 'H';
+      default: return '';
+    }
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      if (currentMonth === 0) {
+        setCurrentMonth(11);
+        setCurrentYear(currentYear - 1);
+      } else {
+        setCurrentMonth(currentMonth - 1);
+      }
+    } else {
+      if (currentMonth === 11) {
+        setCurrentMonth(0);
+        setCurrentYear(currentYear + 1);
+      } else {
+        setCurrentMonth(currentMonth + 1);
+      }
+    }
+  };
+
+  const renderCalendar = () => {
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    const calendarDays = [];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Add day headers
+    dayNames.forEach(day => {
+      calendarDays.push(
+        <div key={`header-${day}`} className="calendar-header-cell">
+          {day}
+        </div>
+      );
+    });
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+      calendarDays.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+    }
+
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const dateStr = date.toISOString().split('T')[0];
+      const attendanceData = monthlyData?.attendance?.[dateStr];
+      const isToday = dateStr === new Date().toISOString().split('T')[0];
+
+      calendarDays.push(
+        <div
+          key={day}
+          className={`calendar-day ${attendanceData ? getStatusColor(attendanceData.status) : 'status-default'} ${isToday ? 'today' : ''}`}
+          onClick={() => handleDateClick(date)}
+          title={`${dateStr}: ${attendanceData ? attendanceData.status : 'Click to mark attendance'}`}
+        >
+          <div className="day-number">{day}</div>
+          {attendanceData && (
+            <div className="status-label">
+              {getStatusLabel(attendanceData.status)}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="calendar-container">
+        <div className="calendar-header">
+          <button onClick={() => navigateMonth('prev')} className="nav-btn">‹</button>
+          <h3 className="calendar-title">{monthNames[currentMonth]} {currentYear}</h3>
+          <button onClick={() => navigateMonth('next')} className="nav-btn">›</button>
+        </div>
+        <div className="calendar-grid">
+          {calendarDays}
+        </div>
+        <div className="calendar-legend">
+          <div className="legend-item">
+            <div className="legend-color status-present"></div>
+            <span>Present</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color status-absent"></div>
+            <span>Absent</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color status-leave"></div>
+            <span>Leave</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color status-weeklyoff"></div>
+            <span>Weekly Off</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color status-holiday"></div>
+            <span>Holiday</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const getWeekDates = (date: Date) => {
+    const startOfWeek = new Date(date);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day;
+    startOfWeek.setDate(diff);
+
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const weekDate = new Date(startOfWeek);
+      weekDate.setDate(startOfWeek.getDate() + i);
+      weekDates.push(weekDate);
+    }
+    return weekDates;
+  };
+
+  const renderWeekView = () => {
+    const weekDates = getWeekDates(new Date(selectedDate));
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    return (
+      <div className="week-view">
+        <div className="week-header">
+          <button onClick={() => {
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() - 7);
+            setSelectedDate(newDate.toISOString().split('T')[0]);
+          }} className="nav-btn">‹</button>
+          <h3>Week of {weekDates[0].toLocaleDateString()} - {weekDates[6].toLocaleDateString()}</h3>
+          <button onClick={() => {
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() + 7);
+            setSelectedDate(newDate.toISOString().split('T')[0]);
+          }} className="nav-btn">›</button>
+        </div>
+        <div className="week-grid">
+          {weekDates.map((date, index) => {
+            const dateStr = date.toISOString().split('T')[0];
+            const attendanceData = monthlyData?.attendance?.[dateStr];
+            const isToday = dateStr === new Date().toISOString().split('T')[0];
+
+            return (
+              <div key={dateStr} className="week-day">
+                <div className="day-name">{dayNames[index]}</div>
+                <div
+                  className={`day-cell ${attendanceData ? getStatusColor(attendanceData.status) : 'status-default'} ${isToday ? 'today' : ''}`}
+                  onClick={() => handleDateClick(date)}
+                >
+                  <div className="day-number">{date.getDate()}</div>
+                  {attendanceData && (
+                    <div className="status-label">
+                      {getStatusLabel(attendanceData.status)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDayView = () => {
+    const date = new Date(selectedDate);
+    const dateStr = date.toISOString().split('T')[0];
+    const attendanceData = monthlyData?.attendance?.[dateStr];
+
+    return (
+      <div className="day-view">
+        <div className="day-header">
+          <button onClick={() => {
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() - 1);
+            setSelectedDate(newDate.toISOString().split('T')[0]);
+          }} className="nav-btn">‹</button>
+          <h3>{date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+          <button onClick={() => {
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() + 1);
+            setSelectedDate(newDate.toISOString().split('T')[0]);
+          }} className="nav-btn">›</button>
+        </div>
+        <div className="day-content">
+          <div
+            className={`day-large ${attendanceData ? getStatusColor(attendanceData.status) : 'status-default'}`}
+            onClick={() => handleDateClick(date)}
+          >
+            <div className="day-status">
+              {attendanceData ? (
+                <>
+                  <div className="status-text">{attendanceData.status}</div>
+                  <div className="status-details">
+                    Hours: {attendanceData.hoursWorked}h
+                    {attendanceData.overtimeHours > 0 && `, OT: ${attendanceData.overtimeHours}h`}
+                  </div>
+                </>
+              ) : (
+                <div className="status-text">Click to mark attendance</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="page-container">
-      <h1>Attendance Management</h1>
-
-      {error && <div className="error-message">{error}</div>}
-
-      {/* Tabs */}
-      <div className="tabs">
-        <button
-          className={`tab-button ${activeTab === 'record' ? 'active' : ''}`}
-          onClick={() => setActiveTab('record')}
-        >
-          Record Attendance
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'view' ? 'active' : ''}`}
-          onClick={() => setActiveTab('view')}
-        >
-          View Attendance
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'summary' ? 'active' : ''}`}
-          onClick={() => setActiveTab('summary')}
-        >
-          Attendance Summary
-        </button>
+    <div className="attendance-page">
+      <div className="page-header">
+        <h1>Attendance Management</h1>
+        <p>Record and view attendance for workers</p>
       </div>
 
-      {/* Record Attendance Tab */}
-      {activeTab === 'record' && (
-        <div className="section">
-          <h2>Record Attendance</h2>
-          <form onSubmit={handleFormSubmit} className="form-grid">
-            <div className="form-group">
-              <label htmlFor="workerId">Select Worker *</label>
-              <select
-                id="workerId"
-                name="workerId"
-                value={formData.workerId}
-                onChange={handleFormChange}
-                required
-              >
-                <option value="">-- Select Worker --</option>
-                {workers.map((worker) => (
-                  <option key={worker._id} value={worker._id}>
-                    {worker.name} ({worker.employeeId})
-                  </option>
-                ))}
-              </select>
-            </div>
+      <div className="attendance-controls">
+        <div className="control-group">
+          <label>Select Worker:</label>
+          <select
+            value={selectedWorker}
+            onChange={(e) => setSelectedWorker(e.target.value)}
+            className="form-select"
+          >
+            <option value="">Choose a worker...</option>
+            {workers.map((worker) => (
+              <option key={worker._id} value={worker._id}>
+                {worker.name} ({worker.employeeId})
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <div className="form-group">
-              <label htmlFor="attendanceDate">Attendance Date *</label>
-              <input
-                id="attendanceDate"
-                name="attendanceDate"
-                type="date"
-                value={formData.attendanceDate}
-                onChange={handleFormChange}
-                required
-              />
-            </div>
+        <div className="control-group">
+          <label>Time Period:</label>
+          <select
+            value={timePeriod}
+            onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
+            className="form-select"
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+        </div>
 
-            <div className="form-group">
-              <label htmlFor="status">Status *</label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleFormChange}
-                required
-              >
-                <option value="Present">Present</option>
-                <option value="Absent">Absent</option>
-                <option value="Leave">Leave</option>
-              </select>
-            </div>
+        <div className="control-group">
+          <label>Select Date:</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="form-input"
+          />
+        </div>
 
-            <div className="form-group">
-              <label htmlFor="hoursWorked">Hours Worked</label>
-              <input
-                id="hoursWorked"
-                name="hoursWorked"
-                type="number"
-                min="0"
-                max="24"
-                step="0.5"
-                value={formData.hoursWorked}
-                onChange={handleFormChange}
-                disabled={formData.status !== 'Present'}
-              />
-            </div>
+        <div className="control-group">
+          <label>Mark as:</label>
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value as AttendanceStatus)}
+            className="form-select status-select"
+          >
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+            <option value="Leave">Leave</option>
+            <option value="WeeklyOff">Weekly Off</option>
+            <option value="Holiday">Holiday</option>
+          </select>
+        </div>
+      </div>
 
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="notes">Notes</label>
-              <textarea
-                id="notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleFormChange}
-                rows={3}
-              />
-            </div>
-
-            <div className="form-actions" style={{ gridColumn: '1 / -1' }}>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Recording...' : 'Record Attendance'}
-              </button>
-            </div>
-          </form>
-
-          {/* Recent Attendance */}
-          <div className="table-section" style={{ marginTop: '2rem' }}>
-            <h3>Recent Attendance Records</h3>
-            {loading ? (
-              <div className="loading">Loading...</div>
-            ) : attendance.length === 0 ? (
-              <div className="empty-state">No records found</div>
-            ) : (
-              <div className="table-wrapper">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Worker</th>
-                      <th>Date</th>
-                      <th>Status</th>
-                      <th>Hours Worked</th>
-                      <th>Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attendance.slice(0, 10).map((record) => (
-                      <tr key={record._id}>
-                        <td>{(record.workerId as any)?.name || 'Unknown'}</td>
-                        <td>{new Date(record.attendanceDate).toLocaleDateString()}</td>
-                        <td>
-                          <span
-                            style={{
-                              color: getStatusColor(record.status),
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            {record.status}
-                          </span>
-                        </td>
-                        <td>{record.hoursWorked}</td>
-                        <td>{record.notes || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+      {selectedWorker && (
+        <div className="attendance-view">
+          {timePeriod === 'day' && renderDayView()}
+          {timePeriod === 'week' && renderWeekView()}
+          {timePeriod === 'month' && renderCalendar()}
         </div>
       )}
 
-      {/* View Attendance Tab */}
-      {activeTab === 'view' && (
-        <div className="section">
-          <h2>View Attendance</h2>
-          <div className="filter-section">
-            <div className="form-group">
-              <label htmlFor="viewWorker">Select Worker</label>
-              <select
-                id="viewWorker"
-                value={selectedWorker}
-                onChange={(e) => setSelectedWorker(e.target.value)}
-              >
-                <option value="">-- Select Worker --</option>
-                {workers.map((worker) => (
-                  <option key={worker._id} value={worker._id}>
-                    {worker.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="startDate">Start Date</label>
-              <input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="endDate">End Date</label>
-              <input
-                id="endDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {selectedWorker && (
-            <div className="table-section" style={{ marginTop: '2rem' }}>
-              <h3>Attendance Records</h3>
-              {loading ? (
-                <div className="loading">Loading...</div>
-              ) : attendance.length === 0 ? (
-                <div className="empty-state">No attendance records found</div>
-              ) : (
-                <div className="table-wrapper">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Hours Worked</th>
-                        <th>Notes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {attendance.map((record) => (
-                        <tr key={record._id}>
-                          <td>{new Date(record.attendanceDate).toLocaleDateString()}</td>
-                          <td>
-                            <span
-                              style={{
-                                color: getStatusColor(record.status),
-                                fontWeight: 'bold'
-                              }}
-                            >
-                              {record.status}
-                            </span>
-                          </td>
-                          <td>{record.hoursWorked}</td>
-                          <td>{record.notes || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
+      {!selectedWorker && (
+        <div className="no-worker-selected">
+          <p>Please select a worker to view and manage attendance.</p>
         </div>
       )}
 
-      {/* Attendance Summary Tab */}
-      {activeTab === 'summary' && (
-        <div className="section">
-          <h2>Attendance Summary</h2>
-          <div className="filter-section">
-            <div className="form-group">
-              <label htmlFor="summaryWorker">Select Worker</label>
-              <select
-                id="summaryWorker"
-                value={selectedWorker}
-                onChange={(e) => setSelectedWorker(e.target.value)}
-              >
-                <option value="">-- Select Worker --</option>
-                {workers.map((worker) => (
-                  <option key={worker._id} value={worker._id}>
-                    {worker.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="summaryStartDate">Start Date</label>
-              <input
-                id="summaryStartDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="summaryEndDate">End Date</label>
-              <input
-                id="summaryEndDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {selectedWorker && summary && (
-            <div className="summary-cards" style={{ marginTop: '2rem' }}>
-              <div className="card">
-                <h3>Total Days</h3>
-                <p className="card-value">{summary.totalDays}</p>
-              </div>
-              <div className="card" style={{ borderColor: '#4CAF50' }}>
-                <h3>Present Days</h3>
-                <p className="card-value" style={{ color: '#4CAF50' }}>
-                  {summary.presentDays}
-                </p>
-              </div>
-              <div className="card" style={{ borderColor: '#f44336' }}>
-                <h3>Absent Days</h3>
-                <p className="card-value" style={{ color: '#f44336' }}>
-                  {summary.absentDays}
-                </p>
-              </div>
-              <div className="card" style={{ borderColor: '#FF9800' }}>
-                <h3>Leave Days</h3>
-                <p className="card-value" style={{ color: '#FF9800' }}>
-                  {summary.leaveDays}
-                </p>
-              </div>
-              <div className="card">
-                <h3>Total Hours</h3>
-                <p className="card-value">{summary.totalHours}</p>
-              </div>
-            </div>
-          )}
+      {calendarLoading && (
+        <div className="loading-overlay">
+          <div className="loading-spinner">Loading...</div>
         </div>
       )}
     </div>

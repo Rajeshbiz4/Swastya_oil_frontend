@@ -10,6 +10,8 @@ import workerSlice from './slices/workerSlice';
 import attendanceSlice from './slices/attendanceSlice';
 import paymentSlice from './slices/paymentSlice';
 import invoiceReducer from './slices/invoiceSlice';
+import leaveSlice from './slices/leaveSlice';
+import maintenanceSlice from './slices/maintenanceSlice';
 
 export const store = configureStore({
   reducer: {
@@ -21,6 +23,8 @@ export const store = configureStore({
     attendance: attendanceSlice,
     payment: paymentSlice,
     invoice: invoiceReducer,
+    leave: leaveSlice,
+    maintenance: maintenanceSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

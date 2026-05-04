@@ -16,6 +16,7 @@ import {
 } from '../store/slices/invoiceSlice';
 import { fetchFinishedGoodsInventory } from '../store/slices/inventorySlice';
 import './Pages.css';
+import { toWords } from 'number-to-words';
 
 const styles = {
   container: {
@@ -348,29 +349,40 @@ const handlePrintPreview = () => {
 
   const headers = ["Sr", "Oil Type", "Packaging Type", "Qty", "Rate", "Amount"];
   const colX = [10, 20, 50, 120, 145, 170];
-
+  const rowHeight = 8;
+  const minRows = 2;
   doc.setFillColor(230, 230, 230);
-  doc.rect(10, startY, 190, 8, "F");
+  doc.rect(10, startY, 190, rowHeight, "F");
 
   doc.setFontSize(9);
   headers.forEach((h, i) => {
     doc.text(h, colX[i] + 2, startY + 6);
   });
 
-  let y = startY + 8;
-
-  products.forEach((p, i) => {
-    doc.rect(10, y, 190, 8);
-    doc.text(String(i + 1), colX[0] + 2, y + 6);
-    doc.text(p.oilType || "-", colX[1] + 2, y + 6);
-    doc.text(p.type || "-", colX[2] + 2, y + 6);
-    doc.text(String(p.qty || 0), colX[3] + 2, y + 6);
-    let adjustedRate = getAdjustedRate(p.total || 0, p.qty || 0, appConfig.tax.cgst + appConfig.tax.sgst);
-    doc.text(`${adjustedRate.toFixed(2)}`, colX[4] + 2, y + 6);
-    doc.text(`${p.total || 0}`, colX[5] + 2, y + 6);
-
-    y += 8;
-  });
+  let y = startY + rowHeight;
+  const totalRows = Math.max(products.length, minRows);
+  for (let i = 0; i < totalRows; i++) {
+    const p = products[i];
+    
+    //doc.setLineWidth(0.5); // line thickness
+    if (p) {
+       doc.rect(10, y, 190, rowHeight);
+        doc.text("", colX[0] + 2, y + 6);
+        doc.text(p.oilType || "-", colX[1] + 2, y + 6);
+        doc.text(p.type || "-", colX[2] + 2, y + 6);
+        doc.text(String(p.qty || 0), colX[3] + 2, y + 6);
+        let adjustedRate = getAdjustedRate(p.total || 0, p.qty || 0, appConfig.tax.cgst + appConfig.tax.sgst);
+        doc.text(`${adjustedRate.toFixed(2)}`, colX[4] + 2, y + 6);
+        doc.text(`${p.total || 0}`, colX[5] + 2, y + 6);
+        //doc.setLineWidth(1.5);
+    }
+    else {
+        // 👉 Empty row (keeps table height fixed)
+        doc.text("", colX[0] + 2, y + 6);
+      }
+        y += rowHeight;
+    }
+  //});
 
   // ===== TOTAL SECTION =====
   let boxY = y + 10;
@@ -389,11 +401,13 @@ const handlePrintPreview = () => {
   doc.setFontSize(10);
   doc.text(`TOTAL: ${finalTotal.toFixed(0)}`, 115, y + 32);
 
-
   // Draw a line below Sales Tax
   doc.setLineWidth(0.5); // line thickness
-  doc.line(120, boxY + 36, 200, boxY + 36); // x1, y1, x2, y2
-
+  doc.setFont("helvetica", "bold"); 
+  doc.text(`Amount in Words: ${convertToWords(finalTotal)}`, 80, boxY + 40);
+  doc.setFont("helvetica", "normal"); 
+  doc.setLineWidth(0.5); // line thickness
+  doc.line(10, boxY + 45, 200, boxY + 45); // horizontal line
   // ================= BANK =================
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");   // Bold text
@@ -412,6 +426,55 @@ const handlePrintPreview = () => {
     doc.text(`${i + 1}. ${t}`, 10, y + 42 + i * 4);
   });
 
+//   // ================= TOTAL =================
+// const totalTax = cgst + sgst;
+
+// let summaryX = 110;
+// let summaryY = y + 5;
+// let boxWidth = 90;
+// let lineHeight = 6;
+
+// // Box
+// doc.rect(summaryX, summaryY, boxWidth, 40);
+
+// // Header
+// doc.setFont("helvetica", "bold");
+// doc.text("TAX SUMMARY", summaryX + 5, summaryY + 6);
+
+// // Values
+// doc.setFont("helvetica", "normal");
+
+// doc.text(`Taxable Value:`, summaryX + 5, summaryY + 14);
+// doc.text(`${taxable.toFixed(2)}`, summaryX + 70, summaryY + 14);
+
+// doc.text(`CGST (2.5%):`, summaryX + 5, summaryY + 20);
+// doc.text(`${cgst.toFixed(2)}`, summaryX + 70, summaryY + 20);
+
+// doc.text(`SGST (2.5%):`, summaryX + 5, summaryY + 26);
+// doc.text(`${sgst.toFixed(2)}`, summaryX + 70, summaryY + 26);
+
+// // Total Tax (NEW SECTION)
+// doc.setFont("helvetica", "bold");
+// doc.text(`Total Tax:`, summaryX + 5, summaryY + 32);
+// doc.text(`${totalTax.toFixed(2)}`, summaryX + 70, summaryY + 32);
+
+// // Final Total line
+// doc.setFont("helvetica", "bold");
+// doc.text(`Grand Total:`, summaryX + 5, summaryY + 38);
+// doc.text(`${finalTotal.toFixed(2)}`, summaryX + 70, summaryY + 38);
+
+// // ================= AMOUNT IN WORDS (separate line below box) =================
+// doc.setFont("helvetica", "normal");
+// doc.setFontSize(8);
+
+// doc.line(10, summaryY + 45, 200, summaryY + 45);
+
+// doc.text(
+//   `Amount in Words: ${convertToWords(finalTotal)}`,
+//   10,
+//   summaryY + 52
+// );
+
    // ================= SIGNATURE =================
    y = 260;
   doc.setFontSize(9);
@@ -427,6 +490,16 @@ const handlePrintPreview = () => {
   setPdfUrl(blobUrl);
   setShowPreview(true);
 };
+
+ const convertToWords = (num: number) => {
+    if (!num) return "";
+    const [rupees, paise] = num.toString().split(".");
+    let words = toWords(Number(rupees)) + " rupees";
+    if (paise) {
+      words += " and " + toWords(Number(paise)) + " paise";
+    }
+    return words.replace(/\b\w/g, (c) => c.toUpperCase());
+  };
 
   
 const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number) => {

@@ -2,16 +2,25 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import api from '../../services/api';
 
 // Types
+export interface InvoiceProduct {
+  oilType: string;
+  type: string;
+  rate: number;
+  qty: number;
+}
+
 export interface Invoice {
   _id: string;
-  invoiceDate: string;
+  invoiceNumber: string;
+  date: string;
   customerName: string;
-  product: string;
-  quantity: number;
-  rate: number;
-  totalAmount: number;
-  paidAmount?: number;
-  status?: string;
+  contact: string;
+  address: string;
+  gstNo?: string;
+  products: InvoiceProduct[];
+  note?: string;
+  status?: 'pending' | 'paid' | 'failed';
+  createdBy: string;
   remarks?: string;
 }
 
@@ -55,7 +64,7 @@ export const createInvoice = createAsyncThunk<
   async (data, { rejectWithValue }) => {
     try {
       const res = await api.post('/invoices', data);
-      return res.data.data as Invoice;
+      return (res.data.data || res.data) as Invoice;
     } catch (err: any) {
       return rejectWithValue(err?.response?.data?.message || 'Failed to create invoice');
     }
@@ -71,7 +80,7 @@ export const updateInvoice = createAsyncThunk<
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const res = await api.put(`/invoices/${id}`, data);
-      return res.data.data as Invoice;
+      return (res.data.data || res.data) as Invoice;
     } catch (err: any) {
       return rejectWithValue(err?.response?.data?.message || 'Failed to update invoice');
     }
@@ -103,7 +112,7 @@ export const updateInvoiceStatus = createAsyncThunk<
   async ({ id, status }, { rejectWithValue }) => {
     try {
       const res = await api.patch(`/invoices/${id}/status`, { status });
-      return res.data.data as Invoice;
+      return (res.data.data || res.data) as Invoice;
     } catch (err: any) {
       return rejectWithValue(err?.response?.data?.message || 'Failed to update status');
     }

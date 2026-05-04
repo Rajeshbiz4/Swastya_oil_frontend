@@ -11,6 +11,7 @@ import {
   createInvoice,
   updateInvoice,
   deleteInvoice,
+  updateInvoiceStatus,
   Invoice
 } from '../store/slices/invoiceSlice';
 import { fetchFinishedGoodsInventory } from '../store/slices/inventorySlice';
@@ -108,15 +109,18 @@ const InvoicePage: React.FC = () => {
     paidAmount: 0,
     remarks: '',
   });
-
+    packagingTypes.push("14 ltrs");
+    packagingTypes.push("1 ltr pp box");
   // Load invoices and finished goods inventory for packaging type options
   useEffect(() => {
+
+
     dispatch(fetchInvoices());
     dispatch(fetchFinishedGoodsInventory());
   }, [dispatch]);
 
   const [products, setProducts] = useState<ProductRow[]>([
-    { oilType: "", type: "", rate: "", qty: "", total: 0 }
+    { oilType: "", type: "", rate: "", qty: 0, total: 0 }
   ]);
 
   useEffect(() => {
@@ -128,7 +132,7 @@ const InvoicePage: React.FC = () => {
     oilType: string;
     type: string;
     rate: number | string;
-    qty: string;
+    qty: number;
     total: number;
   };
 
@@ -165,8 +169,12 @@ const InvoicePage: React.FC = () => {
     const updated = [...products];
     const row = { ...updated[index] };
 
-    if (field === "oilType" || field === "type" || field === "qty") {
-      row[field] = value;
+    if (field === "oilType") {
+      row.oilType = value;
+    } else if (field === "type") {
+      row.type = value;
+    } else if (field === "qty") {
+      row.qty = Number(value) || 0;
     } else if (field === "rate") {
       row.rate = value;
     }
@@ -184,14 +192,14 @@ const InvoicePage: React.FC = () => {
     }
 
     const rate = parseFloat(row.rate as string) || Number(row.rate) || 0;
-    const qty = parseFloat(row.qty || "") || 0;
+    const qty = Number(row.qty) || 0;
     row.total = rate * qty;
     updated[index] = row;
     setProducts(updated);
   };
 
   const addRow = () => {
-    setProducts([...products, { oilType: "", type: "", rate: "", qty: "", total: 0 }]);
+    setProducts([...products, { oilType: "", type: "", rate: "", qty: 0, total: 0 }]);
   };
 
   const removeRow = (index: number) => {
@@ -205,6 +213,16 @@ const InvoicePage: React.FC = () => {
   try {
     setFormLoading(true);
 
+    // First, check and reduce inventory for all products
+    const validProducts = products.filter(p => p.oilType && p.type && (p.qty) > 0);
+    
+    if (validProducts.length === 0) {
+      alert("Please add at least one product with valid oil type, packaging type, and quantity.");
+      return;
+    }
+
+    // If all validations passed, create the invoice
+    // TODO: Add inventory reduction after Vercel backend deployment
     const payload = {
       invoiceNumber,
       date,
@@ -232,14 +250,14 @@ const InvoicePage: React.FC = () => {
     setContact("");
     setAddress("");
     setGstNo(appConfig.company.gstNumber);
-    setProducts([{ oilType: "", type: "", rate: "", qty: "", total: 0 }]);
+    setProducts([{ oilType: "", type: "", rate: "", qty: 0, total: 0 }]);
     setNote("");
 
     setShowForm(false);
 
   } catch (err) {
     console.error(err);
-    // alert("Error creating invoice ❌");
+    alert("Error creating invoice ❌");
   } finally {
     setFormLoading(false);
   }
@@ -347,7 +365,8 @@ const handlePrintPreview = () => {
     doc.text(p.oilType || "-", colX[1] + 2, y + 6);
     doc.text(p.type || "-", colX[2] + 2, y + 6);
     doc.text(String(p.qty || 0), colX[3] + 2, y + 6);
-    doc.text(`${p.rate || 0}`, colX[4] + 2, y + 6);
+    let adjustedRate = getAdjustedRate(p.total || 0, p.qty || 0, appConfig.tax.cgst + appConfig.tax.sgst);
+    doc.text(`${adjustedRate.toFixed(2)}`, colX[4] + 2, y + 6);
     doc.text(`${p.total || 0}`, colX[5] + 2, y + 6);
 
     y += 8;
@@ -368,7 +387,7 @@ const handlePrintPreview = () => {
   doc.text(`SGST (2.5%): ${sgst.toFixed(2)}`, 115, y + 24);
 
   doc.setFontSize(10);
-  doc.text(`TOTAL: ${finalTotal.toFixed(2)}`, 115, y + 32);
+  doc.text(`TOTAL: ${finalTotal.toFixed(0)}`, 115, y + 32);
 
 
   // Draw a line below Sales Tax
@@ -410,6 +429,9 @@ const handlePrintPreview = () => {
 };
 
   
+const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number) => {
+  return finalTotal / (quantity * (1 + gstPercent / 100));
+};
 
   // Handle form change
   const handleChange = (name: string, value: any) => {
@@ -596,8 +618,8 @@ const handlePrintPreview = () => {
                 <input
                   style={styles.input}
                   type="number"
-                  value={item.rate}
-                  readOnly
+                  value={item.rate}                  
+                  onChange={(e) => handleProductChange(index, "rate", e.target.value)}
                 />
               </td>
               <td style={styles.td}>

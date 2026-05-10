@@ -88,7 +88,15 @@ const InvoicePage: React.FC = () => {
   const [note, setNote] = useState("");
 
  const [showPreview, setShowPreview] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [popup, setPopup] = useState({
+    isOpen: false,
+    type: 'info' as 'success' | 'error' | 'warning' | 'info',
+    title: undefined as string | undefined,
+    message: ''
+  });
+
+  const closePopup = () => setPopup((prev) => ({ ...prev, isOpen: false }));
 
   const { invoices, loading, error } = useAppSelector((state: any) => state.invoice);
   const finishedGoods = useAppSelector((state: any) => state.inventory?.finishedGoods || []) as Array<{ packagingType: string; oilType: string }>;
@@ -210,62 +218,81 @@ const InvoicePage: React.FC = () => {
   const grandTotal = products.reduce((sum, item) => sum + item.total, 0);
 
 
-   const handleSave = async () => {
-  try {
-    setFormLoading(true);
+  const handleSave = async () => {
+    try {
+      setFormLoading(true);
+      const validProducts = products.filter(p => p.oilType && p.type && p.qty > 0);
 
-    // First, check and reduce inventory for all products
-    const validProducts = products.filter(p => p.oilType && p.type && (p.qty) > 0);
-    
-    if (validProducts.length === 0) {
-      alert("Please add at least one product with valid oil type, packaging type, and quantity.");
-      return;
+      if (validProducts.length === 0) {
+        setPopup({
+          isOpen: true,
+          type: 'warning',
+          title: 'Validation Error',
+          message: 'Please add at least one product with valid oil type, packaging type, and quantity.'
+        });
+        return;
+      }
+
+      const payload = {
+        invoiceNumber,
+        date,
+        customerName,
+        contact,
+        address,
+        gstNo,
+        products: products.map(p => ({
+          oilType: p.oilType,
+          type: p.type,
+          rate: Number(p.rate),
+          qty: Number(p.qty)
+        })),
+        note,
+        status: 'pending',
+        createdBy: 'admin'
+      };
+
+      await dispatch(createInvoice(payload));
+
+      for (const product of validProducts) {
+        try {
+          await api.post('/inventory/finished-goods/reduce', {
+            oilType: product.oilType,
+            packagingType: product.type,
+            quantity: product.qty
+          });
+        } catch (inventoryErr) {
+          console.error('Failed to reduce inventory for product:', product, inventoryErr);
+        }
+      }
+
+      setPopup({
+        isOpen: true,
+        type: 'success',
+        title: 'Invoice Created',
+        message: 'Invoice created successfully ✅'
+      });
+
+      setCustomerName('');
+      setContact('');
+      setAddress('');
+      setGstNo(appConfig.company.gstNumber);
+      setProducts([{ oilType: '', type: '', rate: '', qty: 0, total: 0 }]);
+      setNote('');
+      setShowForm(false);
+    } catch (err) {
+      console.error(err);
+      setPopup({
+        isOpen: true,
+        type: 'error',
+        title: 'Invoice Error',
+        message: 'Error creating invoice ❌'
+      });
+    } finally {
+      setFormLoading(false);
     }
+  };
 
-    // If all validations passed, create the invoice
-    // TODO: Add inventory reduction after Vercel backend deployment
-    const payload = {
-      invoiceNumber,
-      date,
-      customerName,
-      contact,
-      address,
-      gstNo,
-      products: products.map(p => ({
-        oilType: p.oilType,
-        type: p.type,
-        rate: Number(p.rate),
-        qty: Number(p.qty)
-      })),
-      note,
-      status: "pending",
-      createdBy: "admin" // change as per login user
-    };
-
-    await dispatch(createInvoice(payload));
-
-    alert("Invoice Created Successfully ✅");
-
-    // Reset form
-    setCustomerName("");
-    setContact("");
-    setAddress("");
-    setGstNo(appConfig.company.gstNumber);
-    setProducts([{ oilType: "", type: "", rate: "", qty: 0, total: 0 }]);
-    setNote("");
-
-    setShowForm(false);
-
-  } catch (err) {
-    console.error(err);
-    alert("Error creating invoice ❌");
-  } finally {
-    setFormLoading(false);
-  }
-};
-  
-
-   // Generate PDF and show in modal
+  // Generate PDF and show in modal
 const handlePrintPreview = () => {
     console.log("Generating PDF preview with data:", {
       invoiceNumber,

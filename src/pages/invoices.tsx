@@ -640,7 +640,14 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
             setAddress(row.address);
             setGstNo(appConfig.company.gstNumber);
             setNote(row.note);
-            handlePrintPreview();
+            setProducts(row.products.map(p => ({
+              oilType: p.oilType,
+              type: p.type,
+              rate: Number(p.rate),
+              qty: Number(p.qty),
+              total: Number(p.rate) * Number(p.qty)
+            })));
+            setTimeout(() => handlePrintPreview(), 0);
             
           }}>
             View

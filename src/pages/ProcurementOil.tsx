@@ -364,14 +364,14 @@ const ProcurementOil: React.FC = () => {
                 errors={formErrors}
               />
 
-              {formData.quantity && formData.ratePerLiter && (
+              {formData.quantity > 0 && formData.ratePerLiter > 0 && (
                 <div className="summary-card" style={{ margin: '1.5rem', textAlign: 'center' }}>
                   <h4>Calculated Purchase Amount</h4>
                   <div className="summary-value" style={{ color: '#27ae60', fontSize: '1.75rem' }}>
                     ₹{(calculatedOilAmount + formData.brokerage + formData.tankerTransport + formData.extraCharges).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p style={{ color: '#7f8c8d', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>
-                    {formData.quantity.toLocaleString()} L × ₹{formData.ratePerLiter.toFixed(2)} per liter
+                    ₹{formData.quantity.toLocaleString()} L × ₹{formData.ratePerLiter.toFixed(2)} per liter
                   </p>
                 </div>
               )}

@@ -321,48 +321,31 @@ const getHSNCodeForOilType = (oilType: string): string => {
   return hsnCodes.DEFAULT;
 };
 
-const handlePrintPreview = () => {
+const handlePrintPreview = (invoiceData?: any) => {
+  const data = invoiceData || {
+    invoiceNumber,
+    date,
+    customerName,
+    contact,
+    address,
+    gstNo,
+    products,
+    note
+  };
+
   const doc = new jsPDF();
 
-  // ================= HEADER =================
   doc.setFontSize(14);
   doc.setTextColor(128, 0, 0);
-
-  doc.text(appConfig.company.name, 105, 12, {
-    align: "center",
-  });
+  doc.text(appConfig.company.name, 105, 12, { align: "center" });
 
   doc.setTextColor(0, 0, 0);
-
   doc.setFontSize(8);
 
-  doc.text(
-    appConfig.company.address,
-    105,
-    17,
-    { align: "center" }
-  );
-
-  doc.text(
-    `Contact: ${appConfig.company.contact}, ${appConfig.company.contact2}`,
-    10,
-    22
-  );
-
-  doc.text(
-    `Email: ${appConfig.company.email}`,
-    105,
-    22,
-    { align: "center" }
-  );
-
-  doc.text(
-    `PAN: ${appConfig.company.PAN}`,
-    170,
-    22,
-    { align: "right" }
-  );
-
+  doc.text(appConfig.company.address, 105, 17, { align: "center" });
+  doc.text(`Contact: ${appConfig.company.contact}, ${appConfig.company.contact2}`, 10, 22);
+  doc.text(`Email: ${appConfig.company.email}`, 105, 22, { align: "center" });
+  doc.text(`PAN: ${appConfig.company.PAN}`, 170, 22, { align: "right" });
   doc.text(
     `GSTIN: ${appConfig.company.gstNumber} / FSSAI NO: ${appConfig.company.FSSAI_LIC_NO}`,
     105,
@@ -370,86 +353,52 @@ const handlePrintPreview = () => {
     { align: "center" }
   );
 
-  // ================= TITLE =================
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-
-  doc.text("TAX INVOICE", 105, 34, {
-    align: "center",
-  });
-
+  doc.text("TAX INVOICE", 105, 34, { align: "center" });
   doc.setFont("helvetica", "normal");
 
-  // ================= CUSTOMER BOX =================
   doc.rect(10, 38, 95, 32);
   doc.rect(105, 38, 95, 32);
 
   doc.setFontSize(9);
-
-  // LEFT
   doc.setFont("helvetica", "bold");
   doc.text("Buyer (Bill To)", 12, 44);
 
   doc.setFont("helvetica", "normal");
+  doc.text(data.customerName || "-", 12, 50);
+  doc.text(data.address || "-", 12, 56);
+  doc.text(`GSTIN/UIN : ${data.gstNo || "-"}`, 12, 62);
 
-  doc.text(customerName || "-", 12, 50);
-  doc.text(address || "-", 12, 56);
-
-  doc.text(
-    `GSTIN/UIN : ${gstNo || "-"}`,
-    12,
-    62
-  );
-
-  // RIGHT
   doc.setFont("helvetica", "bold");
   doc.text("Consignee (Ship To)", 107, 44);
 
   doc.setFont("helvetica", "normal");
+  doc.text(data.customerName || "-", 107, 50);
+  doc.text(data.address || "-", 107, 56);
 
-  doc.text(customerName || "-", 107, 50);
-  doc.text(address || "-", 107, 56);
-
-  // ================= INVOICE INFO =================
   doc.rect(10, 70, 190, 16);
 
   doc.setFontSize(8);
+  doc.text(`Invoice No: ${data.invoiceNumber}`, 12, 77);
+  doc.text(`Date: ${new Date(data.date).toLocaleDateString()}`, 80, 77);
+  doc.text(`Contact: ${data.contact || "-"}`, 145, 77);
 
-  doc.text(`Invoice No: ${invoiceNumber}`, 12, 77);
+  const gstPercent = appConfig.tax.cgst + appConfig.tax.sgst;
 
-  doc.text(
-    `Date: ${new Date(date).toLocaleDateString()}`,
-    80,
-    77
-  );
-
-  doc.text(
-    `Contact: ${contact || "-"}`,
-    145,
-    77
-  );
-
-  // ================= PRODUCT TABLE =================
-
-  const gstPercent =
-    appConfig.tax.cgst +
-    appConfig.tax.sgst;
-
-  const tableBody = products.map((p, index) => {
-    const taxableAmount =
-      p.total / (1 + gstPercent / 100);
-
-    const actualRate =
-      taxableAmount / p.qty;
+  const tableBody = data.products.map((p: any, index: number) => {
+    const total = Number(p.total) || Number(p.rate) * Number(p.qty);
+    const taxableAmount = total / (1 + gstPercent / 100);
+    const actualRate = taxableAmount / Number(p.qty);
 
     return [
       index + 1,
       p.oilType || "-",
       p.type || "-",
-     getHSNCodeForOilType(p.oilType) || "-",
+      getHSNCodeForOilType(p.oilType) || "-",
       p.qty || 0,
-        (taxableAmount * (appConfig.tax.cgst / 100)).toFixed(2),
-        (taxableAmount * (appConfig.tax.sgst / 100)).toFixed(2),
+      (taxableAmount * (appConfig.tax.cgst / 100)).toFixed(2),
+      (taxableAmount * (appConfig.tax.sgst / 100)).toFixed(2),
       actualRate.toFixed(2),
       taxableAmount.toFixed(2),
     ];
@@ -457,7 +406,6 @@ const handlePrintPreview = () => {
 
   autoTable(doc, {
     startY: 90,
-
     head: [[
       "Sr",
       "Description of Goods",
@@ -469,231 +417,113 @@ const handlePrintPreview = () => {
       "Rate",
       "Amount",
     ]],
-
     body: tableBody,
-
-    styles: {
-      fontSize: 8,
-      cellPadding: 2,
-      valign: "middle",
-    },
-
-    headStyles: {
-      fillColor: [220, 220, 220],
-      textColor: 0,
-      fontStyle: "bold",
-    },
-
+    styles: { fontSize: 8, cellPadding: 2, valign: "middle" },
+    headStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: "bold" },
     theme: "grid",
-
-    columnStyles: {
-      0: { halign: "center", cellWidth: 10 },
-      1: { cellWidth: 35 },
-      2: { cellWidth: 25 },
-      3: { halign: "center", cellWidth: 25 },
-      4: { halign: "right", cellWidth: 15 },
-      5: { halign: "right", cellWidth: 15 },
-      6: { halign: "right", cellWidth: 15 },
-      7: { halign: "right", cellWidth: 15 },
-      8: { halign: "right", cellWidth: 30 },
-    },
   });
 
-  // ================= TOTALS =================
-
-  const taxable = products.reduce((sum, p) => {
-    return (
-      sum +
-      p.total /
-        (1 + gstPercent / 100)
-    );
+  const taxable = data.products.reduce((sum: number, p: any) => {
+    const total = Number(p.total) || Number(p.rate) * Number(p.qty);
+    return sum + total / (1 + gstPercent / 100);
   }, 0);
 
-  const cgst =
-    taxable *
-    (appConfig.tax.cgst / 100);
-
-  const sgst =
-    taxable *
-    (appConfig.tax.sgst / 100);
-
+  const cgst = taxable * (appConfig.tax.cgst / 100);
+  const sgst = taxable * (appConfig.tax.sgst / 100);
   const totalTax = cgst + sgst;
+  const finalTotal = taxable + totalTax;
 
-  const finalTotal =
-    taxable + totalTax;
-
-  let finalY =
-    doc.lastAutoTable.finalY + 8;
-
-  // ================= GST SUMMARY TABLE =================
+  let finalY = (doc as any).lastAutoTable.finalY + 8;
 
   autoTable(doc, {
     startY: finalY,
-
     head: [[
       "Taxable Value",
       `CGST (${appConfig.tax.cgst}%)`,
       `SGST (${appConfig.tax.sgst}%)`,
       "Total Tax",
     ]],
-
     body: [[
       taxable.toFixed(2),
       cgst.toFixed(2),
       sgst.toFixed(2),
       totalTax.toFixed(2),
     ]],
-
-    foot: [[
-      "Total",
-      taxable.toFixed(2),
-      cgst.toFixed(2),
-      sgst.toFixed(2),
-      totalTax.toFixed(2),
-    ]],
-
-    styles: {
-      fontSize: 8,
-      cellPadding: 2,
-    },
-
-    headStyles: {
-      fillColor: [230, 230, 230],
-      textColor: 0,
-      fontStyle: "bold",
-    },
-
-    footStyles: {
-      fillColor: [245, 245, 245],
-      textColor: 0,
-      fontStyle: "bold",
-    },
-
     theme: "grid",
   });
 
-  finalY =
-    doc.lastAutoTable.finalY + 10;
-
-  // ================= GRAND TOTAL =================
+  finalY = (doc as any).lastAutoTable.finalY + 10;
 
   doc.setFontSize(10);
-
   doc.setFont("helvetica", "bold");
-
-  doc.text(
-    `Grand Total :  ${finalTotal.toFixed(2)}`,
-    135,
-    finalY
-  );
+  doc.text(`Grand Total :  ${finalTotal.toFixed(2)}`, 135, finalY);
 
   doc.setFont("helvetica", "normal");
-
-  // ================= AMOUNT IN WORDS =================
-
   doc.setFontSize(8);
-
   doc.text(
-    `Amount Chargeable (in words): ${convertToWords(
-      Math.round(finalTotal)
-    )} Rupees Only`,
+    `Amount Chargeable (in words): ${convertToWords(Math.round(finalTotal))} Rupees Only`,
     10,
     finalY + 8
   );
 
   // ================= BANK DETAILS =================
 
-  let bankY = finalY + 20;
+    let bankY = finalY + 20;
 
-  doc.setFont("helvetica", "bold");
+    doc.setFont("helvetica", "bold");
+    doc.text("BANK DETAILS", 10, bankY);
 
-  doc.text("BANK DETAILS", 10, bankY);
+    doc.setFont("helvetica", "normal");
 
-  doc.setFont("helvetica", "normal");
+    doc.text(`A/C Name : ${appConfig.bank.name}`, 10, bankY + 6);
+    doc.text(`Bank : ${appConfig.bank.bank}`, 10, bankY + 12);
+    doc.text(`A/C No : ${appConfig.bank.account}`, 10, bankY + 18);
+    doc.text(`IFSC : ${appConfig.bank.ifsc}`, 10, bankY + 24);
 
-  doc.text(
-    `A/C Name : ${appConfig.bank.name}`,
-    10,
-    bankY + 6
-  );
 
-  doc.text(
-    `Bank : ${appConfig.bank.bank}`,
-    10,
-    bankY + 12
-  );
+    // ================= TERMS & CONDITIONS =================
 
-  doc.text(
-    `A/C No : ${appConfig.bank.account}`,
-    10,
-    bankY + 18
-  );
+    let termsY = bankY + 45;
 
-  doc.text(
-    `IFSC : ${appConfig.bank.ifsc}`,
-    10,
-    bankY + 24
-  );
+    doc.setFont("helvetica", "bold");
+    doc.text("Terms & Conditions:", 10, termsY);
 
-  // ================= TERMS =================
+    doc.setFont("helvetica", "normal");
 
-  let termsY = bankY + 38;
+    appConfig.terms.forEach((term: string, index: number) => {
+      doc.text(`${index + 1}. ${term}`, 10, termsY + 7 + index * 6);
+    });
 
-  doc.setFont("helvetica", "bold");
 
-  doc.text(
-    "Terms & Conditions:",
-    10,
-    termsY
-  );
+    // ================= SIGNATURE =================
 
-  doc.setFont("helvetica", "normal");
+    doc.setFont("helvetica", "bold");
 
-  appConfig.terms.forEach(
-    (t, i) => {
-      doc.text(
-        `${i + 1}. ${t}`,
-        10,
-        termsY + 6 + i * 5
-      );
-    }
-  );
+    doc.text(
+      `For ${appConfig.company.name}`,
+      145,
+      termsY + 20
+    );
 
-  // ================= SIGNATURE =================
+    doc.text(
+      "Authorized Signatory",
+      145,
+      termsY + 45
+    );
 
-  doc.setFont("helvetica", "bold");
+    // ================= FOOTER =================
 
-  doc.text(
-    `For ${appConfig.company.name}`,
-    140,
-    termsY + 10
-  );
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
 
-  doc.text(
-    "Authorized Signatory",
-    140,
-    termsY + 28
-  );
+    doc.text(
+      "This is a Computer Generated Invoice",
+      10,
+      285
+    );
 
-  // ================= FOOTER =================
-
-  doc.setFontSize(8);
-
-  doc.setFont("helvetica", "normal");
-
-  doc.text(
-    "This is a Computer Generated Invoice",
-    10,
-    285
-  );
-
-  // ================= PREVIEW =================
-
-  const blobUrl =
-    doc.output("bloburl");
-
+  const blobUrl = String(doc.output("bloburl"));
   setPdfUrl(blobUrl);
-
   setShowPreview(true);
 };
 
@@ -816,30 +646,30 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
       title: 'Actions',
       render: (_: any, row: Invoice) => (
         <>
-          <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={() => {
-            // setEditingInvoice(row);
-            // setShowForm(true);
-            
-            console.log("View invoice:", row);
-            setInvoiceNumber(row.invoiceNumber);
-            setDate(row.date);
-            setCustomerName(row.customerName);
-            setContact(row.contact);
-            setAddress(row.address);
-            setGstNo(appConfig.company.gstNumber);
-            setNote(row.note);
-            setProducts(row.products.map(p => ({
-              oilType: p.oilType,
-              type: p.type,
-              rate: Number(p.rate),
-              qty: Number(p.qty),
-              total: Number(p.rate) * Number(p.qty)
-            })));
-            setTimeout(() => handlePrintPreview(), 0);
-            
-          }}>
+          <button
+            style={{ ...styles.button, ...styles.primaryBtn }}
+            onClick={() => {
+              handlePrintPreview({
+                invoiceNumber: row.invoiceNumber,
+                date: row.date,
+                customerName: row.customerName,
+                contact: row.contact,
+                address: row.address,
+                gstNo: row.gstNo || appConfig.company.gstNumber,
+                note: row.note,
+                products: row.products.map((p: any) => ({
+                  oilType: p.oilType,
+                  type: p.type,
+                  rate: Number(p.rate),
+                  qty: Number(p.qty),
+                  total: Number(p.rate) * Number(p.qty),
+                })),
+              });
+            }}
+          >
             View
           </button>
+          
         </>
       )
     }
@@ -944,7 +774,7 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
       <div style={{ marginTop: 20 }}>
         <button style={{ ...styles.button, ...styles.successBtn }} onClick={handleSave}>Save</button>
         <button style={{ ...styles.button }} onClick={() => setShowForm(false)}>Cancel</button>
-        <button style={{ ...styles.button, ...styles.primaryBtn }} onClick={handlePrintPreview}>Print</button>
+        <button style={{ ...styles.button, ...styles.primaryBtn }}  onClick={() => handlePrintPreview()}>Print</button>
       </div>
 
       {/* PDF Preview Modal */}

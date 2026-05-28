@@ -55,7 +55,7 @@ export const appConfig = {
   packaging: {
     bundles: {
       'Polythene Bundle': {
-        quantity: 200,
+        quantity: 210,
         unit: 'Polythene Bag'
       }
     }

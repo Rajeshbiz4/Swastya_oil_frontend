@@ -693,7 +693,7 @@ const revertRawOilInventory = async (
                   color: '#495057',
                   textAlign: 'right'
                 }}>
-                  <strong>Available Stock:</strong> {availableQuantity.toLocaleString()} L
+                  <strong>Available Stock:</strong> {availableQuantity.toLocaleString()}
                 </div>
               )}
 

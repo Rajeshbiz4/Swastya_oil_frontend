@@ -24,7 +24,7 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
   className = '',
 }) => {
   const renderField = (field: FormField) => {
-    const value = values[field.name] || '';
+    const value = values[field.name] ?? '';
     const error = errors[field.name];
     const hasError = !!error;
 
@@ -34,11 +34,11 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
       required: field.required,
       disabled: loading,
       className: hasError ? 'error' : '',
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-      const newValue = field.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value;
-      onChange(field.name, newValue);
+      value,
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const newValue = field.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value;
+        onChange(field.name, newValue);
+      },
     };
 
     let input: React.ReactNode;
@@ -46,12 +46,8 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
     switch (field.type) {
       case 'select':
         input = (
-          <select
-            {...commonProps}
-            value={value}
-            onChange={handleChange}
-          >
-            <option value="">Select {field.label}</option>
+          <select {...commonProps}>
+            <option value="">{field.options?.length ? '-- Select --' : `Select ${field.label}`}</option>
             {field.options?.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -65,8 +61,6 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
         input = (
           <textarea
             {...commonProps}
-            value={value}
-            onChange={handleChange}
             rows={4}
             placeholder={`Enter ${field.label.toLowerCase()}`}
           />
@@ -78,8 +72,6 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
           <input
             {...commonProps}
             type="date"
-            value={value}
-            onChange={handleChange}
           />
         );
         break;
@@ -89,8 +81,6 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
           <input
             {...commonProps}
             type="number"
-            value={value}
-            onChange={handleChange}
             step="any"
             placeholder={`Enter ${field.label.toLowerCase()}`}
           />
@@ -102,8 +92,6 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
           <input
             {...commonProps}
             type={field.type}
-            value={value}
-            onChange={handleChange}
             placeholder={`Enter ${field.label.toLowerCase()}`}
           />
         );
@@ -122,47 +110,11 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
   };
 
   return (
-   <form onSubmit={onSubmit}>
-  <div className="form-grid">
-    {fields.map((field) => (
-      <div className="form-group" key={field.name}>
-        <label>{field.label}</label>
-
-        {field.type === 'select' ? (
-          <select
-            value={values[field.name] || ''}
-            onChange={(e) => onChange(field.name, e.target.value)}
-          >
-            {field.options?.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <input
-            type={field.type}
-            value={values[field.name] || ''}
-            onChange={(e) =>
-              onChange(
-                field.name,
-                field.type === 'number'
-                  ? parseFloat(e.target.value) || 0
-                  : e.target.value
-              )
-            }
-          />
-        )}
-
-        {errors?.[field.name] ? (
-          <span className="error">{errors[field.name]}</span>
-        ) : null}
+    <form className="form-builder" onSubmit={onSubmit}>
+      <div className="form-grid">
+        {fields.map(renderField)}
       </div>
-    ))}
-  </div>
-
-  {/* <button type="submit">{submitText}</button> */}
-</form>
+    </form>
   );
 };
 

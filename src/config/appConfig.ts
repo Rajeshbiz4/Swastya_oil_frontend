@@ -5,7 +5,7 @@ export const appConfig = {
     email: 'swasthyashaktigold@gmail.com',
     contact: '+917743979251',
     contact2: '+917020375656',
-    gstNumber: 'XXAAAAA0000X000',
+    gstNumber: '27ATGPS719B1ZG',
     PAN:'ABPCS4591P',
     FSSAI_LIC_NO:'11525037000384'
   },
@@ -23,8 +23,8 @@ export const appConfig = {
   ],
 
   tax: {
-    cgst: 9,
-    sgst: 9
+    cgst: 2.5,
+    sgst: 2.5
   },
 
   business: {
@@ -55,7 +55,7 @@ export const appConfig = {
   packaging: {
     bundles: {
       'Polythene Bundle': {
-        quantity: 200,
+        quantity: 210,
         unit: 'Polythene Bag'
       }
     }

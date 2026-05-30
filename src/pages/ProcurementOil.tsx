@@ -28,7 +28,7 @@ const ProcurementOil: React.FC = () => {
     supplierName: '',
     quantity: 0,
     ratePerLiter: 0,
-    paymentMode: '',
+    paymentMode: 'Cash',
     invoiceNumber: '',
     oilType: 'SOYABEAN_OIL',
     actualWeight: 0,
@@ -40,6 +40,7 @@ const ProcurementOil: React.FC = () => {
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [formErrorSummary, setFormErrorSummary] = useState<string | null>(null);
 
   const fetchPendingBookings = useCallback(async () => {
     try {
@@ -95,12 +96,49 @@ const ProcurementOil: React.FC = () => {
   // form handlers and validation (same as earlier)
   const validateForm = () => {
     const errors: Record<string, string> = {};
-    if (!formData.supplierName) errors.supplierName = 'Supplier name is required';
-    if (formData.quantity <= 0) errors.quantity = 'Quantity must be greater than 0';
-    if (formData.ratePerLiter <= 0) errors.ratePerLiter = 'Rate must be greater than 0';
-    if (!formData.paymentMode) errors.paymentMode = 'Payment mode is required';
+    const missingFields: string[] = [];
+
+    if (!formData.supplierName) {
+      errors.supplierName = 'Supplier name is required';
+      missingFields.push('supplierName');
+    }
+    if (formData.quantity <= 0) {
+      errors.quantity = 'Quantity must be greater than 0';
+      missingFields.push('quantity');
+    }
+    if (formData.ratePerLiter <= 0) {
+      errors.ratePerLiter = 'Rate must be greater than 0';
+      missingFields.push('ratePerLiter');
+    }
+    if (!formData.paymentMode) {
+      errors.paymentMode = 'Payment mode is required';
+      missingFields.push('paymentMode');
+    }
+    if (!formData.invoiceNumber) {
+      errors.invoiceNumber = 'Invoice number is required';
+      missingFields.push('invoiceNumber');
+    }
+    if (!formData.invoiceDate) {
+      errors.invoiceDate = 'Invoice date is required';
+      missingFields.push('invoiceDate');
+    }
+    if (!formData.deliveryDate) {
+      errors.deliveryDate = 'Delivery date is required';
+      missingFields.push('deliveryDate');
+    }
+    if (!formData.oilType) {
+      errors.oilType = 'Oil type is required';
+      missingFields.push('oilType');
+    }
+
     setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    setFormErrorSummary(
+      missingFields.length
+        ? `All fields are required: ${missingFields.join(', ')}`
+        : null
+    );
+
+    return missingFields.length === 0;
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,7 +173,6 @@ const ProcurementOil: React.FC = () => {
       type: 'select',
       required: false,
       options: [
-        { value: '', label: '-- Select a Booking (Optional) --' },
         ...pendingBookings.map((booking) => ({
           value: booking._id,
           label: `${new Date(booking.bookingDate).toLocaleDateString()} - ${booking.tankerCapacity.toLocaleString()}L @ ₹${booking.rate}/L (Pending: ₹${booking.pendingAmount.toLocaleString()})`,
@@ -154,7 +191,7 @@ const ProcurementOil: React.FC = () => {
       type: 'select',
       required: true,
       options: [
-        { value: PaymentMode.CASH, label: 'Cash' },
+        { value: PaymentMode.CASH, label: 'Cash'},
         { value: PaymentMode.CHECK, label: 'Cheque' },
         { value: PaymentMode.ONLINE, label: 'Online' },
       ],
@@ -176,6 +213,8 @@ const ProcurementOil: React.FC = () => {
       const response = await oilPurchaseAPI.create(formData);
       if (response.data.success) {
         setSuccess('Oil purchase added successfully');
+        setFormErrors({});
+        setFormErrorSummary(null);
         setShowForm(false);
         fetchOilPurchases();
         fetchOilSummary();
@@ -184,7 +223,7 @@ const ProcurementOil: React.FC = () => {
           supplierName: '',
           quantity: 0,
           ratePerLiter: 0,
-          paymentMode: '',
+          paymentMode: 'Cash',
           invoiceNumber: '',
           oilType: 'SOYABEAN_OIL',
           actualWeight: 0,
@@ -239,7 +278,14 @@ const ProcurementOil: React.FC = () => {
             </div>
 
             <div className="filter-group" style={{ marginLeft: 'auto', alignSelf: 'center' }}>
-              <button className="primary-button" onClick={() => setShowForm(true)}>
+              <button
+                className="primary-button"
+                onClick={() => {
+                  setShowForm(true);
+                  setFormErrors({});
+                  setFormErrorSummary(null);
+                }}
+              >
                 Add Oil Purchase
               </button>
             </div>
@@ -270,6 +316,11 @@ const ProcurementOil: React.FC = () => {
                 <h3 id="modal-title">New Oil Purchase</h3>
                 <button className="modal-close" aria-label="Close" onClick={() => setShowForm(false)}>×</button>
               </div>
+              {formErrorSummary && (
+                <div className="form-error-summary" style={{ margin: '0.75rem 0 1rem', padding: '0.75rem 1rem', backgroundColor: '#fdecea', border: '1px solid #f5c6cb', borderRadius: '6px', color: '#a71d2a' }}>
+                  {formErrorSummary}
+                </div>
+              )}
                     {selectedBooking && (
                 <div className="info-section" style={{ marginBottom: '1.5rem' }}>
                   <h3>Selected Booking Details</h3>
@@ -313,14 +364,14 @@ const ProcurementOil: React.FC = () => {
                 errors={formErrors}
               />
 
-              {formData.quantity && formData.ratePerLiter && (
+              {formData.quantity > 0 && formData.ratePerLiter > 0 && (
                 <div className="summary-card" style={{ margin: '1.5rem', textAlign: 'center' }}>
                   <h4>Calculated Purchase Amount</h4>
                   <div className="summary-value" style={{ color: '#27ae60', fontSize: '1.75rem' }}>
                     ₹{(calculatedOilAmount + formData.brokerage + formData.tankerTransport + formData.extraCharges).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p style={{ color: '#7f8c8d', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>
-                    {formData.quantity.toLocaleString()} L × ₹{formData.ratePerLiter.toFixed(2)} per liter
+                    ₹{formData.quantity.toLocaleString()} L × ₹{formData.ratePerLiter.toFixed(2)} per liter
                   </p>
                 </div>
               )}

@@ -19,7 +19,8 @@ import ProcurementPackaging from './pages/ProcurementPackaging';
 import OilBatchProcessing from './pages/OilBatchProcessing';
 import Inventory from './pages/Inventory';
 import ProductionImproved from './pages/ProductionImproved';
-import Invoices from './pages/invoices';
+//import Invoices from './pages/invoices';
+import InvoicePage from './modules/invoice/InvoicePage';
 import Sales from './pages/Sales';
 import Reports from './pages/Reports';
 import Worker from './pages/Worker';
@@ -129,7 +130,7 @@ const AppContent: React.FC = () => {
 
            <Route path="invoices" element={
             <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
-              <Invoices />
+              <InvoicePage />
             </ProtectedRoute>
           } />
           

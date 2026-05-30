@@ -37,6 +37,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/jspdf": "^2.0.0",
+    "@types/number-to-words": "^1.2.3",
     "@typescript-eslint/eslint-plugin": "^8.52.0",
     "@typescript-eslint/parser": "^8.52.0",
     "@vitejs/plugin-react": "^5.1.2",

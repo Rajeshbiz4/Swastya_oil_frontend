@@ -19,7 +19,7 @@ export interface Invoice {
   gstNo?: string;
   products: InvoiceProduct[];
   note?: string;
-  status?: 'pending' | 'paid' | 'failed';
+  status?: 'pending' | 'completed' | 'failed';
   createdBy: string;
   remarks?: string;
 }
@@ -105,7 +105,7 @@ export const deleteInvoice = createAsyncThunk<
 
 export const updateInvoiceStatus = createAsyncThunk<
   Invoice,
-  { id: string; status: string },
+  { id: string; status: 'pending' | 'completed' | 'failed' },
   { rejectValue: string }
 >(
   'invoice/updateStatus',
@@ -114,7 +114,11 @@ export const updateInvoiceStatus = createAsyncThunk<
       const res = await api.patch(`/invoices/${id}/status`, { status });
       return (res.data.data || res.data) as Invoice;
     } catch (err: any) {
-      return rejectWithValue(err?.response?.data?.message || 'Failed to update status');
+      return rejectWithValue(
+        err?.response?.data?.message ||
+        err?.error?.message ||
+        'Failed to update invoice status'
+      );
     }
   }
 );

@@ -261,7 +261,6 @@ const OilBatchProcessing: React.FC = () => {
       if (!data.success || !data.data || !data.data.inventory) {
         throw new Error('Invalid inventory response structure');
       }
-      debugger;
       // Calculate total available quantity for this oil type
       const totalAvailableQuantity = data.data.inventory
         .filter((item: any) =>  item.totalQuantity > 0)
@@ -433,7 +432,6 @@ const OilBatchProcessing: React.FC = () => {
         quantity: 0,
       });
       setAvailableQuantity(null); // Clear available quantity on success
-      debugger;
       const totalWeight = formData.quantity * (selectedProductType.weight / 1000);
       //Update raw oil inventory stock after created batch
       let rawInvUpdated:boolean = await updateRawOilInventory(selectedProductType.code,totalWeight );

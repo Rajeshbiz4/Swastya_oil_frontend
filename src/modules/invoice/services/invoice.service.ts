@@ -2,7 +2,11 @@ import api from '../../../services/api';
 import {
   CreateInvoicePayload,
   Invoice,
+  InvoiceProductRateResponse,
   InvoiceStatus,
+  RawOilAverageRateResponse,
+  FinishedGoodsQuantityResponse,
+  PackagingRateResponse,
 } from '../types/invoice.types';
 
 export const invoiceService = {
@@ -24,7 +28,55 @@ export const invoiceService = {
     return response.data.data || response.data;
   },
 
-  async deleteInvoice(id: string): Promise<void> {
-    await api.delete(`/invoices/${id}`);
+  async getInvoiceProductRate(
+    oilType: string,
+    packagingType: string
+  ): Promise<InvoiceProductRateResponse> {
+    const response = await api.get(
+      `/invoice-pricing/product-rate/${encodeURIComponent(oilType)}/${encodeURIComponent(packagingType)}`
+    );
+
+    return response.data.data;
+  },
+  async getRawOilAverageRate(
+    oilType: string
+  ): Promise<RawOilAverageRateResponse> {
+    const response = await api.get(
+      `/invoice/raw-oil-average-rate/${encodeURIComponent(oilType)}`
+    );
+
+    return response.data.data;
+  },
+
+  async getOilAverageRate(
+    oilType: string
+  ): Promise<any> {
+    const response = await api.get(
+      `/raw-oil/average-rate/${oilType}`
+    );
+
+    return response.data.data;
+  },
+
+  async getFinishedGoodsQuantity(
+    oilType: string,
+    packagingType: string
+  ): Promise<FinishedGoodsQuantityResponse> {
+    const response = await api.get(
+      `/invoice-pricing/finished-goods-quantity/${encodeURIComponent(oilType)}/${encodeURIComponent(packagingType)}`
+    );
+
+    return response.data.data;
+  },
+
+  async getPackagingRate(
+    packagingType: string
+  ): Promise<PackagingRateResponse> {
+    const response = await api.get(
+      `/invoice-pricing/packaging-rate/${encodeURIComponent(packagingType)}`
+    );
+
+    return response.data.data;
   },
 };
+

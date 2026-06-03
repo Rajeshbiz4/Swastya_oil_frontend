@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../store';
 import { login, clearError } from '../../store/slices/authSlice';
 import { APP_NAME } from '../../utils/constants';
 import LogoTitle from '../Logo/logo';
-import logo from '../../assets/logo.jpeg';
+import logo from '../../assets/logo.png';
 import './Auth.css';
 
 const Login: React.FC = () => {

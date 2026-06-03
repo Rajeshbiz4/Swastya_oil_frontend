@@ -3,7 +3,7 @@ import { useAppSelector, useAppDispatch } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 import { APP_NAME } from '../../utils/constants';
 import LogoTitle from '../Logo/logo';
-import logo from '../../assets/logo.jpeg';
+import logo from '../../assets/logo.png';
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);

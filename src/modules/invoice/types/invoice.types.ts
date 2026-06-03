@@ -48,3 +48,31 @@ export interface CreateInvoicePayload {
   status?: InvoiceStatus;
   createdBy: string;
 }
+
+export interface InvoiceProductRateResponse {
+  oilType: string;
+  selectedPackagingType: string;
+  packagingInventoryType: string;
+  liters: number;
+  oilAverageRate: number;
+  oilAmount: number;
+  packagingRatePerUnit: number;
+  availableQuantity: number;
+  finalRate: number;
+}
+export interface RawOilAverageRateResponse {
+  oilType: string;
+  averageRate: number;
+}
+
+export interface FinishedGoodsQuantityResponse {
+  oilType: string;
+  packagingType: string;
+  availableQuantity: number;
+}
+
+export interface PackagingRateResponse {
+  selectedPackagingType: string;
+  packagingInventoryType: string;
+  ratePerUnit: number;
+}

@@ -5,7 +5,7 @@ import { useAppSelector } from '../store';
 import api, { ApiResponse } from '../services/api';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import logo from './src/assets/logo.jpeg';
+import logo from './src/assets/logo.png';
 import { appConfig } from "../config/appConfig";
 import {
   fetchInvoices,

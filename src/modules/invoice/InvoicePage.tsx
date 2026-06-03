@@ -14,11 +14,39 @@ import InvoicePreviewModal from './components/InvoicePreviewModal';
 import { useInvoicePdf } from './hooks/useInvoicePdf';
 import { Invoice } from './types/invoice.types';
 import { mapInvoiceToPdfData } from './utils/invoiceCalculations';
+import InvoiceForm from './components/InvoiceForm';
 
 const InvoicePage: React.FC = () => {
   const dispatch = useDispatch<any>();
+  const [showForm, setShowForm] = useState(false);
 
   const { invoices, loading, error } = useAppSelector((state: any) => state.invoice);
+
+  const finishedGoods = useAppSelector(
+    (state: any) => state.inventory?.finishedGoods || []
+  ) as Array<{
+    oilType: string;
+    packagingType: string;
+    quantity: number;
+    isActive?: boolean;
+  }>;
+  const oilTypes = Array.from(
+    new Set(
+      finishedGoods
+        .filter((item) => item.isActive !== false && Number(item.quantity) > 0)
+        .map((item) => item.oilType)
+        .filter(Boolean)
+    )
+  ).sort();
+
+  const packagingTypes = Array.from(
+    new Set(
+      finishedGoods
+        .filter((item) => item.isActive !== false && Number(item.quantity) > 0)
+        .map((item) => item.packagingType)
+        .filter(Boolean)
+    )
+  ).sort();
 
   const [popup, setPopup] = useState<{
     isOpen: boolean;
@@ -48,6 +76,7 @@ const InvoicePage: React.FC = () => {
   const handleViewInvoice = (invoice: Invoice) => {
     openPreview(mapInvoiceToPdfData(invoice));
   };
+
 
   const handleSettleInvoice = async (invoice: Invoice) => {
     try {
@@ -89,10 +118,7 @@ const InvoicePage: React.FC = () => {
       <button
         className="primary-button"
         style={{ marginTop: 10, marginBottom: 10 }}
-        onClick={() => {
-          // Next step: open InvoiceForm component
-          console.log('Create invoice clicked');
-        }}
+        onClick={() => setShowForm(true)}
       >
         + Create Invoice
       </button>
@@ -103,6 +129,16 @@ const InvoicePage: React.FC = () => {
         onView={handleViewInvoice}
         onSettle={handleSettleInvoice}
       />
+      {showForm && (
+        <InvoiceForm
+          oilTypes={oilTypes}
+          packagingTypes={packagingTypes}
+          finishedGoods={finishedGoods}
+          onClose={() => setShowForm(false)}
+          onCreated={() => dispatch(fetchInvoices())}
+          setPopup={setPopup}
+        />
+      )}
 
       {showPreview && (
         <InvoicePreviewModal

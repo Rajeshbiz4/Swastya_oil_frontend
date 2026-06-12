@@ -11,6 +11,7 @@ export interface InvoiceProduct {
 
 export interface Invoice {
   _id: string;
+  ackNo?: string;
   invoiceNumber: string;
   date: string;
   customerName: string;
@@ -22,6 +23,13 @@ export interface Invoice {
   status?: 'pending' | 'paid' | 'failed';
   createdBy: string;
   remarks?: string;
+  vehicleNumber?: string;
+transporterName?: string;
+driverName?: string;
+distance?: number;
+ewayBillNumber?: string;
+dispatchAddress?: string;
+destinationAddress?: string;
 }
 
 interface InvoiceState {

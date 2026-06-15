@@ -15,7 +15,7 @@ export const appConfig = {
     account: "50200112984964",
     ifsc: "HDFC0000437",
 
-    upiId: "8550946895@ybl"
+   // upiId: "8550946895@ybl"
 
   },
    

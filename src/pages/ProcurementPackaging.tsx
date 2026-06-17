@@ -14,6 +14,18 @@ const ProcurementPackaging: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  useEffect(() => {
+  if (showForm) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = 'auto';
+  }
+
+  return () => {
+    document.body.style.overflow = 'auto';
+  };
+}, [showForm]);
+
   // ✅ COMMON FIELDS (no packagingType here now)
   const [formData, setFormData] = useState({
     supplierName: '',
@@ -326,8 +338,10 @@ const ProcurementPackaging: React.FC = () => {
             </div>
 
             {/* SCROLL CONTAINER */}
-            <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
 
+                
+            
               {/* SUPPLIER & INVOICE SECTION */}
               <div style={{ padding: '1.5rem', borderBottom: '1px solid #eee' }}>
                 <h4 style={{ marginBottom: '1rem', color: '#333' }}>📋 Invoice & Supplier Details</h4>
@@ -553,7 +567,7 @@ const ProcurementPackaging: React.FC = () => {
               </div>
 
               {/* TOTAL SECTION */}
-              <div style={{
+              <div style={{             
                 padding: '1.5rem',
                 backgroundColor: '#f0f8ff',
                 borderTop: '2px solid #ddd',
@@ -582,7 +596,7 @@ const ProcurementPackaging: React.FC = () => {
                 </div>
               </div>
 
-            </div>
+             
 
             {/* ACTION BUTTONS */}
             <div className="modal-actions" style={{ borderTop: '1px solid #eee', backgroundColor: '#f9f9f9' }}>
@@ -602,6 +616,8 @@ const ProcurementPackaging: React.FC = () => {
               >
                 {formLoading ? '⏳ Saving...' : '💾 Save Purchase'}
               </button>
+            </div>
+
             </div>
 
           </div>

@@ -62,6 +62,7 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [activePreset, setActivePreset] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(true);
 
   // Form data with default current date
   const [formData, setFormData] = useState({
@@ -677,123 +678,61 @@ const confirmDeleteBooking = async () => {
       </div>
 
       <div className="module-content">
-        <div className="filters-section">
-          <div style={{ marginBottom: '1rem' }}>
-            <label className="date-range-label" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, color: '#495057' }}>
-              Filter by Booking Date
-            </label>
-            
-            {/* Date Range Inputs */}
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-              <div className="filter-group">
-                <label htmlFor="start-date" style={{ fontSize: '0.85rem', color: '#6c757d' }}>From</label>
-                <input
-                  id="start-date"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => handleStartDateChange(e.target.value)}
-                  max={endDate || getTodayDate()}
-                  style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ced4da' }}
-                />
-              </div>
-              
-              <div className="filter-group">
-                <label htmlFor="end-date" style={{ fontSize: '0.85rem', color: '#6c757d' }}>To</label>
-                <input
-                  id="end-date"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => handleEndDateChange(e.target.value)}
-                  min={startDate}
-                  max={getTodayDate()}
-                  style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ced4da' }}
-                />
-              </div>
+    <div className="filters-section">
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      cursor: 'pointer',
+      marginBottom: '1rem'
+    }}
+    onClick={() => setShowFilters(!showFilters)}
+  >
+    <h3 style={{ margin: 0 }}>Filter by Booking Date</h3>
 
-              {(startDate || endDate) && (
-                <button 
-                  type="button"
-                  onClick={clearFilters}
-                  className="secondary-button"
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            
-            {/* Preset Buttons */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => setPresetRange('today')}
-                className={activePreset === 'today' ? 'primary-button' : 'secondary-button'}
-                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                onClick={() => setPresetRange('7days')}
-                className={activePreset === '7days' ? 'primary-button' : 'secondary-button'}
-                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-              >
-                Last 7 Days
-              </button>
-              <button
-                type="button"
-                onClick={() => setPresetRange('30days')}
-                className={activePreset === '30days' ? 'primary-button' : 'secondary-button'}
-                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-              >
-                Last 30 Days
-              </button>
-              <button
-                type="button"
-                onClick={() => setPresetRange('90days')}
-                className={activePreset === '90days' ? 'primary-button' : 'secondary-button'}
-                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-              >
-                Last 90 Days
-              </button>
-              <button
-                type="button"
-                onClick={() => setPresetRange('thisMonth')}
-                className={activePreset === 'thisMonth' ? 'primary-button' : 'secondary-button'}
-                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-              >
-                This Month
-              </button>
-            </div>
+    <button
+      type="button"
+      className="secondary-button"
+    >
+      {showFilters ? '▲ Hide' : '▼ Show'}
+    </button>
+  </div>
 
-            {/* Active Filter Display */}
-            {(startDate || endDate) && (
-              <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: '#6c757d' }}>
-                Showing bookings from <strong>{startDate ? new Date(startDate).toLocaleDateString() : 'beginning'}</strong> to <strong>{endDate ? new Date(endDate).toLocaleDateString() : 'now'}</strong>
-                {' '}({filteredBookings.length} of {bookings.length} bookings)
-              </div>
-            )}
-          </div>
-        </div>
+  {showFilters && (
+    <>
+      <div style={{ marginBottom: '1rem' }}>
+        {/* Your Date Filter Code */}
 
-        <DataTable
-          data={filteredBookings}
-          columns={columns}
-          loading={loading}
-          rowKey="_id"
-        />
-        <ConfirmModal
-              isOpen={showDeleteModal}
-              title="Delete Booking"
-              message="Are you sure you want to delete this booking? This action cannot be undone."
-              onConfirm={confirmDeleteBooking}
-              onCancel={() => {
-                setShowDeleteModal(false);
-                setSelectedBookingId(null);
-              }}
-              confirmText="Delete"
-              cancelText="Cancel"
-            />
+        {/* Date Inputs */}
+
+        {/* Preset Buttons */}
+
+        {/* Active Filter Display */}
+      </div>
+    </>
+  )}
+</div>
+
+<DataTable
+  data={filteredBookings}
+  columns={columns}
+  loading={loading}
+  rowKey="_id"
+/>
+
+<ConfirmModal
+  isOpen={showDeleteModal}
+  title="Delete Booking"
+  message="Are you sure you want to delete this booking? This action cannot be undone."
+  onConfirm={confirmDeleteBooking}
+  onCancel={() => {
+    setShowDeleteModal(false);
+    setSelectedBookingId(null);
+  }}
+  confirmText="Delete"
+  cancelText="Cancel"
+/>
       </div>
     </div>
   );

@@ -54,8 +54,33 @@ const Dashboard: React.FC = () => {
       };
     }
     
-    const totalRawOil = rawOil.reduce((sum, item) => sum + item.currentQuantity, 0);
-    const totalRawOilValue = rawOil.reduce((sum, item) => sum + (item.currentQuantity * item.costPerLiter), 0);
+    //const totalRawOil = rawOil.reduce((sum, item) => sum + item.currentQuantity, 0);
+    //const totalRawOilValue = rawOil.reduce((sum, item) => sum + (item.currentQuantity * item.costPerLiter), 0);
+    const totalRawOil = rawOil.reduce((sum: number, item: any) => {
+  return (
+    sum +
+    (item.batches?.reduce(
+      (batchSum: number, batch: any) =>
+        batchSum + Number(batch.currentQuantity || 0),
+      0
+    ) || 0)
+  );
+}, 0);
+
+const totalRawOilValue = rawOil.reduce((sum: number, item: any) => {
+  return (
+    sum +
+    (item.batches?.reduce(
+      (batchSum: number, batch: any) =>
+        batchSum +
+        Number(batch.currentQuantity || 0) *
+        Number(batch.costPerLiter || 0),
+      0
+    ) || 0)
+  );
+}, 0);
+
+
     const totalPackaging = packaging.reduce((sum, item) => sum + (item.quantity || item.currentStock || 0), 0);
     const totalFinishedGoods = finishedGoods.reduce((sum, item) => sum + item.quantity, 0);
     const totalFinishedGoodsValue = finishedGoods.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
@@ -100,6 +125,20 @@ const Dashboard: React.FC = () => {
   const handleQuickAction = (path: string) => {
     navigate(path);
   };
+
+  
+
+  
+
+/*rawOil.forEach((item) => {
+  console.log("Raw Oil Item:", {
+    currentQuantity: item.currentQuantity,
+    costPerLiter: item.costPerLiter,
+    multiply: item.currentQuantity * item.costPerLiter,
+  });
+});*/
+
+
 
   const totals = calculateTotals();
 

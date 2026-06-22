@@ -21,7 +21,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "chart.js": "^4.5.1",
-    "dotenv": "^8.6.0",
+    "dotenv": "^8.2.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "node-fetch": "^3.3.2",

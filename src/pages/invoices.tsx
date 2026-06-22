@@ -20,6 +20,7 @@ import './Pages.css';
 import { toWords } from 'number-to-words';
 import { time } from 'node:console';
 import { timeStamp } from 'node:console';
+import Popup from '../components/UI/Popup';
 
 const styles = {
   container: {
@@ -78,10 +79,44 @@ const styles = {
 
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
+type ProductTypeMaster = {
+  _id: string;
+  value: string;
+  label: string;
+  oilType: string;
+  packagingType: string;
+  packageSize: number;
+  unitType: "LITER" | "KG";
+  weight: number;
+  packagingMaterialType: string;
+  packagingCostDivisionQty: number;
+  salesPackType: string;
+  unitsPerSalesPack: number;
+  isActive: boolean;
+};
+
+type ProductRateForInvoice = {
+  id?: string;
+  productTypeId: string;
+  oilType: string;
+  packagingType: string;
+  packageSize: number;
+  unitType: "LITER" | "KG";
+  packagingMaterialType: string;
+  packagingCostDivisionQty: number;
+  rawOilAverageRatePerUnit: number;
+  packagingAverageCost: number;
+  profitPerUnit: number;
+  finalOilRatePerUnit: number;
+  finalProductRate: number;
+};
 
 const InvoicePage: React.FC = () => {
   const dispatch = useDispatch<any>();
-
+  const [productTypes, setProductTypes] = useState<ProductTypeMaster[]>([]);
+  const [productRateDetails, setProductRateDetails] = useState<
+    Record<number, ProductRateForInvoice>
+  >({});
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [date, setDate] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -108,13 +143,7 @@ const InvoicePage: React.FC = () => {
   const packagingTypes = Array.from(new Set(finishedGoods.map((item) => item.packagingType).filter(Boolean) as string[])).sort() as string[];
   const oilTypes = Array.from(new Set(finishedGoods.map((item) => item.oilType).filter(Boolean) as string[])).sort() as string[];
   // const [packagingRateCache, setPackagingRateCache] = useState<Record<string, number>>({});
-  const [productRateCache, setProductRateCache] = useState<
-    Record<string, ProductRateForInvoice>
-  >({});
 
-  const [productRateDetails, setProductRateDetails] = useState<
-    Record<number, ProductRateForInvoice>
-  >({});
   //    console.log("Invoices from store:", invoices);
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -135,14 +164,13 @@ const InvoicePage: React.FC = () => {
   // packagingTypes.push("14 Liter Cane");
   // Load invoices and finished goods inventory for packaging type options
   useEffect(() => {
-
-
     dispatch(fetchInvoices());
     dispatch(fetchFinishedGoodsInventory());
+    loadProductTypes();
   }, [dispatch]);
 
   const [products, setProducts] = useState<ProductRow[]>([
-    { oilType: "", type: "", rate: "", qty: 0, total: 0 }
+    { productTypeId: "", oilType: "", type: "", rate: "", qty: 0, total: 0 }
   ]);
 
   const randomInvoiceNo =
@@ -156,6 +184,7 @@ const InvoicePage: React.FC = () => {
   }, []);
 
   type ProductRow = {
+    productTypeId: string;
     oilType: string;
     type: string;
     rate: number | string;
@@ -191,67 +220,62 @@ const InvoicePage: React.FC = () => {
 
   const fetchProductRateForInvoice = async (
     index: number,
-    oilType: string,
-    packagingType: string
-  ): Promise<number> => {
-    if (!oilType || !packagingType) return 0;
-
-    const cacheKey = `${oilType}-${packagingType}`;
-
-    if (productRateCache[cacheKey]) {
-      const cachedRate = productRateCache[cacheKey];
-
-      setProductRateDetails((prev) => ({
-        ...prev,
-        [index]: cachedRate,
-      }));
-
-      return calculatePackageRate(cachedRate);
+    productTypeId: string
+  ): Promise<number | null> => {
+    if (!productTypeId || productTypeId === "0") {
+      return null;
     }
 
     try {
-      debugger;
-      const response = await api.get<ApiResponse<ProductRateForInvoice>>(
-        `/product-rates/active/${encodeURIComponent(oilType)}/${encodeURIComponent(packagingType)}`
+      const response = await api.get(
+        `/product-rates/active/by-product/${productTypeId}`
       );
 
       if (!response.data.success || !response.data.data) {
-        throw new Error(
-          response.data.error?.message || 'Product rate not configured.'
-        );
+        throw response;
       }
 
       const rateData = response.data.data;
-      const packageRate = calculatePackageRate(rateData);
-
-      setProductRateCache((prev) => ({
-        ...prev,
-        [cacheKey]: rateData,
-      }));
 
       setProductRateDetails((prev) => ({
         ...prev,
         [index]: rateData,
       }));
 
-      return packageRate;
+      return Number(rateData.finalProductRate || 0);
     } catch (error: any) {
-      console.error('Product rate fetch error:', error);
+      console.error("Product rate fetch error:", error);
 
-      const message =
-        error?.error?.message ||
-        error?.response?.data?.error?.message ||
-        error?.message ||
-        `Rate is not configured for ${oilType} - ${packagingType}. Please update Product Rate Form first.`;
+      const apiError = error?.response?.data?.error;
+      const errorCode = apiError?.code;
+      const errorMessage =
+        apiError?.message ||
+        "Product rate is not configured. Please update Product Rate Form first.";
 
-      setPopup({
-        isOpen: true,
-        type: 'error',
-        title: 'Rate Not Configured',
-        message,
+      // Clear old rate breakdown for this row
+      setProductRateDetails((prev) => {
+        const updated = { ...prev };
+        delete updated[index];
+        return updated;
       });
 
-      return 0;
+      if (errorCode === "RATE_NOT_CONFIGURED") {
+        setPopup({
+          isOpen: true,
+          type: "warning", // use "error" if your popup does not support warning
+          title: "Product Rate Not Configured",
+          message: errorMessage,
+        });
+      } else {
+        setPopup({
+          isOpen: true,
+          type: "error",
+          title: "Product Rate Error",
+          message: errorMessage,
+        });
+      }
+
+      return null;
     }
   };
 
@@ -263,35 +287,22 @@ const InvoicePage: React.FC = () => {
     const updated = [...products];
     const row = { ...updated[index] };
 
-    if (field === "oilType") {
-      row.oilType = value;
-      row.type = "";
-      row.rate = "";
-      row.total = 0;
+    if (field === "productTypeId") {
+      const selectedProductType = productTypes.find(
+        (productType) => productType._id === value
+      );
 
-      setProductRateDetails((prev) => {
-        const copy = { ...prev };
-        delete copy[index];
-        return copy;
-      });
+      row.productTypeId = value;
+      row.oilType = selectedProductType?.oilType || "";
+      row.type = selectedProductType?.packagingType || "";
 
-      updated[index] = row;
-      setProducts(updated);
-      return;
-    }
+      const rate = value
+        ? await fetchProductRateForInvoice(index, value)
+        : null;
 
-    if (field === "type") {
-      row.type = value;
-
-      if (row.oilType && row.type) {
-        const packageRate = await fetchProductRateForInvoice(
-          index,
-          row.oilType,
-          row.type
-        );
-
-        row.rate = packageRate;
-      }
+      // Set default rate from ProductRate if available.
+      // If rate is not configured, keep blank so user can manually enter invoice-level rate.
+      row.rate = rate !== null ? rate : "";
     }
 
     if (field === "qty") {
@@ -299,7 +310,14 @@ const InvoicePage: React.FC = () => {
     }
 
     if (field === "rate") {
-      row.rate = value;
+      row.rate = value === "" ? "" : Number(value);
+
+      // Optional: remove product-rate breakdown because user changed rate manually
+      setProductRateDetails((prev) => {
+        const updatedDetails = { ...prev };
+        delete updatedDetails[index];
+        return updatedDetails;
+      });
     }
 
     const rate = Number(row.rate) || 0;
@@ -312,7 +330,10 @@ const InvoicePage: React.FC = () => {
   };
 
   const addRow = () => {
-    setProducts([...products, { oilType: "", type: "", rate: "", qty: 0, total: 0 }]);
+    setProducts([
+      ...products,
+      { productTypeId: "", oilType: "", type: "", rate: "", qty: 0, total: 0 }
+    ]);
   };
 
   const removeRow = (index: number) => {
@@ -325,7 +346,14 @@ const InvoicePage: React.FC = () => {
   const handleSave = async () => {
     try {
       setFormLoading(true);
-      const validProducts = products.filter(p => p.oilType && p.type && p.qty > 0);
+      const validProducts = products.filter(
+        (p) =>
+          p.productTypeId &&
+          p.oilType &&
+          p.type &&
+          Number(p.rate) > 0 &&
+          Number(p.qty) > 0
+      );
 
       if (validProducts.length === 0) {
         setPopup({
@@ -345,10 +373,12 @@ const InvoicePage: React.FC = () => {
         address,
         gstNo,
         products: products.map(p => ({
+          productTypeId: p.productTypeId,
           oilType: p.oilType,
           type: p.type,
           rate: Number(p.rate),
-          qty: Number(p.qty)
+          qty: Number(p.qty),
+          total: Number(p.total) || Number(p.rate) * Number(p.qty)
         })),
         note,
         status: 'pending',
@@ -380,7 +410,7 @@ const InvoicePage: React.FC = () => {
       setContact('');
       setAddress('');
       setGstNo(appConfig.company.gstNumber);
-      setProducts([{ oilType: '', type: '', rate: '', qty: 0, total: 0 }]);
+      setProducts([{ productTypeId: '', oilType: '', type: '', rate: '', qty: 0, total: 0 }]);
       setNote('');
       setShowForm(false);
     } catch (err) {
@@ -787,6 +817,33 @@ const InvoicePage: React.FC = () => {
     setFormData(updated);
   };
 
+  const loadProductTypes = async () => {
+    try {
+      const response = await api.get<ApiResponse<any>>(
+        "/product-types?isActive=true&limit=1000"
+      );
+
+      const data = response.data.data;
+
+      const list =
+        data?.productTypes ||
+        data?.items ||
+        data ||
+        [];
+
+      setProductTypes(Array.isArray(list) ? list : []);
+    } catch (error) {
+      console.error("Failed to load product types:", error);
+
+      setPopup({
+        isOpen: true,
+        type: "error",
+        title: "Product Types Error",
+        message: "Failed to load product types from server."
+      });
+    }
+  };
+
   // Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -927,6 +984,7 @@ const InvoicePage: React.FC = () => {
         <table style={styles.table}>
           <thead>
             <tr>
+              <th style={styles.th}>Product</th>
               <th style={styles.th}>Oil Type</th>
               <th style={styles.th}>Packaging Type</th>
               <th style={styles.th}>Rate</th>
@@ -941,38 +999,38 @@ const InvoicePage: React.FC = () => {
                 <td style={styles.td}>
                   <select
                     style={styles.input}
-                    value={item.oilType}
-                    onChange={(e) => handleProductChange(index, "oilType", e.target.value)}
+                    value={item.productTypeId}
+                    onChange={(e) =>
+                      handleProductChange(index, "productTypeId", e.target.value)
+                    }
                   >
-                    <option value="">Select Oil Type</option>
-                    {oilTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
+                    <option value="">Select Product</option>
+                    {productTypes.map((productType) => (
+                      <option key={productType._id} value={productType._id}>
+                        {productType.label}
                       </option>
                     ))}
                   </select>
                 </td>
+
                 <td style={styles.td}>
-                  <select
-                    style={styles.input}
-                    value={item.type}
-                    onChange={(e) => handleProductChange(index, "type", e.target.value)}
-                    disabled={!item.oilType}
-                  >
-                    <option value="">Select Packaging Type</option>
-                    {getPackagingTypesByOilType(item.oilType).map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
+                  {item.oilType || "-"}
+                </td>
+
+                <td style={styles.td}>
+                  {item.type || "-"}
                 </td>
                 <td style={styles.td}>
                   <input
                     style={styles.input}
                     type="number"
                     value={item.rate}
-                    readOnly
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter rate"
+                    onChange={(e) =>
+                      handleProductChange(index, "rate", e.target.value)
+                    }
                   />
 
                   {productRateDetails[index] && (
@@ -982,7 +1040,7 @@ const InvoicePage: React.FC = () => {
                       {" + "}
                       ₹{productRateDetails[index].packagingAverageCost}
                       {" = "}
-                      ₹{calculatePackageRate(productRateDetails[index])}
+                      ₹{productRateDetails[index].finalProductRate}
                     </small>
                   )}
                 </td>
@@ -1038,6 +1096,13 @@ const InvoicePage: React.FC = () => {
             </div>
           </div>
         )}
+        <Popup
+          isOpen={popup.isOpen}
+          type={popup.type}
+          title={popup.title}
+          message={popup.message}
+          onClose={closePopup}
+        />
       </div>
 
 
@@ -1164,6 +1229,7 @@ const InvoicePage: React.FC = () => {
           </div>
         )}
       />
+
     </div>
   );
 };

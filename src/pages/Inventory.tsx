@@ -28,9 +28,9 @@ const Inventory: React.FC = () => {
     { key: 'costPerKg', title: 'Cost/Kg', sortable: true, render: (value: number) => value != null ? `₹${value.toFixed(2)}` : '-' },
     { key: 'totalOilPurchases', title: 'Total Purchased (L)', sortable: true, render: (value: number) => value != null ? value.toLocaleString() : '-' },
     { key: 'averageRate', title: 'Avg Rate/L', sortable: true, render: (value: number) => value != null ? `₹${value.toFixed(2)}` : '-' },
-    { 
-      key: 'totalValue', 
-      title: 'Total Value', 
+    {
+      key: 'totalValue',
+      title: 'Total Value',
       render: (_: any, record: any) => {
         const qty = record.currentQuantity ?? 0;
         const cost = record.costPerLiter ?? 0;
@@ -42,27 +42,27 @@ const Inventory: React.FC = () => {
   ];
 
   const oilPurchaseColumns = [
-    { 
-      key: 'invoiceNumber', 
-      title: 'Invoice #', 
+    {
+      key: 'invoiceNumber',
+      title: 'Invoice #',
       sortable: true,
       render: (value: string) => value || '-'
     },
-    { 
-      key: 'supplierName', 
-      title: 'Supplier', 
+    {
+      key: 'supplierName',
+      title: 'Supplier',
       sortable: true,
       render: (value: string) => value || '-'
     },
-    { 
-      key: 'quantity', 
-      title: 'Quantity (L)', 
+    {
+      key: 'quantity',
+      title: 'Quantity (L)',
       sortable: true,
       render: (value: number) => value ? value.toLocaleString() : '-'
     },
-    { 
-      key: 'ratePerLiter', 
-      title: 'Rate/L', 
+    {
+      key: 'ratePerLiter',
+      title: 'Rate/L',
       render: (value: number) => value ? `₹${value.toFixed(2)}` : '-'
     },
     {
@@ -70,24 +70,24 @@ const Inventory: React.FC = () => {
       title: 'Total Amount',
       render: (_: any, record: any) => `₹${(record.totalAmount || 0).toLocaleString()}`
     },
-    { 
+    {
       key: 'invoiceDate',
-      title: 'Invoice Date', 
+      title: 'Invoice Date',
       render: (value: string) => value ? new Date(value).toLocaleDateString() : '-'
     },
-    { 
+    {
       key: 'deliveryDate',
-      title: 'Delivery Date', 
+      title: 'Delivery Date',
       render: (value: string) => value ? new Date(value).toLocaleDateString() : '-'
     },
-    { 
-      key: 'paymentMode', 
-      title: 'Payment Mode', 
+    {
+      key: 'paymentMode',
+      title: 'Payment Mode',
       render: (value: string) => value || '-'
     },
-    { 
-      key: 'isPaid', 
-      title: 'Paid', 
+    {
+      key: 'isPaid',
+      title: 'Paid',
       render: (value: boolean) => value ? '✅ Yes' : '❌ No'
     },
   ];
@@ -97,9 +97,9 @@ const Inventory: React.FC = () => {
     { key: 'packagingType', title: 'Packaging Type', sortable: true },
     { key: 'quantity', title: 'Current Stock', sortable: true, render: (value: number | undefined) => value ? value.toLocaleString() : '-' },
     { key: 'ratePerUnit', title: 'Avg Rate/Unit', sortable: true, render: (value: number | undefined) => value ? `₹${value.toFixed(2)}` : '-' },
-    { 
-      key: 'totalValue', 
-      title: 'Total Value', 
+    {
+      key: 'totalValue',
+      title: 'Total Value',
       render: (_: any, record: any) => record.quantity && record.ratePerUnit ? `₹${(record.quantity * record.ratePerUnit).toLocaleString()}` : '-'
     },
     { key: 'totalPurchasedQuantity', title: 'Total Purchased', sortable: true, render: (value: number | undefined) => value ? value.toLocaleString() : '-' },
@@ -114,9 +114,9 @@ const Inventory: React.FC = () => {
     { key: 'packagingType', title: 'Type', sortable: true },
     { key: 'quantity', title: 'Quantity', sortable: true, render: (value: number) => value.toLocaleString() },
     { key: 'unitCost', title: 'Unit Cost', sortable: true, render: (value: number) => `₹${value.toFixed(2)}` },
-    { 
-      key: 'totalValue', 
-      title: 'Total Value', 
+    {
+      key: 'totalValue',
+      title: 'Total Value',
       render: (_: any, record: any) => `₹${(record.quantity * record.unitCost).toLocaleString()}`
     },
     { key: 'productionDate', title: 'Production Date', sortable: true, render: (value: string) => new Date(value).toLocaleDateString() },
@@ -173,6 +173,15 @@ const Inventory: React.FC = () => {
 
     return { rawOilSummary, packagingSummary, finishedGoodsSummary };
   };
+
+  const formatOilTypeTag = (value?: string) => {
+  if (!value) return '-';
+
+  return value
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}; 
 
   const { rawOilSummary, packagingSummary, finishedGoodsSummary } = calculateSummary();
 
@@ -293,7 +302,7 @@ const Inventory: React.FC = () => {
           <p>Monitor raw materials, packaging, and finished goods inventory</p>
         </div>
         <div className="module-actions">
-          <button 
+          <button
             className="secondary-button"
             onClick={() => {
               dispatch(fetchOilInventory());
@@ -352,10 +361,10 @@ const Inventory: React.FC = () => {
                         <span className="stat-label">Total Batches:</span>
                         <span className="stat-value">{item.totalBatches || 0}</span>
                       </div>
-                       <div className="packaging-stat">
+                      <div className="packaging-stat">
                         <span className="stat-label">Total Quantity (kg):</span>
                         <span className="stat-value">{(item.totalQuantity || 0).toLocaleString()}</span>
-                      </div> 
+                      </div>
                       {/* <div className="packaging-stat">
                         <span className="stat-label">Total Weight (kg):</span>
                         <span className="stat-value">{(item.totalWeight || 0).toLocaleString()}</span>
@@ -409,14 +418,14 @@ const Inventory: React.FC = () => {
 
         {activeTab === 'packaging' && (
           <div className="packaging-cards-grid">
-            {packaging?.map((item: any) => (  
+            {packaging?.map((item: any) => (
               <div key={item._id} className="packaging-card">
                 <div className="packaging-card-header">
                   <h3>{item.packagingType}</h3>
                 </div>
                 <div className="packaging-card-body">
                   <div className="packaging-stat">
-                 
+
                     <span className="stat-label">Total Remaining:</span>
                     <span className="stat-value">{item.totalPurchased?.toLocaleString() || 0}</span>
                   </div>
@@ -437,41 +446,82 @@ const Inventory: React.FC = () => {
         {activeTab === 'finished-goods' && (
           <div className="packaging-cards-grid">
             {finishedGoods.length > 0 ? (
-              Object.entries(finishedGoods.reduce((acc, item) => {
-                const key = item.packagingType;
-                if (!acc[key]) {
-                  acc[key] = { packagingType: key, totalQty: 0 };
-                }
-                acc[key].totalQty += item.quantity || 0;
-                return acc;
-              }, {} as Record<string, { packagingType: string; totalQty: number }>))
-              .map(([key, group]) => (
+              Object.entries(
+                finishedGoods.reduce((acc, item: any) => {
+                  const oilType = item.oilType || 'UNKNOWN_OIL';
+                  const packagingType = item.packagingType || 'Unknown';
+
+                  const key = `${oilType}_${packagingType}`;
+
+                  if (!acc[key]) {
+                    acc[key] = {
+                      oilType,
+                      packagingType,
+                      totalQty: 0,
+                    };
+                  }
+
+                  acc[key].totalQty += item.quantity || 0;
+
+                  return acc;
+                }, {} as Record<string, { oilType: string; packagingType: string; totalQty: number }>)
+              ).map(([key, group]) => (
                 <div key={key} className="packaging-tile-card">
                   <div className="tile-icon">
                     📦
                   </div>
-                  <h4 style={{
-                    marginBottom: '0.5rem',
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    textTransform: 'capitalize'
-                  }}>
-                    {group.packagingType.replace(/_/g, ' ')}
-                  </h4>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <div style={{
-                      fontSize: '4.5rem',
-                      fontWeight: '700',
+
+                  {/* Oil Type Tag */}
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      padding: '0.25rem 0.6rem',
+                      borderRadius: '999px',
+                      backgroundColor: '#eef6ff',
+                      color: '#2563eb',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      marginBottom: '0.75rem',
+                    }}
+                  >
+                    {formatOilTypeTag(group.oilType)}
+                  </div>
+
+                  {/* Packaging Type - keep as it is */}
+                  <h4
+                    style={{
                       marginBottom: '0.5rem',
-                      color: '#27ae60'
-                    }}>
+                      fontSize: '1.1rem',
+                      fontWeight: '600',
+                    }}
+                  >
+                    {group.packagingType}
+                  </h4>
+
+                  {/* Total Qty - keep as it is */}
+                  <div style={{ marginBottom: '1rem' }}>
+                    <div
+                      style={{
+                        fontSize: '4.5rem',
+                        fontWeight: '700',
+                        marginBottom: '0.5rem',
+                        color: '#27ae60',
+                      }}
+                    >
                       {group.totalQty.toLocaleString()}
                     </div>
                   </div>
                 </div>
               ))
             ) : (
-              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: '#999' }}>
+              <div
+                style={{
+                  gridColumn: '1 / -1',
+                  textAlign: 'center',
+                  padding: '2rem',
+                  color: '#999',
+                }}
+              >
                 No finished goods inventory found
               </div>
             )}

@@ -44,6 +44,22 @@ export interface BookingSummary {
   statusBreakdown: Record<string, { count: number; totalAmount: number }>;
 }
 
+export interface ProductTypeMaster {
+  _id: string;
+  value: string;
+  label: string;
+  oilType: string;
+  packagingType: string;
+  packageSize: number;
+  unitType: 'LITER' | 'KG';
+  weight: number;
+  packagingMaterialType: string;
+  packagingCostDivisionQty: number;
+  salesPackType: string;
+  unitsPerSalesPack: number;
+  isActive: boolean;
+}
+
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
   // const baseURL =  'https://swastya-oil-backend.vercel.app/api';
   const baseURL =  'http://localhost:5000/api';
@@ -369,6 +385,26 @@ export const packagingPurchaseAPI = {
     if (params?.packagingType) queryParams.append('packagingType', params.packagingType);
     
     return api.get<ApiResponse<{ summary: PurchaseSummary; breakdown: any; filters: any }>>(`/procurement/packaging-purchases/summary?${queryParams}`);
+  }
+};
+
+export const productTypeAPI = {
+  getAll: () => {
+    return api.get<ApiResponse<{
+      productTypes: ProductTypeMaster[];
+    }>>('/product-types?isActive=true&limit=1000');
+  },
+
+  create: (payload: Partial<ProductTypeMaster>) => {
+    return api.post<ApiResponse<ProductTypeMaster>>('/product-types', payload);
+  },
+
+  update: (id: string, payload: Partial<ProductTypeMaster>) => {
+    return api.put<ApiResponse<ProductTypeMaster>>(`/product-types/${id}`, payload);
+  },
+
+  delete: (id: string) => {
+    return api.delete<ApiResponse<void>>(`/product-types/${id}`);
   }
 };
 

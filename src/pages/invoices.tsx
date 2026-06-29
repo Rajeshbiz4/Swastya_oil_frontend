@@ -289,6 +289,7 @@ const InvoicePage: React.FC = () => {
   return;
 }
 
+/*
 if (!vehicleRegex.test(vehicleNumber)) {
   setPopup({
     isOpen: true,
@@ -299,6 +300,7 @@ if (!vehicleRegex.test(vehicleNumber)) {
   });
   return;
 }
+ 
 
 if (!distance || isNaN(Number(distance))) {
   setPopup({
@@ -310,6 +312,8 @@ if (!distance || isNaN(Number(distance))) {
   });
   return;
 } 
+    
+*/
 
       if (validProducts.length === 0) {
         setPopup({

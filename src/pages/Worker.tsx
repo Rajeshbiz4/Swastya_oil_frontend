@@ -145,6 +145,8 @@ const EmployeeCRUD: React.FC = () => {
   };
 
   // Handle form submission
+
+  
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -156,6 +158,10 @@ const EmployeeCRUD: React.FC = () => {
 
     setFormLoading(true);
     console.log('Starting form submission...');
+
+    const token = localStorage.getItem('authToken');
+
+console.log("TOKEN FROM LOCALSTORAGE =", token);
 
     try {
       const formDataToSend = new FormData();

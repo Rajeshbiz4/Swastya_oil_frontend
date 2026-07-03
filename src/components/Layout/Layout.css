@@ -62,7 +62,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 100px);
 }
 
 .sidebar-nav ul {
@@ -146,9 +146,9 @@
 /* Main Content Styles */
 .main-content {
   flex: 1;
-  padding: 2rem;
+   padding: 1px 22px;
   overflow-y: auto;
-  background-color: #ecf0f1;
+  background-color: #ffffff;
 }
 
 /* Responsive Design */

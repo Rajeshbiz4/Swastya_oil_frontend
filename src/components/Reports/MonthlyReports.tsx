@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -140,19 +141,72 @@ interface MonthlyReportData {
   pnl?: MonthlyPnLData;
   summary?: MonthlySummaryData;
   comparison?: MonthlyComparisonData;
+
+  rawOilInventory?: any;
+  packagingInventory?: any;
+  finishedGoodsInventory?: any;
 }
 
+/*
 interface MonthlyReportsProps {
   onError: (error: string) => void;
   reportType?: 'comprehensive' | 'pnl';
 }
+*/
 
-const MonthlyReports: React.FC<MonthlyReportsProps> = ({ onError, reportType: propReportType = 'comprehensive' }) => {
+interface MonthlyReportsProps {
+  onError: (error: string) => void;
+
+  reportType?:
+    | 'comprehensive'
+    | 'pnl'
+    | 'inventory'
+    | 'purchases'
+    | 'sales'
+    | 'production';
+
+  reportData?: any;
+
+  loading?: boolean;
+}
+
+
+const MonthlyReports: React.FC<MonthlyReportsProps> = ({
+  onError,
+  reportType: propReportType = 'comprehensive',
+  reportData: externalReportData,
+  loading: externalLoading,
+}) => {
   const reportType = propReportType;
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [reportData, setReportData] = useState<MonthlyReportData | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().getMonth() + 1
+  );
+  const [selectedYear, setSelectedYear] = useState(
+    new Date().getFullYear()
+  );
+
+  const [reportData, setReportData] = useState<MonthlyReportData | null>(
+    externalReportData ?? null
+  );
+
+  const [loading, setLoading] = useState(
+    externalLoading ?? false
+  );
+  useEffect(() => {
+  setReportData(externalReportData ?? null);
+}, [externalReportData]);
+
+useEffect(() => {
+  setLoading(externalLoading ?? false);
+}, [externalLoading]);
+
+
+  const [inventoryTab, setInventoryTab] = useState<
+    'rawOil' | 'packaging' | 'finishedGoods'
+  >('rawOil');
+
+  // rest of your code...
 
   const fetchMonthlyReport = async () => {
     try {
@@ -625,6 +679,94 @@ const MonthlyReports: React.FC<MonthlyReportsProps> = ({ onError, reportType: pr
     );
   };
 
+const renderInventorySection = () => {
+  switch (inventoryTab) {
+    case 'rawOil':
+      return (
+        <DataTable
+          columns={[
+            { key: 'oilType', title: 'Oil Type' },
+            { key: 'openingStock', title: 'Opening Stock' },
+            { key: 'purchased', title: 'Purchased Qty' },
+            { key: 'consumed', title: 'Consumed Qty' },
+            { key: 'available', title: 'Available Stock' },
+          ]}
+          data={
+  reportData?.rawOilInventory?.inventory?.map((item: any) => ({
+    oilType: item.oilType,
+    openingStock: item.openingStock ?? 0,
+    purchased: item.purchased ?? 0,
+    consumed: item.consumed ?? 0,
+    available: item.currentQuantity ?? 0,
+  })) || []
+}
+
+        />
+      );
+
+    case 'packaging':
+      return (
+        <DataTable
+          columns={[
+            { key: 'packagingType', title: 'Packaging Type' },
+            { key: 'openingStock', title: 'Opening Stock' },
+            { key: 'purchased', title: 'Purchased Qty' },
+            { key: 'consumed', title: 'Consumed Qty' },
+            { key: 'available', title: 'Available Stock' },
+          ]}
+         data={
+  reportData?.packagingInventory?.inventory?.map((item: any) => ({
+    packagingType: item.packagingType || item.name,
+    openingStock: item.openingStock ?? 0,
+    purchased: item.purchased ?? 0,
+    consumed: item.consumed ?? 0,
+    available: item.quantity ?? 0,
+  })) || []
+}
+
+        />
+      );
+
+    case 'finishedGoods':
+      return (
+        <DataTable
+          columns={[
+            { key: 'product', title: 'Product' },
+            { key: 'openingStock', title: 'Opening Stock' },
+            { key: 'produced', title: 'Produced Qty' },
+            { key: 'sold', title: 'Sold Qty' },
+            { key: 'available', title: 'Available Stock' },
+          ]}
+           data={
+  reportData?.finishedGoodsInventory?.inventory?.map((item: any) => ({
+    
+    //product: item.productName || item.batchNumber,
+    product:
+  item.productName ||
+  item.product?.name ||
+  item.product ||
+  item.name ||
+  item.finishedGoodName ||
+  item.oilType ||
+  item.batchNumber ||
+  "-",
+  
+    openingStock: item.openingStock ?? 0,
+    produced: item.produced ?? 0,
+    sold: item.sold ?? 0,
+    available: item.quantity ?? 0,
+  })) || []
+}
+
+        />
+      );
+
+    default:
+      return null;
+  }
+};
+
+
   const getMonthName = (month: number) => {
     return new Date(0, month - 1).toLocaleString('default', { month: 'long' });
   };
@@ -632,59 +774,8 @@ const MonthlyReports: React.FC<MonthlyReportsProps> = ({ onError, reportType: pr
   return (
     <div>
       {/* Filters */}
-      <div className="report-filters">
-        <div className="report-filters-header">
-          <h3 className="report-filters-title">Monthly Report Filters</h3>
-          <div className="report-actions">
-            <button
-              onClick={fetchMonthlyReport}
-              disabled={loading}
-              className="generate-report-button"
-            >
-              {loading ? 'Generating...' : 'Generate Report'}
-            </button>
-            {reportData && (
-              <ExportButton
-                data={getExportData()}
-                filename={`monthly-report-${selectedYear}-${selectedMonth.toString().padStart(2, '0')}`}
-                title={`Monthly Report - ${getMonthName(selectedMonth)} ${selectedYear}`}
-                disabled={loading}
-              />
-            )}
-          </div>
-        </div>
-        
-        <div className="report-filters-content">
-          <div className="report-filter-group">
-            <label>Month</label>
-            <select 
-              value={selectedMonth} 
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-            >
-              {Array.from({ length: 12 }, (_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {getMonthName(i + 1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="report-filter-group">
-            <label>Year</label>
-            <select 
-              value={selectedYear} 
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            >
-              {Array.from({ length: 5 }, (_, i) => (
-                <option key={i} value={new Date().getFullYear() - i}>
-                  {new Date().getFullYear() - i}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
+      
+            
       {/* Report Content */}
       {loading ? (
         <div className="report-loading">
@@ -702,20 +793,58 @@ const MonthlyReports: React.FC<MonthlyReportsProps> = ({ onError, reportType: pr
             />
           </div>
 
-          {renderSummaryCards()}
-          
-          <div className="report-sections">
-            {renderCostBreakdownChart()}
-            {reportType === 'comprehensive' && renderProductionChart()}
-            {reportType === 'comprehensive' && renderSalesAnalysis()}
-            {reportType === 'comprehensive' && renderFinancialSummary()}
-            {reportType === 'comprehensive' && renderMonthlyComparison()}
-          </div>
+          {reportType === 'inventory' && (
+  <div
+    style={{
+      display: 'flex',
+      gap: '10px',
+      marginBottom: '20px'
+    }}
+  >
+    <button
+      className={inventoryTab === 'rawOil' ? 'btn-primary' : 'btn-secondary'}
+      onClick={() => setInventoryTab('rawOil')}
+    >
+      Raw Oil
+    </button>
+
+    <button
+      className={inventoryTab === 'packaging' ? 'btn-primary' : 'btn-secondary'}
+      onClick={() => setInventoryTab('packaging')}
+    >
+      Packaging Material
+    </button>
+
+    <button
+      className={inventoryTab === 'finishedGoods' ? 'btn-primary' : 'btn-secondary'}
+      onClick={() => setInventoryTab('finishedGoods')}
+    >
+      Finished Goods
+    </button>
+  </div>
+)}      
+
+ {reportType === 'inventory' && renderInventorySection()}
+
+{reportType !== 'inventory' && (
+  <>
+    {renderSummaryCards()}
+
+    <div className="report-sections">
+      {renderCostBreakdownChart()}
+      {reportType === 'comprehensive' && renderProductionChart()}
+      {reportType === 'comprehensive' && renderSalesAnalysis()}
+      {reportType === 'comprehensive' && renderFinancialSummary()}
+      {reportType === 'comprehensive' && renderMonthlyComparison()}
+    </div>
+  </>
+)}
+
         </div>
       ) : (
         <div className="report-no-data">
           <h3>No Report Generated</h3>
-          <p>Select your filters and click "Generate Report" to view monthly report data.</p>
+          <p>Select your filters and click "Generate Report".</p>
         </div>
       )}
     </div>

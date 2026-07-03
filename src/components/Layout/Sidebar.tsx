@@ -98,6 +98,11 @@ const Sidebar: React.FC = () => {
     return item.roles.includes(user.role);
   };
 
+  /*
+  const hasAccess = (item: NavItem): boolean => {
+  return true;
+};*/
+
   return (
     <aside className="sidebar">
       <nav className="sidebar-nav" aria-label="Main Navigation">

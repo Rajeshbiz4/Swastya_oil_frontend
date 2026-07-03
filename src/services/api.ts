@@ -45,8 +45,8 @@ export interface BookingSummary {
 }
 
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
-  const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
-  //const baseURL =  'http://localhost:5000/api';
+  //const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
+  const baseURL =  'http://localhost:5000/api';
 
   //const baseURL = 'http://localhost:5000/api';
 
@@ -372,5 +372,53 @@ export const packagingPurchaseAPI = {
     return api.get<ApiResponse<{ summary: PurchaseSummary; breakdown: any; filters: any }>>(`/procurement/packaging-purchases/summary?${queryParams}`);
   }
 };
+
+export const reportsAPI = {
+
+  // Monthly P&L Report
+  getMonthlyPnL: (year: number, month: number) =>
+    api.get(`/reports/monthly/pnl/${year}/${month}`),
+
+  // Monthly Summary Report
+  getMonthlySummary: (year: number, month: number) =>
+    api.get(`/reports/monthly/summary/${year}/${month}`),
+
+  // Monthly Comparison Report
+  getMonthlyComparison: (year: number, month: number) =>
+    api.get(`/reports/monthly/comparison/${year}/${month}`),
+
+  getMonthlyInventory: (year: number, month: number) =>
+  api.get(`/reports/monthly/inventory/${year}/${month}`),
+
+  // Daily Report
+  getDailyReport: (date: string) =>
+    api.get(`/reports/daily/${date}`),
+
+  downloadMonthlyExcel: (year: number, month: number, type: string) =>
+  api.get(
+    `/reports/export/excel/${year}/${month}/${type}`,
+    {
+      responseType: "blob",
+    }
+  ),
+
+  downloadMonthlyPdf: (
+  year: number,
+  month: number,
+  type: string
+) =>
+  api.get(
+    `/reports/export/pdf/${year}/${month}/${type}`,
+    {
+      responseType: "blob",
+    }
+  ),
+  
+
+
+};
+
+
+
 
 export default api;

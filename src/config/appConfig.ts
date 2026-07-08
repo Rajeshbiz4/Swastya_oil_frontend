@@ -13,9 +13,12 @@ export const appConfig = {
     name: "SWASHTYASHAKTI GOLD PRIVATE LIMITED",
     bank: "HDFC Bank",
     account: "50200112984964",
-    ifsc: "HDFC0000437"
-  },
+    ifsc: "HDFC0000437",
 
+   // upiId: "8550946895@ybl"
+
+  },
+   
    terms: [
     "All claims within 10 days",
     "Goods once sold will not be taken back",

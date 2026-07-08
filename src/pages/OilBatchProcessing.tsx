@@ -7,6 +7,8 @@ import { OilTypes } from '../types/enums';
 import { PRODUCT_TYPES } from '../utils/constants';
 import './Pages.css';
 
+const BASE_URL =   'https://swastya-oil-backend1.vercel.app';
+
 interface BatchRecord {
   _id: string;
   batchNumber: string;
@@ -64,7 +66,7 @@ const OilBatchProcessing: React.FC = () => {
         return;
       }
 
-      const response = await fetch('/api/oil-batches', {
+      const response = await fetch(`${BASE_URL}/api/oil-batches`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -213,7 +215,7 @@ const OilBatchProcessing: React.FC = () => {
         return;
       }
 
-      const response = await fetch('/api/inventory/raw-oil?oilType=' + encodeURIComponent(productTypeCode), {
+      const response = await fetch(`${BASE_URL}/api/inventory/raw-oil?oilType=${encodeURIComponent(productTypeCode)}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -245,7 +247,7 @@ const OilBatchProcessing: React.FC = () => {
       if (!token) {
         throw new Error('Authentication token is missing. Please login again.');
       }
-      const response = await fetch('/api/inventory/raw-oil?oilType=' + encodeURIComponent(productTypeCode), {
+      const response = await fetch(`${BASE_URL}/api/inventory/raw-oil?oilType=${encodeURIComponent(productTypeCode)}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -290,7 +292,7 @@ const OilBatchProcessing: React.FC = () => {
       }
 
       // Consume packaging inventory using the packaging consume endpoint
-      const response = await fetch('/api/inventory/packaging/consume', {
+      const response = await fetch(`${BASE_URL}/api/inventory/packaging/consume`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -335,7 +337,7 @@ const OilBatchProcessing: React.FC = () => {
       }
 
       // Consume packaging inventory using the packaging consume endpoint
-      const response = await fetch('/api/inventory/packaging/revert', {
+      const response = await fetch(`${BASE_URL}/api/inventory/packaging/revert`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -396,7 +398,7 @@ const OilBatchProcessing: React.FC = () => {
 
       const packagingType = selectedProductType.packagingType;
 
-      const response = await fetch('/api/oil-batches', {
+      const response = await fetch(`${BASE_URL}/api/oil-batches`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -475,7 +477,7 @@ const OilBatchProcessing: React.FC = () => {
       const anyErr = err as Error;
       console.error('Post-processing failed:', err);
       // Mark batch as FAILED
-      await fetch(`/api/oil-batches/${createdBatch._id}/status`, {
+      await fetch(`${BASE_URL}/api/oil-batches/${createdBatch._id}/status`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -509,7 +511,7 @@ const OilBatchProcessing: React.FC = () => {
       return false;
     }
 
-    const response = await fetch('/api/inventory/finished-goods/upsert', {
+    const response = await fetch(`${BASE_URL}/api/inventory/finished-goods/upsert`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -555,7 +557,7 @@ const OilBatchProcessing: React.FC = () => {
       return false;
     }
 
-    const response = await fetch("/api/inventory/raw-oil/reduceRawOilInventory", {
+    const response = await fetch(`${BASE_URL}/api/inventory/raw-oil/reduceRawOilInventory`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -595,7 +597,7 @@ const revertRawOilInventory = async (
       return;
     }
 
-    const response = await fetch("/api/inventory/raw-oil/revert", {
+    const response = await fetch(`${BASE_URL}/api/inventory/raw-oil/revert`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

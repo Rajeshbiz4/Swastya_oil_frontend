@@ -373,4 +373,73 @@ export const packagingPurchaseAPI = {
   }
 };
 
+export const reportsAPI = {
+
+  // Monthly P&L Report
+  getMonthlyPnL: (year: number, month: number) =>
+    api.get(`/reports/monthly/pnl/${year}/${month}`),
+
+  // Monthly Summary Report
+  getMonthlySummary: (year: number, month: number) =>
+    api.get(`/reports/monthly/summary/${year}/${month}`),
+
+  // Monthly Comparison Report
+  getMonthlyComparison: (year: number, month: number) =>
+    api.get(`/reports/monthly/comparison/${year}/${month}`),
+
+  //getMonthlyInventory: (year: number, month: number) =>
+  //api.get(`/reports/monthly/inventory/${year}/${month}`),
+  
+  getMonthlyInventory: (
+  year: number,
+  month: number,
+  fromDate?: string,
+  toDate?: string,
+  oilType?: string,
+  packagingType?: string,
+  productType?: string
+) => {
+  const params = new URLSearchParams();
+
+  if (fromDate) params.append("fromDate", fromDate);
+  if (toDate) params.append("toDate", toDate);
+  if (oilType) params.append("oilType", oilType);
+  if (packagingType) params.append("packagingType", packagingType);
+  if (productType) params.append("productType", productType);
+
+  return api.get(
+    `/reports/monthly/inventory/${year}/${month}?${params.toString()}`
+  );
+},
+
+
+  // Daily Report
+  getDailyReport: (date: string) =>
+    api.get(`/reports/daily/${date}`),
+
+  downloadMonthlyExcel: (year: number, month: number, type: string) =>
+  api.get(
+    `/reports/export/excel/${year}/${month}/${type}`,
+    {
+      responseType: "blob",
+    }
+  ),
+
+  downloadMonthlyPdf: (
+  year: number,
+  month: number,
+  type: string
+) =>
+  api.get(
+    `/reports/export/pdf/${year}/${month}/${type}`,
+    {
+      responseType: "blob",
+    }
+  ),
+
+};
+
+
+
+
 export default api;

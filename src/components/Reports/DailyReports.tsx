@@ -58,6 +58,11 @@ const DailyReports: React.FC<DailyReportsProps> = ({ onError, reportType: propRe
   const [reportData, setReportData] = useState<DailyReportData | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [inventoryTab, setInventoryTab] = useState<
+    "rawOil" | "packaging" | "finishedGoods"
+    >("rawOil");
+
+    
   const fetchDailyReport = async () => {
     try {
       setLoading(true);
@@ -321,7 +326,7 @@ const DailyReports: React.FC<DailyReportsProps> = ({ onError, reportType: propRe
     );
   };
 
-  const renderInventorySection = () => {
+  /*const renderInventorySection = () => {
     if (!reportData?.inventory) return null;
 
     const rawOilColumns = [
@@ -377,7 +382,126 @@ const DailyReports: React.FC<DailyReportsProps> = ({ onError, reportType: propRe
         </div>
       </div>
     );
-  };
+  }; */ 
+
+  const renderInventorySection = () => {
+  if (!reportData?.inventory) return null;
+
+  const rawOilColumns = [
+    { key: 'batchNumber', title: 'Batch Number', sortable: true },
+    { key: 'currentQuantity', title: 'Current Quantity (L)', sortable: true },
+    {
+      key: 'costPerLiter',
+      title: 'Cost/L',
+      sortable: true,
+      render: (value: number) => `₹${value?.toFixed(2)}`
+    },
+    {
+      key: 'purchaseDate',
+      title: 'Purchase Date',
+      sortable: true,
+      render: (value: string) => new Date(value).toLocaleDateString()
+    },
+  ];
+
+  const packagingColumns = [
+    { key: 'packagingType', title: 'Packaging Type', sortable: true },
+    {
+      key: 'quantity',
+      title: 'Quantity',
+      sortable: true,
+      render: (value: number) => value?.toLocaleString()
+    },
+    {
+      key: 'ratePerUnit',
+      title: 'Rate/Unit',
+      sortable: true,
+      render: (value: number) => `₹${value?.toFixed(2)}`
+    },
+  ];
+
+  const finishedGoodsColumns = [
+    { key: 'skuSize', title: 'SKU Size', sortable: true },
+    { key: 'packagingType', title: 'Type', sortable: true },
+    { key: 'quantity', title: 'Quantity', sortable: true },
+    {
+      key: 'unitCost',
+      title: 'Unit Cost',
+      sortable: true,
+      render: (value: number) => `₹${value?.toFixed(2)}`
+    },
+    {
+      key: 'productionDate',
+      title: 'Production Date',
+      sortable: true,
+      render: (value: string) => new Date(value).toLocaleDateString()
+    },
+  ];
+
+  return (
+    <div className="report-section">
+      <h3 className="report-section-title">Inventory Status</h3>
+
+      <div className="inventory-tabs">
+        <button
+          className={inventoryTab === 'rawOil' ? 'active' : ''}
+          onClick={() => setInventoryTab('rawOil')}
+        >
+          Raw Oil
+        </button>
+
+        <button
+          className={inventoryTab === 'packaging' ? 'active' : ''}
+          onClick={() => setInventoryTab('packaging')}
+        >
+          Packaging Material
+        </button>
+
+        <button
+          className={inventoryTab === 'finishedGoods' ? 'active' : ''}
+          onClick={() => setInventoryTab('finishedGoods')}
+        >
+          Finished Goods
+        </button>
+      </div>
+
+      <div style={{ marginTop: '20px' }}>
+        {inventoryTab === 'rawOil' && (
+          <>
+            <h4>Raw Oil Inventory</h4>
+            <DataTable
+              data={reportData.inventory.rawOil || []}
+              columns={rawOilColumns}
+              loading={loading}
+            />
+          </>
+        )}
+
+        {inventoryTab === 'packaging' && (
+          <>
+            <h4>Packaging Material Inventory</h4>
+            <DataTable
+              data={reportData.inventory.packaging || []}
+              columns={packagingColumns}
+              loading={loading}
+            />
+          </>
+        )}
+
+        {inventoryTab === 'finishedGoods' && (
+          <>
+            <h4>Finished Goods Inventory</h4>
+            <DataTable
+              data={reportData.inventory.finishedGoods || []}
+              columns={finishedGoodsColumns}
+              loading={loading}
+            />
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
 
   return (
     <div>
@@ -385,23 +509,7 @@ const DailyReports: React.FC<DailyReportsProps> = ({ onError, reportType: propRe
       <div className="report-filters">
         <div className="report-filters-header">
           <h3 className="report-filters-title">Daily Report Filters</h3>
-          <div className="report-actions">
-            <button
-              onClick={fetchDailyReport}
-              disabled={loading}
-              className="generate-report-button"
-            >
-              {loading ? 'Generating...' : 'Generate Report'}
-            </button>
-            {reportData && (
-              <ExportButton
-                data={getExportData()}
-                filename={`daily-report-${selectedDate}`}
-                title={`Daily Report - ${selectedDate}`}
-                disabled={loading}
-              />
-            )}
-          </div>
+           
         </div>
         
         <div className="report-filters-content">

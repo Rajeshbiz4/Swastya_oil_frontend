@@ -387,8 +387,31 @@ export const reportsAPI = {
   getMonthlyComparison: (year: number, month: number) =>
     api.get(`/reports/monthly/comparison/${year}/${month}`),
 
-  getMonthlyInventory: (year: number, month: number) =>
-  api.get(`/reports/monthly/inventory/${year}/${month}`),
+  //getMonthlyInventory: (year: number, month: number) =>
+  //api.get(`/reports/monthly/inventory/${year}/${month}`),
+  
+  getMonthlyInventory: (
+  year: number,
+  month: number,
+  fromDate?: string,
+  toDate?: string,
+  oilType?: string,
+  packagingType?: string,
+  productType?: string
+) => {
+  const params = new URLSearchParams();
+
+  if (fromDate) params.append("fromDate", fromDate);
+  if (toDate) params.append("toDate", toDate);
+  if (oilType) params.append("oilType", oilType);
+  if (packagingType) params.append("packagingType", packagingType);
+  if (productType) params.append("productType", productType);
+
+  return api.get(
+    `/reports/monthly/inventory/${year}/${month}?${params.toString()}`
+  );
+},
+
 
   // Daily Report
   getDailyReport: (date: string) =>
@@ -413,8 +436,6 @@ export const reportsAPI = {
       responseType: "blob",
     }
   ),
-  
-
 
 };
 

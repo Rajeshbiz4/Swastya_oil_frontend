@@ -509,23 +509,7 @@ const DailyReports: React.FC<DailyReportsProps> = ({ onError, reportType: propRe
       <div className="report-filters">
         <div className="report-filters-header">
           <h3 className="report-filters-title">Daily Report Filters</h3>
-          <div className="report-actions">
-            <button
-              onClick={fetchDailyReport}
-              disabled={loading}
-              className="generate-report-button"
-            >
-              {loading ? 'Generating...' : 'Generate Report'}
-            </button>
-            {reportData && (
-              <ExportButton
-                data={getExportData()}
-                filename={`daily-report-${selectedDate}`}
-                title={`Daily Report - ${selectedDate}`}
-                disabled={loading}
-              />
-            )}
-          </div>
+           
         </div>
         
         <div className="report-filters-content">

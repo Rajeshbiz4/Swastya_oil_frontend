@@ -1,5 +1,5 @@
 import { reportsAPI } from "../services/api";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DailyReports from '../components/Reports/DailyReports';
 import MonthlyReports from '../components/Reports/MonthlyReports';
 import './Pages.css';
@@ -18,6 +18,12 @@ const Reports: React.FC = () => {
 
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
+  const [fromDate, setFromDate] = useState("");
+const [toDate, setToDate] = useState("");
+const [oilType, setOilType] = useState("");
+const [packagingType, setPackagingType] = useState("");
+const [productType, setProductType] = useState("");
+
 
   const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -35,11 +41,21 @@ const handleGenerateReport = async () => {
     setError(null);
 
     let response;
+     
 
     if (reportFrequency === "monthly") {
       switch (reportType) {
         case "inventory":
-          response = await reportsAPI.getMonthlyInventory(year, month);
+       response = await reportsAPI.getMonthlyInventory(
+  year,
+  month,
+  fromDate,
+  toDate,
+  oilType,
+  packagingType,
+  productType
+);
+
           break;
 
         case "comprehensive":
@@ -54,6 +70,7 @@ const handleGenerateReport = async () => {
       setReportData(response.data.data);
     }
 
+
   } catch (err: any) {
     console.error(err);
     setError(err.response?.data?.error?.message || "Failed to generate report");
@@ -61,6 +78,19 @@ const handleGenerateReport = async () => {
     setLoading(false);
   }
 };
+useEffect(() => {
+  if (reportFrequency === "monthly" && reportType === "inventory") {
+    handleGenerateReport();
+  }
+}, [
+  fromDate,
+  toDate,
+  oilType,
+  packagingType,
+  productType,
+]);
+
+
 
 const handleExcelDownload = async () => {
   try {
@@ -231,12 +261,28 @@ const handlePdfDownload = () => {
     }
 
     return (
-      <MonthlyReports
+     <MonthlyReports
     onError={handleError}
     reportType={reportType}
     reportData={reportData}
     loading={loading}
-    />
+
+    fromDate={fromDate}
+    setFromDate={setFromDate}
+
+    toDate={toDate}
+    setToDate={setToDate}
+
+    oilType={oilType}
+    setOilType={setOilType}
+
+    packagingType={packagingType}
+    setPackagingType={setPackagingType}
+
+    productType={productType}
+    setProductType={setProductType}
+/>
+
     );
   };
 

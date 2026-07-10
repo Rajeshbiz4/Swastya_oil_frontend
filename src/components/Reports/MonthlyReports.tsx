@@ -168,6 +168,22 @@ interface MonthlyReportsProps {
   reportData?: any;
 
   loading?: boolean;
+
+  fromDate: string;
+setFromDate: React.Dispatch<React.SetStateAction<string>>;
+
+toDate: string;
+setToDate: React.Dispatch<React.SetStateAction<string>>;
+
+oilType: string;
+setOilType: React.Dispatch<React.SetStateAction<string>>;
+
+packagingType: string;
+setPackagingType: React.Dispatch<React.SetStateAction<string>>;
+
+productType: string;
+setProductType: React.Dispatch<React.SetStateAction<string>>;
+
 }
 
 
@@ -176,7 +192,23 @@ const MonthlyReports: React.FC<MonthlyReportsProps> = ({
   reportType: propReportType = 'comprehensive',
   reportData: externalReportData,
   loading: externalLoading,
+
+  fromDate,
+  setFromDate,
+
+  toDate,
+  setToDate,
+
+  oilType,
+  setOilType,
+
+  packagingType,
+  setPackagingType,
+
+  productType,
+  setProductType,
 }) => {
+  
   const reportType = propReportType;
 
   const [selectedMonth, setSelectedMonth] = useState(
@@ -205,6 +237,7 @@ useEffect(() => {
   const [inventoryTab, setInventoryTab] = useState<
     'rawOil' | 'packaging' | 'finishedGoods'
   >('rawOil');
+
 
   // rest of your code...
 
@@ -786,11 +819,7 @@ const renderInventorySection = () => {
         <div className="report-content">
           <div className="report-header">
             <h2 className="report-title">Monthly Report - {getMonthName(selectedMonth)} {selectedYear}</h2>
-            <ExportButton
-              data={getExportData()}
-              filename={`monthly-report-${selectedYear}-${selectedMonth.toString().padStart(2, '0')}`}
-              title={`Monthly Report - ${getMonthName(selectedMonth)} ${selectedYear}`}
-            />
+             
           </div>
 
           {reportType === 'inventory' && (
@@ -822,7 +851,80 @@ const renderInventorySection = () => {
       Finished Goods
     </button>
   </div>
+  
+
 )}      
+<div className="inventory-report-filters">
+
+  <div className="filter-item">
+    <label>From Date</label>
+    <input
+      type="date"
+      value={fromDate}
+      onChange={(e) => setFromDate(e.target.value)}
+    />
+  </div>
+
+  <div className="filter-item">
+    <label>To Date</label>
+    <input
+      type="date"
+      value={toDate}
+      onChange={(e) => setToDate(e.target.value)}
+    />
+  </div>
+
+  {inventoryTab === "rawOil" && (
+    <div className="filter-item">
+      <label>Oil Type</label>
+
+      <select
+        value={oilType}
+        onChange={(e) => setOilType(e.target.value)}
+      >
+        <option value="">All</option>
+
+        <option value="SOYABEAN_OIL">Soyabean Oil</option>
+        <option value="GROUNDNUT_OIL">Groundnut Oil</option>
+        <option value="SUNFLOWER_OIL">Sunflower Oil</option>
+      </select>
+    </div>
+  )}
+
+  {inventoryTab === "packaging" && (
+    <div className="filter-item">
+      <label>Packaging Type</label>
+
+      <select
+        value={packagingType}
+        onChange={(e) => setPackagingType(e.target.value)}
+      >
+        <option value="">All</option>
+
+        <option value="5L Can">5L Can</option>
+        <option value="10L Can">10L Can</option>
+        <option value="15L Can">15L Can</option>
+      </select>
+    </div>
+  )}
+
+  {inventoryTab === "finishedGoods" && (
+    <div className="filter-item">
+      <label>Product Type</label>
+
+      <select
+        value={productType}
+        onChange={(e) => setProductType(e.target.value)}
+      >
+        <option value="">All</option>
+
+        <option value="SOYABEAN">Soyabean</option>
+        <option value="GROUNDNUT">Groundnut</option>
+      </select>
+    </div>
+  )}
+
+</div>
 
  {reportType === 'inventory' && renderInventorySection()}
 

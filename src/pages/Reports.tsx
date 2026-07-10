@@ -1,5 +1,9 @@
 import { reportsAPI } from "../services/api";
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
+=======
+import React, { useState } from 'react';
+>>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
 import DailyReports from '../components/Reports/DailyReports';
 import MonthlyReports from '../components/Reports/MonthlyReports';
 import './Pages.css';
@@ -41,11 +45,15 @@ const handleGenerateReport = async () => {
     setError(null);
 
     let response;
+<<<<<<< HEAD
      
+=======
+>>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
 
     if (reportFrequency === "monthly") {
       switch (reportType) {
         case "inventory":
+<<<<<<< HEAD
        response = await reportsAPI.getMonthlyInventory(
   year,
   month,
@@ -56,6 +64,9 @@ const handleGenerateReport = async () => {
   productType
 );
 
+=======
+          response = await reportsAPI.getMonthlyInventory(year, month);
+>>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
           break;
 
         case "comprehensive":
@@ -70,7 +81,10 @@ const handleGenerateReport = async () => {
       setReportData(response.data.data);
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
   } catch (err: any) {
     console.error(err);
     setError(err.response?.data?.error?.message || "Failed to generate report");
@@ -78,6 +92,7 @@ const handleGenerateReport = async () => {
     setLoading(false);
   }
 };
+<<<<<<< HEAD
 useEffect(() => {
   if (reportFrequency === "monthly" && reportType === "inventory") {
     handleGenerateReport();
@@ -91,6 +106,8 @@ useEffect(() => {
 ]);
 
 
+=======
+>>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
 
 const handleExcelDownload = async () => {
   try {
@@ -261,11 +278,16 @@ const handlePdfDownload = () => {
     }
 
     return (
+<<<<<<< HEAD
      <MonthlyReports
+=======
+      <MonthlyReports
+>>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
     onError={handleError}
     reportType={reportType}
     reportData={reportData}
     loading={loading}
+<<<<<<< HEAD
 
     fromDate={fromDate}
     setFromDate={setFromDate}
@@ -283,6 +305,9 @@ const handlePdfDownload = () => {
     setProductType={setProductType}
 />
 
+=======
+    />
+>>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
     );
   };
 

@@ -168,6 +168,7 @@ interface MonthlyReportsProps {
   reportData?: any;
 
   loading?: boolean;
+<<<<<<< HEAD
 
   fromDate: string;
 setFromDate: React.Dispatch<React.SetStateAction<string>>;
@@ -184,6 +185,8 @@ setPackagingType: React.Dispatch<React.SetStateAction<string>>;
 productType: string;
 setProductType: React.Dispatch<React.SetStateAction<string>>;
 
+=======
+>>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
 }
 
 
@@ -192,6 +195,7 @@ const MonthlyReports: React.FC<MonthlyReportsProps> = ({
   reportType: propReportType = 'comprehensive',
   reportData: externalReportData,
   loading: externalLoading,
+<<<<<<< HEAD
 
   fromDate,
   setFromDate,
@@ -209,6 +213,9 @@ const MonthlyReports: React.FC<MonthlyReportsProps> = ({
   setProductType,
 }) => {
   
+=======
+}) => {
+>>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
   const reportType = propReportType;
 
   const [selectedMonth, setSelectedMonth] = useState(
@@ -238,7 +245,10 @@ useEffect(() => {
     'rawOil' | 'packaging' | 'finishedGoods'
   >('rawOil');
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
   // rest of your code...
 
   const fetchMonthlyReport = async () => {

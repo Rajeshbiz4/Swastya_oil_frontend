@@ -90,19 +90,29 @@ const navigationItems: NavItem[] = [
   // },
 ];
 
+//console.log("Sidebar User:", user);
+//console.log("Sidebar Role:", user?.role);
+
 const Sidebar: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
+
+ /*navigationItems.forEach(item => {
+    console.log(
+      item.label,
+      item.roles,
+      item.roles?.includes(user?.role as UserRole)
+    );
+  });*/
 
   const hasAccess = (item: NavItem): boolean => {
     if (!user || !item.roles) return true;
     return item.roles.includes(user.role);
   };
 
-  /*
-  const hasAccess = (item: NavItem): boolean => {
+  /*const hasAccess = (item: NavItem): boolean => {
   return true;
-};*/
-
+};
+*/
   return (
     <aside className="sidebar">
       <nav className="sidebar-nav" aria-label="Main Navigation">

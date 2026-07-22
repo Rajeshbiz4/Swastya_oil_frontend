@@ -647,10 +647,14 @@
   padding: 1.5rem;
 }
 
-.report-header {
-  margin-bottom: 2rem;
-  text-align: center;
+.report-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 20px;
+    margin-bottom:10px;
 }
+
 
 .report-header h3 {
   color: #2c3e50;
@@ -714,7 +718,7 @@
   }
   
   .report-content {
-    padding: 1rem;
+    padding: 1.5rem;
   }
 }
 
@@ -1641,3 +1645,33 @@
   margin-top: 10px;
   font-size: 16px;
 }
+
+
+.report-title{
+    margin:0;
+}
+
+.inventory-report-filters{
+    display:flex;
+    align-items:center;
+    gap:15px;
+    flex-wrap:wrap;
+}
+
+.inventory-report-filters .filter-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.inventory-report-filters label{
+    white-space:nowrap;
+    font-weight:600;
+}
+
+.inventory-report-filters input,
+.inventory-report-filters select{
+    width:150px;
+    height:34px;
+}
+

@@ -48,8 +48,6 @@ export interface BookingSummary {
   //const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
   const baseURL =  'http://localhost:5000/api';
 
-  //const baseURL = 'http://localhost:5000/api';
-
 // Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL,
@@ -379,6 +377,12 @@ export const reportsAPI = {
   getMonthlyPnL: (year: number, month: number) =>
     api.get(`/reports/monthly/pnl/${year}/${month}`),
 
+  getMonthlySales: (year: number, month: number) =>
+  api.get(`/reports/monthly/sales/${year}/${month}`),
+
+  getMonthlyPurchases: (year: number, month: number) =>
+  api.get(`/reports/monthly/purchases/${year}/${month}`),
+
   // Monthly Summary Report
   getMonthlySummary: (year: number, month: number) =>
     api.get(`/reports/monthly/summary/${year}/${month}`),
@@ -389,7 +393,20 @@ export const reportsAPI = {
 
   //getMonthlyInventory: (year: number, month: number) =>
   //api.get(`/reports/monthly/inventory/${year}/${month}`),
+
+  getMonthlyProductionReport(
+  year: number,
+  month: number
+) {
+  return api.get(
+    `/reports/monthly/production/${year}/${month}`
+  );
+},
   
+getDailyProductionReport: (date: string) =>
+  api.get(`/reports/daily/production/${date}`),
+
+
   getMonthlyInventory: (
   year: number,
   month: number,
@@ -437,7 +454,41 @@ export const reportsAPI = {
     }
   ),
 
+  downloadComprehensiveExcel: (
+  year: number,
+  month: number
+) =>
+  api.get(
+    `/reports/export/comprehensive/excel/${year}/${month}`,
+    {
+      responseType: "blob",
+    }
+  ),
+  downloadComprehensivePdf: (
+  year: number,
+  month: number
+) =>
+  api.get(
+    `/reports/export/comprehensive/pdf/${year}/${month}`,
+    {
+      responseType: "blob",
+    }
+  ),
+  downloadPurchasesPdf: (
+  year: number,
+  month: number
+) =>
+  api.get(
+    `/reports/export/purchases/pdf/${year}/${month}`,
+    {
+      responseType: "blob",
+    }
+  ),
+  
+
 };
+
+
 
 
 

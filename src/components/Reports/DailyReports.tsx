@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DataTable from '../UI/DataTable';
 import ExportButton from '../UI/ExportButton';
 import api from '../../services/api';
@@ -50,12 +50,22 @@ interface DailyReportData {
 interface DailyReportsProps {
   onError: (error: string) => void;
   reportType?: 'comprehensive' | 'purchases' | 'sales' | 'inventory' | 'production';
+  selectedDate?: string;
+  reportData?: DailyReportData | null;
 }
 
-const DailyReports: React.FC<DailyReportsProps> = ({ onError, reportType: propReportType = 'comprehensive' }) => {
-  const reportType = propReportType;
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [reportData, setReportData] = useState<DailyReportData | null>(null);
+
+//const DailyReports: React.FC<DailyReportsProps> = ({ onError, reportType: propReportType = 'comprehensive', selectedDate: propSelectedDate }) => {
+const DailyReports: React.FC<DailyReportsProps> = ({
+    onError,
+    reportType: propReportType = 'comprehensive',
+    selectedDate: propSelectedDate,
+    reportData
+}) => {
+    
+const reportType = propReportType;
+  const selectedDate = propSelectedDate;
+  //const [reportData, setReportData] = useState<DailyReportData | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [inventoryTab, setInventoryTab] = useState<
@@ -98,6 +108,12 @@ const DailyReports: React.FC<DailyReportsProps> = ({ onError, reportType: propRe
       setLoading(false);
     }
   };
+
+  /*useEffect(() => {
+  fetchDailyReport();
+}, [selectedDate, reportType]);
+*/
+
 
   const getExportData = () => {
     if (!reportData) return [];

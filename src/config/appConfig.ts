@@ -1,11 +1,11 @@
 export const appConfig = {
   company: {
     name: 'Swastya Shakti Gold Pvt Ltd',
-    address: 'Address: Shop No: 1,Ground Floor,Gate No:129,Ganesh Nagar, Talwade, Haweli, Pune-411062, Maharashtra, India ',
+    address: 'Address: Shop No: 1,Ground Floor,Gate No:129,Ganesh Nagar, Talwade Road, Nearby Landmark: Powerline Enterprises, Haweli, Pune-411062, Maharashtra, India ',
     email: 'swasthyashaktigold@gmail.com',
     contact: '+917743979251',
     contact2: '+917020375656',
-    gstNumber: '27ATGPS719B1ZG',
+    gstNumber: '27ABPCS4591P1Z8',
     PAN:'ABPCS4591P',
     FSSAI_LIC_NO:'11525037000384'
   },

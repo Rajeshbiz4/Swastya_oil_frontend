@@ -213,6 +213,7 @@ const MonthlyReports: React.FC<MonthlyReportsProps> = ({
 }) => {
   
   const [purchaseTab, setPurchaseTab] = useState<"oilf" | "packaging">("oil");
+  
 
   const reportType = propReportType;
 
@@ -752,7 +753,7 @@ const renderInventorySection = () => {
     openingStock: item.openingStock ?? 0,
     purchased: item.purchased ?? 0,
     consumed: item.consumed ?? 0,
-    available: item.quantity ?? 0,
+    available: item.available ?? item.quantity ?? 0,
   })) || []
 }
 
@@ -786,7 +787,7 @@ const renderInventorySection = () => {
     openingStock: item.openingStock ?? 0,
     produced: item.produced ?? 0,
     sold: item.sold ?? 0,
-    available: item.quantity ?? 0,
+    available: item.available ?? item.quantity ?? 0,
   })) || []
 }
 

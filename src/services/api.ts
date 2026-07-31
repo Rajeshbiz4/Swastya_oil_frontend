@@ -45,11 +45,11 @@ export interface BookingSummary {
 }
 
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
-  //const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
-  const baseURL =  'http://localhost:5000/api';
+ // const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
+   const baseURL =  'http://localhost:5000/api';
 
   //const baseURL = 'http://localhost:5000/api';
-  
+
 // Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL,
@@ -371,6 +371,123 @@ export const packagingPurchaseAPI = {
     
     return api.get<ApiResponse<{ summary: PurchaseSummary; breakdown: any; filters: any }>>(`/procurement/packaging-purchases/summary?${queryParams}`);
   }
+};
+
+export const reportsAPI = {
+
+  // Monthly P&L Report
+  getMonthlyPnL: (year: number, month: number) =>
+    api.get(`/reports/monthly/pnl/${year}/${month}`),
+
+  getMonthlySales: (year: number, month: number) =>
+  api.get(`/reports/monthly/sales/${year}/${month}`),
+
+  getMonthlyPurchases: (year: number, month: number) =>
+  api.get(`/reports/monthly/purchases/${year}/${month}`),
+
+  // Monthly Summary Report
+  getMonthlySummary: (year: number, month: number) =>
+    api.get(`/reports/monthly/summary/${year}/${month}`),
+
+  // Monthly Comparison Report
+  getMonthlyComparison: (year: number, month: number) =>
+    api.get(`/reports/monthly/comparison/${year}/${month}`),
+
+  //getMonthlyInventory: (year: number, month: number) =>
+  //api.get(`/reports/monthly/inventory/${year}/${month}`),
+
+  getMonthlyProductionReport(
+  year: number,
+  month: number
+) {
+  return api.get(
+    `/reports/monthly/production/${year}/${month}`
+  );
+},
+  
+getDailyProductionReport: (date: string) =>
+  api.get(`/reports/daily/production/${date}`),
+
+
+  getMonthlyInventory: (
+  year: number,
+  month: number,
+  fromDate?: string,
+  toDate?: string,
+  oilType?: string,
+  packagingType?: string,
+  productType?: string
+) => {
+  const params = new URLSearchParams();
+
+  if (fromDate) params.append("fromDate", fromDate);
+  if (toDate) params.append("toDate", toDate);
+  if (oilType) params.append("oilType", oilType);
+  if (packagingType) params.append("packagingType", packagingType);
+  if (productType) params.append("productType", productType);
+
+  return api.get(
+    `/reports/monthly/inventory/${year}/${month}?${params.toString()}`
+  );
+},
+
+
+  // Daily Report
+  getDailyReport: (date: string) =>
+    api.get(`/reports/daily/${date}`),
+
+  downloadMonthlyExcel: (year: number, month: number, type: string) =>
+  api.get(
+    `/reports/export/excel/${year}/${month}/${type}`,
+    {
+      responseType: "blob",
+    }
+  ),
+
+  downloadMonthlyPdf: (
+  year: number,
+  month: number,
+  type: string
+) =>
+  api.get(
+    `/reports/export/pdf/${year}/${month}/${type}`,
+    {
+      responseType: "blob",
+    }
+  ),
+
+  downloadComprehensiveExcel: (
+  year: number,
+  month: number
+) =>
+  api.get(
+    `/reports/export/comprehensive/excel/${year}/${month}`,
+    {
+      responseType: "blob",
+    }
+  ),
+  downloadComprehensivePdf: (
+  year: number,
+  month: number
+) =>
+  api.get(
+    `/reports/export/comprehensive/pdf/${year}/${month}`,
+    {
+      responseType: "blob",
+    }
+  ),
+  downloadPurchasesPdf: (
+  year: number,
+  month: number
+) =>
+  api.get(
+    `/reports/export/purchases/pdf/${year}/${month}`,
+    {
+      responseType: "blob",
+    }
+  ),
+  
+
 };
 
 export default api;

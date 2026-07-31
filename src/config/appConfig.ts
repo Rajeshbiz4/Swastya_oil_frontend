@@ -37,9 +37,11 @@ export const appConfig = {
 
   invoice: {
     termsAndConditions: [
-      'Goods once sold will not be taken back',
-      'Payment due within 7 days',
-      'Subject to jurisdiction'
+       "We hereby certify that goods mentioned in this invoice are",
+        "warranted to be of same in nature & quality which this",
+        "purports to be the same at the time of delivery. We",
+        "hereby that goods mentioned in this invoice are covered",
+        "under MAH VAT ACT 2002 in force on the date"
     ]
   },
 

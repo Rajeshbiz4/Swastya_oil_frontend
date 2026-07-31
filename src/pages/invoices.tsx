@@ -557,306 +557,304 @@ doc.addImage(
 // Divider Line
 
 doc.setDrawColor(180, 180, 180);
-
- 
 // =================================================
-// COMPANY + PARTY DETAILS SECTION
+// COMPANY + PARTY DETAILS SECTION - DYNAMIC HEIGHT
+// Buyer and Consignee in same row
 // =================================================
 
 const sectionTop = 40;
 
-// Outer Box
-doc.rect(10, sectionTop, 190, 80);
+const sectionX = 10;
+const sectionW = 190;
+const sectionEndX = sectionX + sectionW; // 200
 
-// LEFT SIDE
-doc.rect(10, sectionTop, 105, 80);
+const companyW = 105;
+const companyEndX = sectionX + companyW; // 115
 
-// Company Block Divider
-doc.line(
-  10,
-  sectionTop + 26,
-  115,
-  sectionTop + 26
+const rightX = companyEndX;
+const rightW = 85;
+const rightMidX = 155;
+
+const partyColW = 95;
+const buyerX = sectionX;
+const consigneeX = sectionX + partyColW; // 105
+const partyDividerX = consigneeX;
+
+const textX = 45;
+const lineH = 4;
+const smallLineH = 3.8;
+
+const companyPan =
+  (appConfig.company as any).PAN ||
+  (appConfig.company as any).panNumber ||
+  "-";
+
+// ================= MULTILINE VALUES =================
+
+const companyAddressLines = doc.splitTextToSize(
+  appConfig.company.address || "-",
+  66
 );
 
+const buyerAddressLines = doc.splitTextToSize(
+  data.address || "-",
+  88
+);
+
+const consigneeAddressLines = doc.splitTextToSize(
+  data.destinationAddress || data.address || "-",
+  88
+);
+
+const invoiceNoLines = doc.splitTextToSize(
+  data.invoiceNumber || "-",
+  36
+);
+
+const ewayBillLines = doc.splitTextToSize(
+  data.ewayBillNumber || "-",
+  36
+);
+
+const transporterLines = doc.splitTextToSize(
+  data.transporterName || "-",
+  38
+);
+
+// =================================================
+// TOP ROW HEIGHT: COMPANY + INVOICE DETAILS
+// =================================================
+
+const companyNameY = sectionTop + 5;
+const companyAddressY = sectionTop + 11;
+
+const companyGstY =
+  companyAddressY + companyAddressLines.length * smallLineH + 3;
+
+const companyPanY = companyGstY + 4;
+const companyEmailY = companyPanY + 4;
+
+const topRowHeight = Math.max(
+  58,
+  companyEmailY + 5 - sectionTop
+);
+
+const topRowBottom = sectionTop + topRowHeight;
+
+// =================================================
+// PARTY ROW HEIGHT: BUYER + CONSIGNEE SAME ROW
+// =================================================
+
+const getPartyBlockHeight = (addressLines: string[]) => {
+  return (
+    5 + // label
+    5 + // customer name
+    4 + // party code
+    addressLines.length * lineH +
+    2 +
+    5 + // GST
+    5 + // State
+    5   // bottom padding
+  );
+};
+
+const partyStartY = topRowBottom;
+
+const partyRowHeight = Math.max(
+  42,
+  getPartyBlockHeight(buyerAddressLines),
+  getPartyBlockHeight(consigneeAddressLines)
+);
+
+const sectionBottom = partyStartY + partyRowHeight;
+const sectionHeight = sectionBottom - sectionTop;
+
+// =================================================
+// DRAW MAIN STRUCTURE
+// =================================================
+
+doc.setDrawColor(160, 160, 160);
+
+// Full outer box
+doc.rect(sectionX, sectionTop, sectionW, sectionHeight);
+
+// Top row separator between company and invoice details
+doc.line(companyEndX, sectionTop, companyEndX, topRowBottom);
+
+// Separator between top row and buyer/consignee row
+doc.line(sectionX, topRowBottom, sectionEndX, topRowBottom);
+
+// Buyer/Consignee vertical divider
+doc.line(partyDividerX, partyStartY, partyDividerX, sectionBottom);
+
+// =================================================
+// COMPANY DETAILS
+// =================================================
 
 // Logo
 doc.addImage(
   logo,
   "PNG",
   12,
-  sectionTop + 2,
+  sectionTop + 3,
   29,
-  20
+  15
 );
 
-const textX = 45;
-
-bold(12);
-
+bold(11);
 doc.text(
-  appConfig.company.name,
+  appConfig.company.name || "-",
   textX,
-  sectionTop + 4
+  companyNameY
 );
 
-normal(9);
-
+normal(8);
 doc.text(
-  "Factory :- New S.No. 103, Hissa No. 2, Autade",
+  companyAddressLines,
   textX,
+  companyAddressY
+);
+
+normal(8);
+doc.text(
+  `GST: ${appConfig.company.gstNumber || "-"}`,
+  textX,
+  companyGstY
+);
+
+normal(8);
+doc.text(
+  `PAN: ${companyPan}`,
+  textX,
+  companyPanY
+);
+
+normal(8);
+doc.text(
+  appConfig.company.email || "-",
+  textX,
+  companyEmailY
+);
+
+// =================================================
+// RIGHT SIDE INVOICE DETAILS
+// =================================================
+
+doc.line(rightMidX, sectionTop, rightMidX, topRowBottom);
+
+doc.line(rightX, sectionTop + 18, sectionEndX, sectionTop + 18);
+doc.line(rightX, sectionTop + 36, sectionEndX, sectionTop + 36);
+doc.line(rightX, sectionTop + 54, sectionEndX, sectionTop + 54);
+
+// Invoice No
+bold(8);
+doc.text("Invoice No.", rightX + 2, sectionTop + 5);
+
+normal(7);
+doc.text(invoiceNoLines, rightX + 2, sectionTop + 10);
+
+// Date
+bold(8);
+doc.text("Dated", rightMidX + 2, sectionTop + 5);
+
+normal(8);
+doc.text(
+  data.date ? new Date(data.date).toLocaleDateString("en-IN") : "-",
+  rightMidX + 2,
   sectionTop + 10
 );
 
-doc.text(
-  "Handewadi Tal. Haveli",
-  textX,
-  sectionTop + 15
-);
+// e-Way Bill
+bold(8);
+doc.text("e-Way Bill No.", rightX + 2, sectionTop + 23);
 
-doc.text(
-  "CIN: C15141PN2008PTC131689",
-  textX,
-  sectionTop + 20
-);
+normal(7);
+doc.text(ewayBillLines, rightX + 2, sectionTop + 28);
 
-doc.text(
-  "E-Mail : satgurumarket784@gmail.com",
-  textX,
-  sectionTop + 25
-);
+// Mode/Terms
+bold(8);
+doc.text("Mode/Terms", rightMidX + 2, sectionTop + 23);
 
-const buyerAddress = doc.splitTextToSize(
-  data.address || "-",
-  90
-);
+normal(8);
+doc.text("Credit", rightMidX + 2, sectionTop + 28);
 
-// ================= BUYER =================
+// Vehicle No
+bold(8);
+doc.text("Vehicle No.", rightX + 2, sectionTop + 41);
 
-normal(10);
-doc.text("Buyer (Bill to) :", 12, sectionTop + 29);
+normal(8);
+doc.text(data.vehicleNumber || "-", rightX + 2, sectionTop + 46);
 
-bold(10);
-doc.text(data.customerName || "-", 12, sectionTop + 34);
+// Transporter
+bold(8);
+doc.text("Transporter", rightMidX + 2, sectionTop + 41);
 
-normal(10);
-doc.text("Party Code :", 12, sectionTop + 38);
+normal(7);
+doc.text(transporterLines, rightMidX + 2, sectionTop + 46);
 
-bold(10);
-doc.text(buyerAddress, 12, sectionTop + 42);
+// =================================================
+// BUYER + CONSIGNEE SAME ROW
+// =================================================
 
-normal(10);
-doc.text(
-  `GSTIN/UIN      : ${data.gstNo || "-"}`,
-  12,
-  sectionTop + 46
-);
+const drawPartyBlock = (
+  title: string,
+  x: number,
+  yStart: number,
+  name: string,
+  addressLines: string[],
+  gstNumber: string,
+  state: string
+) => {
+  let y = yStart + 5;
 
-normal(10);
-doc.text(
-  `State Name     : ${data.stateName || "-"}`,
-  12,
-  sectionTop + 50
-);
+  normal(8);
+  doc.text(title, x + 2, y);
 
-// Divider
-doc.line(
-  10,
-  sectionTop + 52,
-  115,
-  sectionTop + 52
-);
+  y += 5;
+  bold(8);
+  doc.text(name || "-", x + 2, y);
 
-// ================= CONSIGNEE =================
+  y += 5;
+  normal(7.5);
+  doc.text("Party Code :", x + 2, y);
 
-normal(10);
-doc.text(
-  "Consignee (Ship to ) :",
-  12,
-  sectionTop + 56
-);
+  y += 4;
+  normal(7.5);
+  doc.text(addressLines, x + 2, y);
 
-bold(10);
-doc.text(
+  y += addressLines.length * lineH + 2;
+  normal(7.5);
+  doc.text(`GSTIN/UIN : ${gstNumber || "-"}`, x + 2, y);
+
+  y += 5;
+  normal(7.5);
+  doc.text(`State Name : ${state || "-"}`, x + 2, y);
+};
+
+// Buyer left side
+drawPartyBlock(
+  "Buyer (Bill to) :",
+  buyerX,
+  partyStartY,
   data.customerName || "-",
-  12,
-  sectionTop + 60
+  buyerAddressLines,
+  data.gstNo || "-",
+  data.stateName || "-"
 );
 
-normal(10);
-doc.text(
-  "Party Code :",
-  12,
-  sectionTop + 64
+// Consignee right side
+drawPartyBlock(
+  "Consignee (Ship to) :",
+  consigneeX,
+  partyStartY,
+  data.customerName || "-",
+  consigneeAddressLines,
+  data.gstNo || "-",
+  data.stateName || "-"
 );
 
-normal(10);
-doc.text(
-  buyerAddress,
-  12,
-  sectionTop + 68
-);
-
-normal(10);
-doc.text(
-  `GSTIN/UIN      : ${data.gstNo || "-"}`,
-  12,
-  sectionTop + 72
-);
-
-normal(10);
-doc.text(
-  `State Name     : ${data.stateName || "-"}`,
-  12,
-  sectionTop + 77
-);
-
-
-// =====================================
-// RIGHT SIDE DETAILS
-// =====================================
-
-const rx = 115;
-const ry = sectionTop;
-
-// Outer Box
-doc.rect(rx, ry, 85, 80);
-
-// Middle Vertical Line
-doc.line(155, ry, 155, ry + 80);
-
-// Horizontal Lines
-const rows = [
-  16,// after header  
-  23,// after invoice & date
-  32,// after delivery & payment terms
-  40,// after ref & other refs
-  48,// after buyer's order
-  56,// after dispatch doc
-  64,// after dispatched through
-  72//  after bill of lading
-];
-
-rows.forEach(y => {
-  doc.line(
-    rx,
-    ry + y,
-    200,
-    ry + y
-  );
-});
-
-// Labels + Values
-
-bold(10);
-
-doc.text("Invoice No.",117,44);
-
-normal(8);
-
-doc.text(
-  data.invoiceNumber || "-",
-  117,
-  48
-);
-
-bold(10);
-
-doc.text(
-  "e-Way Bill No.",
-  117,
-  52
-);
-
-normal(8);
-
-doc.text(
-  data.ewayBillNumber || "-",
-  117,
-  55
-);
-
-// Date 
-bold(10);
-
-doc.text(
-  "Dated",
-  157,
-  44
-);
-
-bold(9);
-
-doc.text(
-  new Date(data.date).toLocaleDateString(),
-  157,
-  50
-);
-
-bold(8);
-doc.text("Delivery Note",117,59);
-doc.text("Mode/Terms of Payment",157,59);
-
-doc.text("Reference No. & Date.",117,66);
-doc.text("Other References",157,66);
-
-doc.text("Buyer's Order No.",117,75);
-doc.text("Dated",157,75);
-
-doc.text("Dispatch Doc No.",117,83);
-doc.text("Delivery Note Date",157,83);
-
-doc.text("Dispatched through",117,91);
-doc.text("Destination",157,91);
-
-doc.text("Bill of Lading/LR-RR No.",117,99);
-doc.text("Motor Vehicle No.",157,99);
-normal(8);
-
-doc.text(
-  data.vehicleNumber || "",
-  157,
-  103
-);
-
-// ================= TERMS OF DELIVERY =================
-
-bold(8);
-
-doc.text("Terms of Delivery", 117, 107);
-
-
-// ================= SALES MAN / BEAT =================
-
- 
-
-// Vertical split
-//doc.line(155, 126, 155, 110);
-
-bold(8);
-
-doc.text("Sales Man", 117, 115);
-doc.text("Beat", 157, 115);
-
-normal(8);
-
-doc.text(
-  data.salesman || "",
-  117,
-  134
-);
-
-// ================= AREA =================
-
-bold(8);
-
-doc.text(
-  "Area",
-  157,
-  107
-);
-
-const csBottom = sectionTop + 80;
+// Product table starts after dynamic full section
+const csBottom = sectionBottom;
 
 
   // ── PRODUCT TABLE ──────────────────────────────────────
@@ -955,7 +953,7 @@ doc.text("0.00", 195, taxY, { align: "right" });
 
   // Add outer borders manually
 const tableStartY = csBottom;
-const fixedTableBottom = 210;
+const fixedTableBottom = Math.max(210, csBottom + 75);
 
 // Fixed bottom where Total row should start
  
@@ -1169,7 +1167,7 @@ doc.text(
 
 bold(8);
 doc.text(
-  "AALCS9101Q",
+  appConfig.company.PAN,
   40,
   decY + 16
 );
@@ -1183,16 +1181,8 @@ doc.text(
 );
 
 normal(8)
-const declarationLines = [
-  "We hereby certify that goods mentioned in this invoice are",
-  "warranted to be of same in nature & quality which this",
-  "purports to be the same at the time of delivery. We",
-  "hereby that goods mentioned in this invoice are covered",
-  "under MAH VAT ACT 2002 in force on the date"
-];
-
 doc.text(
-  declarationLines,
+  appConfig.invoice.termsAndConditions,
   12,
   decY + 23,
   {
@@ -1241,573 +1231,6 @@ doc.text(
 doc.setTextColor(0, 0, 0);
 
 
-// ════════════════════════════════════════════════════════
-// PAGE 2 — E-WAY BILL
-// ════════════════════════════════════════════════════════
-
-doc.addPage();
-
-bold(14);
-doc.text("E-WAY BILL", PW / 2, 15, { align: "center" });
-
-// IRN / Ack
-
-normal(8);
-
-doc.text(
-  `Doc No.      : Tax Invoice - ${data.invoiceNumber}`,
-  M,
-  24
-);
-
-doc.text(
-  `Date           : ${
-    data.date
-      ? new Date(data.date).toLocaleDateString("en-IN")
-      : "-"
-  }`,
-  M,
-  29
-);
-
-doc.text("IRN", 10, 35);
-doc.text(":", 25, 35);
-
-doc.text(
-  data.irn || "-",
-  27,
-  35
-);
-
-
-doc.text("Ack No.", 10, 40);
-doc.text(":", 25, 40);
-normal(8);
-
-doc.text(
-  data.ackNo || "-",
-  27,
-  40
-);
-
-
-
-doc.text("Ack Date", 10, 45);
-doc.text(":", 25, 45);
-
-doc.text(
-  data.ackDate || "-",
-  27,
-  45
-);
-
-// =====================================================
-// OUTER BOX START
-// =====================================================
-
-let ey = 50;
-const sectionBoxTop = ey - 3;
-
-hLine(sectionBoxTop);
-
-// =====================================================
-// 1. e-Way Bill Details
-// =====================================================
-
-bold(10);
-doc.text(
-  " 1. e-Way Bill Details",
-  M,
-  ey + 2
-);
-
-ey += 5;
-
-// LEFT COLUMN
-
-bold(8);
-doc.text(" e-Way Bill No", M, ey+3);
-doc.text(":", M + 28, ey+3);
-
-normal(8);
-doc.text(
-  data.ewayBillNumber || "",
-  M + 32,
-  ey+3
-);
-
-ey += 5;
-
-bold(8);
-doc.text(" Generated By", M, ey+3);
-doc.text(":", M + 28, ey+3);
-
-normal(8);
-doc.text(
-  data.companyGstin || "",
-  M + 32,
-  ey+3
-);
-
-ey += 5;
-
-bold(8);
-doc.text(" Supply Type", M, ey+3);
-doc.text(":", M + 28, ey+3);
-
-normal(8);
-doc.text(
-  "Outward-Supply",
-  M + 32,
-  ey+3
-);
-
-// CENTER COLUMN
-
-const cx = 85;
-
-bold(8);
-doc.text("Mode", cx, ey - 7);
-doc.text(":", cx + 22, ey - 7);
-
-normal(8);
-doc.text(
-  "",
-  cx + 26,
-  ey - 7
-);
-
-bold(8);
-doc.text(
-  "Approx Distance : ",
-  cx,
-  ey - 2
-);
-
- 
-
-normal(8);
-doc.text(
-  `${data.distance || 0} KM`,
-  cx + 26,
-  ey - 2
-);
-
-bold(8);
-doc.text(
-  "Transaction Type : ",
-  cx,
-  ey+3
-);
-
-
-normal(8);
-doc.text(
-  "Regular",
-  cx + 26,
-  ey+3
-);
-
-// RIGHT COLUMN
-
-const rightColX = 145;
-
-bold(8);
-doc.text(
-  "Generated Date",
-  rightColX,
-  ey - 7
-);
-
-doc.text(
-  ":",
-  rightColX + 28,
-  ey - 7
-);
-
-normal(8);
-doc.text(
-  data.date
-    ? new Date(data.date).toLocaleDateString("en-IN")
-    : "-",
-  rightColX + 32,
-  ey - 7
-);
-
-bold(8);
-doc.text(
-  "Valid Upto",
-  rightColX,
-  ey - 2
-);
-
-doc.text(
-  ":",
-  rightColX + 28,
-  ey - 2
-);
-
-normal(8);
-doc.text(
-  "",
-  rightColX + 32,
-  ey - 2
-);
-
-ey += 8;
-
-doc.line(
-  M,
-  ey,
-  PW - M,
-  ey
-);
-
-ey += 4;
-
-// ── 2. Address Details ─────────────────────────────────
-
-bold(10);
-doc.text(" 2. Address Details", M, ey);
-
-const startY = ey + 6;
-const leftX = M;
-// Use a fixed column width so both sides align predictably
-const columnWidth = 95;
-const rightX = leftX + columnWidth + 5;
-
-const contentWidth = columnWidth - 10; // padding inside column
-const lineHeight = 5;
-
-// Prepare multiline content for both columns so we can size backgrounds
-const dispatchLines = doc.splitTextToSize(data.dispatchAddress || "", contentWidth);
-const shipLines = doc.splitTextToSize(data.destinationAddress || "", contentWidth);
-const maxLines = Math.max(dispatchLines.length, shipLines.length, 1);
-
-
-// LEFT COLUMN (FROM)
-bold(9);
-doc.text(" From :", leftX, startY );
-
-normal(9);
-doc.text(appConfig.company.name || " ", leftX +1, startY + 5);
-
-bold(8)
-doc.text(` GSTIN : ${ appConfig.company.gstNumber || ""}`, leftX, startY + 11);
-normal(8)
-const companyAddressLines = doc.splitTextToSize(
-  appConfig.company.address || "",
-  75
-);
-
-doc.text(
-  companyAddressLines,
-  leftX + 1,
-  startY + 22
-);
-
-// Dispatch From (reduced gap: one line from GSTIN)
-bold(9);
-doc.text(" Dispatch From :", leftX, startY + 17);
-
-normal(8);
-doc.text(dispatchLines, leftX, startY + 22);
-
-// RIGHT COLUMN (TO)
-bold(9);
-doc.text("To :", rightX, startY - 1);
-
-normal(9);
-doc.text(data.customerName || "", rightX, startY + 4);
-bold(8)
-doc.text(`GSTIN : ${data.gstNo || ""}`, rightX, startY + 10);
-normal(8)
-doc.text(data.address || "", rightX, startY + 22);
-
-// Ship To (reduced gap: one line from GSTIN)
-bold(9);
-doc.text("Ship To :", rightX, startY + 17);
-
-normal(8);
-doc.text(shipLines, rightX, startY + 22);
-
-// Move ey to below the taller column and leave exactly 3 lines gap before the separator
-const contentBottom = startY + 22 + maxLines * lineHeight;
-ey = contentBottom + 4;
-doc.line(M, ey, PW - M, ey);
-ey += lineHeight;
-
-// ── 3. Goods Details ───────────────────────────────────
-
-bold(10);
-doc.text(" 3. Goods Details", M, ey);
-
-ey += 5;
-
-const goodsTop = ey;
-const goodsHeight = 120;
-
-// Outer Box
-doc.rect(
-  M,
-  goodsTop,
-  PW - (M * 2),
-  goodsHeight
-);
-const headerY = goodsTop;
-const headerH = 10;
-
-// Header Bottom Line
-doc.line(M, headerY + headerH, PW - M, headerY + headerH);
-
-// Column Positions
-const col1 = M + 22;   // HSN
-const col2 = col1 + 95; // Product
-const col3 = col2 + 25; // Qty
-const col4 = col3 + 28; // Taxable
-
-// Vertical Lines
-doc.line(col1, goodsTop, col1, goodsTop + goodsHeight - 14);
-doc.line(col2, goodsTop, col2, goodsTop + goodsHeight - 14);
-doc.line(col3, goodsTop, col3, goodsTop + goodsHeight - 14);
-doc.line(col4, goodsTop, col4, goodsTop + goodsHeight - 14);
-
-
-// Header Text
-bold(7);
-
-doc.text("HSN\nCode", M + 6, goodsTop + 5, { align: "center" });
-
-doc.text(
-  "Product Name & Desc",
-  col1 + 40,
-  goodsTop + 6,
-  { align: "center" }
-);
-
-doc.text(
-  "Quantity",
-  col2 + 12,
-  goodsTop + 6,
-  { align: "center" }
-);
-
-doc.text(
-  "Taxable Amt",
-  col3 + 14,
-  goodsTop + 6,
-  { align: "center" }
-);
-
-doc.text(
-  "Tax Rate\n(C+S)",
-  col4 + 10,
-  goodsTop + 5,
-  { align: "center" }
-);
-
-normal(7);
-
-let rowY = goodsTop + 10;
-const rowH = 8;
-
-data.products.forEach((p: any) => {
-  const total =
-    Number(p.total) ||
-    Number(p.rate) * Number(p.qty);
-
-  const taxableAmt =
-    total / (1 + gstPercent / 100);
-
-  // Row Bottom Line
-  doc.line(
-    M,
-    rowY + rowH,
-    PW - M,
-    rowY + rowH
-  );
-
-  // HSN
-  doc.text(
-    String(getHSNCodeForOilType(p.oilType)),
-    M + 2,
-    rowY + 5
-  );
-
-  // Product
-  doc.text(
-    `${p.oilType || "-"} ${p.type || "-"}`,
-    col1 + 2,
-    rowY + 5
-  );
-
-  // Qty
-  doc.text(
-    `${p.qty || 0} BOX`,
-    col3 - 2,
-    rowY + 5,
-    { align: "right" }
-  );
-
-  // Taxable
-  doc.text(
-    fmt(taxableAmt),
-    col4 - 2,
-    rowY + 5,
-    { align: "right" }
-  );
-
-  // Tax Rate
-  doc.text(
-    `${appConfig.tax.cgst}+${appConfig.tax.sgst}`,
-    PW - M - 8,
-    rowY + 5,
-    { align: "right" }
-  );
-
-  rowY += rowH;
-});
-
-// =====================================
-// SUMMARY INSIDE BOX
-// =====================================
-
-const summaryY = goodsTop + goodsHeight - 14;
-
-// Summary Top Line
-doc.line(
-  M,
-  summaryY,
-  PW - M,
-  summaryY
-);
-
-normal(8);
-
-// Row 1
-
-doc.text("Tot.Taxable Amt", M + 3, summaryY + 6);
-doc.text(":", M + 28, summaryY + 6);
-
-bold(8);
-doc.text(fmt(taxable), M + 30, summaryY + 6);
-
-normal(8);
-
-doc.text("Other Amt", M + 65, summaryY + 6);
-doc.text(":", M + 82, summaryY + 6);
-
-bold(8);
-doc.text("0.08", M + 85, summaryY + 6);
-
-// Row 2
-
-normal(8);
-
-doc.text("CGST Amt", M + 3, summaryY + 12);
-doc.text(":", M + 28, summaryY + 12);
-
-bold(8);
-doc.text(
-  fmt(cgst),
-  M + 30,
-  summaryY + 12
-);
-
-normal(8);
-
-doc.text("SGST Amt", M + 65, summaryY + 12);
-doc.text(":", M + 82, summaryY + 12);
-
-bold(8);
-doc.text(
-  fmt(sgst),
-  M + 85,
-  summaryY + 12
-);
-
-normal(8);
-
-doc.text("Total Inv Amt", M + 150, summaryY + 12);
-doc.text(":", M + 170, summaryY + 12);
-
-bold(8);
-doc.text(
-  fmt(finalTotal),
-  PW - M - 3,
-  summaryY + 12,
-  { align: "right" }
-);
-
-// Next Section
-ey = goodsTop + goodsHeight;
-
-// 4. Transportation Details
-// =====================================
-
-doc.line(M, ey, PW - M, ey);
-ey += 4;
-
-bold(10);
-doc.text(" 4. Transportation Details", M, ey);
-
-ey +=5;
-
-normal(8);
-
-doc.text(" Transporter ID", M, ey);
-doc.text(":", M + 25, ey);
-
-doc.text("Doc No", 150, ey);
-doc.text(":", 165, ey);
-
-ey += 6;
-
-doc.text(" Name", M, ey);
-doc.text(":", M + 25, ey);
-
-doc.text("Date", 150, ey);
-doc.text(":", 165, ey);
-
-// =====================================
-// 5. Vehicle Details
-// =====================================
-
-ey += 6;
-
-doc.line(M, ey, PW - M, ey);
-
-ey += 5;
-
-bold(10);
-doc.text(" 5. Vehicle Details", M, ey);
-
-ey += 6;
-
-normal(8);
-
-doc.text(" Vehicle No.", M, ey);
-doc.text(":", M + 25, ey);
-doc.text(data.vehicleNumber || "", M + 30, ey);
-
-doc.text("From", 65, ey);
-doc.text(":", 80, ey);
-doc.text(data.fromLocation || "", 85, ey);
-
-doc.text("CEWB No.", 145, ey);
-doc.text(":", 165, ey);
-
-ey += 6;
-
-doc.line(M, ey, PW - M, ey);
-
-doc.rect(
-  M,
-  sectionBoxTop,
-  PW - (M * 2),
-  ey - sectionBoxTop
-);
-  
   // Footer page 2
   normal(7);
 

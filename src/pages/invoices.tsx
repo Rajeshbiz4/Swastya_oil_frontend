@@ -120,8 +120,15 @@ const InvoicePage: React.FC = () => {
   const packagingTypes = Array.from(new Set(finishedGoods.map((item) => item.packagingType).filter(Boolean) as string[])).sort() as string[];
   const oilTypes = Array.from(new Set(finishedGoods.map((item) => item.oilType).filter(Boolean) as string[])).sort() as string[];
   const [packagingRateCache, setPackagingRateCache] = useState<Record<string, number>>({});
-//    console.log("Invoices from store:", invoices);
   const [showForm, setShowForm] = useState(false);
+  type InvoiceTab =
+  | "invoiceList"
+  | "customerLedger"
+  | "vendorLedger";
+
+  const [activeTab, setActiveTab] =
+  useState<InvoiceTab>("invoiceList");
+
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
@@ -1835,7 +1842,34 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
       )}
 
       <h1>Invoice Management</h1>
+      <div className="tabs invoice-tabs">
+  <button
+    className={`tab-button ${
+      activeTab === "invoiceList" ? "active" : ""
+    }`}
+    onClick={() => setActiveTab("invoiceList")}
+  >
+    📄 Invoice List
+  </button>
 
+  <button
+    className={`tab-button ${
+      activeTab === "customerLedger" ? "active" : ""
+    }`}
+    onClick={() => setActiveTab("customerLedger")}
+  >
+     Customer Ledger
+  </button>
+
+  <button
+    className={`tab-button ${
+      activeTab === "vendorLedger" ? "active" : ""
+    }`}
+    onClick={() => setActiveTab("vendorLedger")}
+  >
+     Vendor Ledger
+  </button>
+</div>
       {error && <div className="error-message">{error}</div>}
 
       <button style={{ ...styles.button, ...styles.primaryBtn, marginTop: 10, marginBottom: 10 }} onClick={() => {

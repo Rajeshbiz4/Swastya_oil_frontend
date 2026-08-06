@@ -21,7 +21,8 @@ interface EmployeeFormData {
   status: 'Active' | 'Inactive' | 'Deleted';
 
   // Salary Reference
-  salaryTemplateId?: string;
+  dailyWage: string;
+  monthlySalary: string
 
   // ID Proof
   aadhaarNumber: string;
@@ -76,7 +77,8 @@ const EmployeeCRUD: React.FC = () => {
     joiningDate: '',
     employmentType: 'Full-time',
     status: 'Active',
-    salaryTemplateId: '',
+    dailyWage: '',
+    monthlySalary: '',
     aadhaarNumber: '',
     panNumber: '',
     aadhaarCard: undefined,
@@ -105,7 +107,8 @@ const EmployeeCRUD: React.FC = () => {
       joiningDate: '',
       employmentType: 'Full-time',
       status: 'Active',
-      salaryTemplateId: '',
+      dailyWage: '',  
+      monthlySalary: '',
       aadhaarNumber: '',
       panNumber: '',
       aadhaarCard: undefined,
@@ -181,7 +184,10 @@ console.log("TOKEN FROM LOCALSTORAGE =", token);
         joiningDate: formData.joiningDate,
         employmentType: formData.employmentType,
         status: formData.status,
-        salaryTemplateId: formData.salaryTemplateId,
+          isActive: formData.status === "Active",
+
+        dailyWage: formData.dailyWage,
+        monthlySalary: formData.monthlySalary,
         aadhaarNumber: formData.aadhaarNumber,
         panNumber: formData.panNumber,
         phone: formData.mobile,
@@ -306,7 +312,8 @@ console.log("TOKEN FROM LOCALSTORAGE =", token);
       joiningDate: employee.joiningDate ? employee.joiningDate.split('T')[0] : '',
       employmentType: employee.employmentType || 'Full-time',
       status: employee.isActive ? 'Active' : 'Inactive',
-      salaryTemplateId: employee.salaryTemplateId || '',
+      dailyWage: employee.dailyWage?.toString() || '',
+      monthlySalary: employee.monthlySalary?.toString() || '',
       aadhaarNumber: employee.aadhaarNumber || '',
       panNumber: employee.panNumber || ''
     });
@@ -582,17 +589,28 @@ console.log("TOKEN FROM LOCALSTORAGE =", token);
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="salaryTemplateId">Salary Template ID (Optional)</label>
-                <input
-                  id="salaryTemplateId"
-                  name="salaryTemplateId"
-                  type="text"
-                  value={formData.salaryTemplateId}
-                  onChange={handleFormChange}
-                  disabled={formLoading}
-                  placeholder="Reference only"
-                />
-              </div>
+  <label htmlFor="dailyWage">Daily Wage</label>
+  <input
+    id="dailyWage"
+    name="dailyWage"
+    type="number"
+    value={formData.dailyWage}
+    onChange={handleFormChange}
+    placeholder="Enter Daily Wage"
+  />
+</div>
+
+<div className="form-group">
+  <label htmlFor="monthlySalary">Monthly Salary</label>
+  <input
+    id="monthlySalary"
+    name="monthlySalary"
+    type="number"
+    value={formData.monthlySalary}
+    onChange={handleFormChange}
+    placeholder="Enter Monthly Salary"
+  />
+</div>
             </div>
 
             {/* ===== ID & DOCUMENTS SECTION ===== */}

@@ -381,14 +381,22 @@
   font-size: 0.85rem;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.status-badge{
+    display:inline-block;
+    padding:7px 14px;
+    border-radius:30px;
+    font-size:13px;
+    font-weight:600;
+}
+
+.status-badge.active{
+    background:#e8f8ef;
+    color:#198754;
+}
+
+.status-badge.inactive{
+    background:#fdeaea;
+    color:#dc3545;
 }
 
 .status-inprogress {

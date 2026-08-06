@@ -1,12 +1,12 @@
-
-
+import EmployeeReport from '../components/Reports/EmployeeReport';
+import AttendanceReport from '../components/Reports/AttendanceReport';
 import React, { useState } from 'react';
 import Worker from './Worker';
 import Attendance from './Attendance';
 import Payment from './Payment';
 import './Pages.css';
 
-type EmployeeTab = 'workers' | 'attendance' | 'payroll';
+type EmployeeTab = 'workers' | 'attendance' | 'payroll' | 'employeeReport' | 'attendanceReport' ;
 
 const EmployeeManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<EmployeeTab>('workers');
@@ -37,6 +37,18 @@ const EmployeeManagement: React.FC = () => {
         >
           💰 Payroll
         </button>
+        <button
+  className={`tab-button ${activeTab === 'employeeReport' ? 'active' : ''}`}
+  onClick={() => setActiveTab('employeeReport')}
+>
+  📊 Employee Report
+</button>
+<button
+  className={`tab-button ${activeTab === 'attendanceReport' ? 'active' : ''}`}
+  onClick={() => setActiveTab('attendanceReport')}
+>
+  📅 Attendance Report
+</button>
       </div>
 
       {/* Tab Content */}
@@ -58,6 +70,19 @@ const EmployeeManagement: React.FC = () => {
             <Payment />
           </div>
         )}
+
+        {activeTab === 'employeeReport' && (
+        <div className="tab-content">
+        <EmployeeReport />
+        </div>
+        )}
+        
+        {activeTab === "attendanceReport" && (
+        <div className="tab-content">
+        <AttendanceReport />
+        </div>
+        )}
+
       </div>
     </div>
   );

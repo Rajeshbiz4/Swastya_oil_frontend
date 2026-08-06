@@ -147,13 +147,6 @@ interface MonthlyReportData {
   finishedGoodsInventory?: any;
 }
 
-/*
-interface MonthlyReportsProps {
-  onError: (error: string) => void;
-  reportType?: 'comprehensive' | 'pnl';
-}
-*/
-
 interface MonthlyReportsProps {
   onError: (error: string) => void;
 
@@ -167,8 +160,10 @@ interface MonthlyReportsProps {
 
   reportData?: any;
 
+  month: number;
+  year: number;
+
   loading?: boolean;
-<<<<<<< HEAD
 
   fromDate: string;
 setFromDate: React.Dispatch<React.SetStateAction<string>>;
@@ -185,8 +180,6 @@ setPackagingType: React.Dispatch<React.SetStateAction<string>>;
 productType: string;
 setProductType: React.Dispatch<React.SetStateAction<string>>;
 
-=======
->>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
 }
 
 
@@ -195,7 +188,11 @@ const MonthlyReports: React.FC<MonthlyReportsProps> = ({
   reportType: propReportType = 'comprehensive',
   reportData: externalReportData,
   loading: externalLoading,
-<<<<<<< HEAD
+
+
+
+  month,
+  year,
 
   fromDate,
   setFromDate,
@@ -211,19 +208,15 @@ const MonthlyReports: React.FC<MonthlyReportsProps> = ({
 
   productType,
   setProductType,
+  
+
 }) => {
   
-=======
-}) => {
->>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
+  const [purchaseTab, setPurchaseTab] = useState<"oilf" | "packaging">("oil");
+  
+
   const reportType = propReportType;
 
-  const [selectedMonth, setSelectedMonth] = useState(
-    new Date().getMonth() + 1
-  );
-  const [selectedYear, setSelectedYear] = useState(
-    new Date().getFullYear()
-  );
 
   const [reportData, setReportData] = useState<MonthlyReportData | null>(
     externalReportData ?? null
@@ -245,10 +238,7 @@ useEffect(() => {
     'rawOil' | 'packaging' | 'finishedGoods'
   >('rawOil');
 
-<<<<<<< HEAD
 
-=======
->>>>>>> d561161e326838e9ed8a5acfcf50b07b43c37355
   // rest of your code...
 
   const fetchMonthlyReport = async () => {
@@ -260,16 +250,16 @@ useEffect(() => {
       
       if (reportType === 'pnl') {
         // Fetch P&L report only
-        const pnlResponse = await api.get(`/reports/monthly/pnl/${selectedYear}/${selectedMonth}`);
+        const pnlResponse = await api.get(`/reports/monthly/pnl/${year}/${month}`);
         if (pnlResponse.data.success) {
           reportData.pnl = pnlResponse.data.data;
         }
       } else {
         // Fetch comprehensive report (P&L + Summary + Comparison)
         const [pnlResponse, summaryResponse, comparisonResponse] = await Promise.all([
-          api.get(`/reports/monthly/pnl/${selectedYear}/${selectedMonth}`),
-          api.get(`/reports/monthly/summary/${selectedYear}/${selectedMonth}`),
-          api.get(`/reports/monthly/comparison/${selectedYear}/${selectedMonth}`)
+          api.get(`/reports/monthly/pnl/${year}/${month}`),
+          api.get(`/reports/monthly/summary/${year}/${month}`),
+          api.get(`/reports/monthly/comparison/${year}/${month}`)
         ]);
         
         if (pnlResponse.data.success) {
@@ -763,7 +753,7 @@ const renderInventorySection = () => {
     openingStock: item.openingStock ?? 0,
     purchased: item.purchased ?? 0,
     consumed: item.consumed ?? 0,
-    available: item.quantity ?? 0,
+    available: item.available ?? item.quantity ?? 0,
   })) || []
 }
 
@@ -797,7 +787,7 @@ const renderInventorySection = () => {
     openingStock: item.openingStock ?? 0,
     produced: item.produced ?? 0,
     sold: item.sold ?? 0,
-    available: item.quantity ?? 0,
+    available: item.available ?? item.quantity ?? 0,
   })) || []
 }
 
@@ -828,9 +818,65 @@ const renderInventorySection = () => {
       ) : reportData ? (
         <div className="report-content">
           <div className="report-header">
-            <h2 className="report-title">Monthly Report - {getMonthName(selectedMonth)} {selectedYear}</h2>
-             
-          </div>
+
+  <h2 className="report-title">
+  Monthly Report - {getMonthName(month)} {year}
+  </h2>
+
+  <div className="inventory-report-filters">
+
+    <div className="filter-item">
+      <label>From Date</label>
+      <input
+        type="date"
+        value={fromDate}
+        onChange={(e) => setFromDate(e.target.value)}
+      />
+    </div>
+
+    <div className="filter-item">
+      <label>To Date</label>
+      <input
+        type="date"
+        value={toDate}
+        onChange={(e) => setToDate(e.target.value)}
+      />
+    </div>
+
+    {reportType === "inventory" && inventoryTab === "rawOil" && (
+      <div className="filter-item">
+        <label>Oil Type</label>
+        <select
+          value={oilType}
+          onChange={(e) => setOilType(e.target.value)}
+        >
+          <option value="">All</option>
+          <option value="SOYABEAN_OIL">Soyabean Oil</option>
+          <option value="GROUNDNUT_OIL">Groundnut Oil</option>
+          <option value="SUNFLOWER_OIL">Sunflower Oil</option>
+        </select>
+      </div>
+    )}
+
+    {reportType === "production" && (
+      <div className="filter-item">
+        <label>Oil Type</label>
+        <select
+          value={oilType}
+          onChange={(e) => setOilType(e.target.value)}
+        >
+          <option value="">All</option>
+          <option value="SOYABEAN_OIL">Soyabean Oil</option>
+          <option value="GROUNDNUT_OIL">Groundnut Oil</option>
+          <option value="SUNFLOWER_OIL">Sunflower Oil</option>
+        </select>
+      </div>
+    )}
+
+  </div>
+
+</div>
+
 
           {reportType === 'inventory' && (
   <div
@@ -864,92 +910,243 @@ const renderInventorySection = () => {
   
 
 )}      
-<div className="inventory-report-filters">
+{reportType === "purchases" && (
+  <div
+    style={{
+      display: "flex",
+      gap: "10px",
+      marginBottom: "20px",
+    }}
+  >
+    <button
+      className={purchaseTab === "oil" ? "btn-primary" : "btn-secondary"}
+      onClick={() => setPurchaseTab("oil")}
+    >
+      Oil Purchases
+    </button>
 
-  <div className="filter-item">
-    <label>From Date</label>
-    <input
-      type="date"
-      value={fromDate}
-      onChange={(e) => setFromDate(e.target.value)}
-    />
+    <button
+      className={purchaseTab === "packaging" ? "btn-primary" : "btn-secondary"}
+      onClick={() => setPurchaseTab("packaging")}
+    >
+      Packaging Purchases
+    </button>
   </div>
+)}
 
-  <div className="filter-item">
-    <label>To Date</label>
-    <input
-      type="date"
-      value={toDate}
-      onChange={(e) => setToDate(e.target.value)}
-    />
-  </div>
-
-  {inventoryTab === "rawOil" && (
-    <div className="filter-item">
-      <label>Oil Type</label>
-
-      <select
-        value={oilType}
-        onChange={(e) => setOilType(e.target.value)}
-      >
-        <option value="">All</option>
-
-        <option value="SOYABEAN_OIL">Soyabean Oil</option>
-        <option value="GROUNDNUT_OIL">Groundnut Oil</option>
-        <option value="SUNFLOWER_OIL">Sunflower Oil</option>
-      </select>
-    </div>
-  )}
-
-  {inventoryTab === "packaging" && (
-    <div className="filter-item">
-      <label>Packaging Type</label>
-
-      <select
-        value={packagingType}
-        onChange={(e) => setPackagingType(e.target.value)}
-      >
-        <option value="">All</option>
-
-        <option value="5L Can">5L Can</option>
-        <option value="10L Can">10L Can</option>
-        <option value="15L Can">15L Can</option>
-      </select>
-    </div>
-  )}
-
-  {inventoryTab === "finishedGoods" && (
-    <div className="filter-item">
-      <label>Product Type</label>
-
-      <select
-        value={productType}
-        onChange={(e) => setProductType(e.target.value)}
-      >
-        <option value="">All</option>
-
-        <option value="SOYABEAN">Soyabean</option>
-        <option value="GROUNDNUT">Groundnut</option>
-      </select>
-    </div>
-  )}
-
-</div>
 
  {reportType === 'inventory' && renderInventorySection()}
 
-{reportType !== 'inventory' && (
-  <>
-    {renderSummaryCards()}
+  {reportType === "production" && (
+  <DataTable
+    columns={[
+      { key: "batchNumber", title: "Batch Number" },
+      { key: "productType", title: "Product Type" },
+      { key: "rawOilUsed", title: "Raw Oil Used" },
+      { key: "packagingUsed", title: "Packaging Used" },
+      { key: "finishedQuantity", title: "Finished Quantity" },
+    ]}
+    data={reportData || []}
+  />
+)}
 
-    <div className="report-sections">
-      {renderCostBreakdownChart()}
-      {reportType === 'comprehensive' && renderProductionChart()}
-      {reportType === 'comprehensive' && renderSalesAnalysis()}
-      {reportType === 'comprehensive' && renderFinancialSummary()}
-      {reportType === 'comprehensive' && renderMonthlyComparison()}
+{reportType === "sales" && (
+
+  reportData && reportData.length > 0 ? (
+
+    <DataTable
+      columns={[
+        { key: "orderNumber", title: "Order Number" },
+        { key: "customerName", title: "Customer" },
+        { key: "orderDate", title: "Order Date" },
+        { key: "totalAmount", title: "Amount" },
+        { key: "status", title: "Status" },
+      ]}
+      data={reportData}
+    />
+
+  ) : (
+
+    <div
+      style={{
+        textAlign: "center",
+        padding: "40px",
+        fontSize: "22px",
+        fontWeight: "bold",
+        color: "#888",
+      }}
+    >
+      No Data Available
     </div>
-  </>
+
+  )
+
+)}
+
+
+{reportType === "purchases" && (
+  <DataTable
+    columns={
+      purchaseTab === "oil"
+        ? [
+            { key: "supplierName", title: "Supplier" },
+            { key: "oilType", title: "Oil Type" },
+            { key: "quantity", title: "Quantity" },
+            { key: "ratePerLiter", title: "Rate/Liter" },
+            { key: "totalAmount", title: "Total Amount" },
+          ]
+        : [
+            { key: "supplierName", title: "Supplier" },
+            { key: "packagingType", title: "Packaging" },
+            { key: "quantity", title: "Quantity" },
+            { key: "ratePerUnit", title: "Rate" },
+            { key: "totalAmount", title: "Total Amount" },
+          ]
+    }
+    data={
+      purchaseTab === "oil"
+        ? reportData?.oilPurchases?.purchases || []
+        : reportData?.packagingPurchases?.purchases || []
+    }
+  />
+)}
+
+
+{reportType === "comprehensive" && reportData && (
+
+<div>
+
+    <h3>Revenue</h3>
+
+    <table className="report-table">
+        <tbody>
+            <tr>
+                <td>Total Sales</td>
+                <td>{reportData.revenue?.totalSales}</td>
+            </tr>
+
+            <tr>
+                <td>Total Orders</td>
+                <td>{reportData.revenue?.totalOrders}</td>
+            </tr>
+
+            <tr>
+                <td>Average Order Value</td>
+                <td>{reportData.revenue?.averageOrderValue}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Cost Of Goods Sold</h3>
+
+    <table className="report-table">
+        <tbody>
+            <tr>
+                <td>Oil Cost</td>
+                <td>{reportData.costOfGoodsSold?.oilCost}</td>
+            </tr>
+
+            <tr>
+                <td>Labor Cost</td>
+                <td>{reportData.costOfGoodsSold?.laborCost}</td>
+            </tr>
+
+            <tr>
+                <td>Packaging Cost</td>
+                <td>{reportData.costOfGoodsSold?.packagingCost}</td>
+            </tr>
+
+            <tr>
+                <td>Total</td>
+                <td>{reportData.costOfGoodsSold?.total}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Gross Profit</h3>
+
+    <table className="report-table">
+        <tbody>
+
+            <tr>
+                <td>Amount</td>
+                <td>{reportData.grossProfit?.amount}</td>
+            </tr>
+
+            <tr>
+                <td>Margin</td>
+                <td>{reportData.grossProfit?.margin}%</td>
+            </tr>
+
+        </tbody>
+    </table>
+
+    <h3>Operational Expenses</h3>
+
+    <table className="report-table">
+        <tbody>
+
+            <tr>
+                <td>Total Purchases</td>
+                <td>{reportData.operationalExpenses?.totalPurchases}</td>
+            </tr>
+
+            <tr>
+                <td>Oil Purchases</td>
+                <td>{reportData.operationalExpenses?.oilPurchases}</td>
+            </tr>
+
+            <tr>
+                <td>Packaging Purchases</td>
+                <td>{reportData.operationalExpenses?.packagingPurchases}</td>
+            </tr>
+
+        </tbody>
+    </table>
+
+    <h3>Net Profit</h3>
+
+    <table className="report-table">
+        <tbody>
+
+            <tr>
+                <td>Amount</td>
+                <td>{reportData.netProfit?.amount}</td>
+            </tr>
+
+            <tr>
+                <td>Margin</td>
+                <td>{reportData.netProfit?.margin}%</td>
+            </tr>
+
+        </tbody>
+    </table>
+
+    <h3>Production</h3>
+
+    <table className="report-table">
+        <tbody>
+
+            <tr>
+                <td>Total Batches</td>
+                <td>{reportData.production?.totalBatches}</td>
+            </tr>
+
+            <tr>
+                <td>Total Oil Consumed</td>
+                <td>{reportData.production?.totalOilConsumed}</td>
+            </tr>
+
+            <tr>
+                <td>Total Production</td>
+                <td>{reportData.production?.totalProduction}</td>
+            </tr>
+
+        </tbody>
+    </table>
+
+</div>
+
 )}
 
         </div>

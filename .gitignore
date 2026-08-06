@@ -190,10 +190,6 @@ Thumbs.db
 
 config.bat
 .env
-
-/node_modules
-# Dependencies
-
 node_modules/
 
 /.pnp
@@ -384,3 +380,6 @@ Thumbs.db
 
 config.bat
 .env
+
+/node_modules
+>>>>>>>>> Temporary merge branch 2

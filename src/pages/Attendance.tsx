@@ -22,7 +22,14 @@ import { fetchWorkers } from '../store/slices/workerSlice';
 import './Pages.css';
 import './Attendance.css';
 
-type AttendanceStatus = 'Present' | 'Absent' | 'Leave' | 'WeeklyOff' | 'Holiday';
+type AttendanceStatus =
+  | 'Present'
+  | 'Absent'
+  | 'HalfDay'
+  | 'Leave'
+  | 'WeeklyOff'
+  | 'Holiday';
+
 type TimePeriod = 'day' | 'week' | 'month';
 
 const Attendance: React.FC = () => {
@@ -45,6 +52,7 @@ const Attendance: React.FC = () => {
   const [monthlyData, setMonthlyData] = useState<any>(null);
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<AttendanceStatus>('Present');
+  const [overtimeHours, setOvertimeHours] = useState(0);
 
   useEffect(() => {
     dispatch(fetchWorkers({ isActive: true }));
@@ -76,6 +84,18 @@ const Attendance: React.FC = () => {
   };
 
   const handleDateClick = async (date: Date) => {
+
+    const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const clickedDate = new Date(date);
+clickedDate.setHours(0, 0, 0, 0);
+
+if (clickedDate > today) {
+  alert("Future attendance cannot be marked.");
+  return;
+}
+
     if (!selectedWorker) {
       alert('Please select a worker first');
       return;
@@ -91,8 +111,12 @@ const Attendance: React.FC = () => {
           id: existingAttendance._id,
           data: {
             status: selectedStatus,
-            hoursWorked: selectedStatus === 'Present' ? 8 : 0,
-            overtimeHours: 0
+        hoursWorked:
+        selectedStatus === 'Present'
+        ? 8
+        : selectedStatus === 'HalfDay'
+        ? 4
+        : 0,            overtimeHours: overtimeHours
           }
         })).unwrap();
         loadMonthlyAttendance(); // Reload data
@@ -106,8 +130,13 @@ const Attendance: React.FC = () => {
           workerId: selectedWorker,
           date: dateStr,
           status: selectedStatus,
-          hoursWorked: selectedStatus === 'Present' ? 8 : 0,
-          overtimeHours: 0
+          hoursWorked:
+          selectedStatus === 'Present'
+          ? 8
+          : selectedStatus === 'HalfDay'
+          ? 4
+          : 0,
+          overtimeHours: overtimeHours
         })).unwrap();
         loadMonthlyAttendance(); // Reload data
       } catch (error: any) {
@@ -131,6 +160,7 @@ const Attendance: React.FC = () => {
     switch (status) {
       case 'Present': return 'P';
       case 'Absent': return 'A';
+      case 'HalfDay': return 'HD';
       case 'Leave': return 'L';
       case 'WeeklyOff': return 'WO';
       case 'Holiday': return 'H';
@@ -390,6 +420,7 @@ const Attendance: React.FC = () => {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
+            max={new Date().toISOString().split("T")[0]}
             className="form-input"
           />
         </div>
@@ -406,8 +437,22 @@ const Attendance: React.FC = () => {
             <option value="Leave">Leave</option>
             <option value="WeeklyOff">Weekly Off</option>
             <option value="Holiday">Holiday</option>
+            <option value="HalfDay">Half Day</option>
           </select>
         </div>
+        <div className="control-group">
+  <label>Overtime (Hrs):</label>
+
+  <input
+    type="number"
+    min="0"
+    max="16"
+    value={overtimeHours}
+    onChange={(e) => setOvertimeHours(Number(e.target.value))}
+    className="form-input"
+    placeholder="Enter OT Hours"
+  />
+</div>
       </div>
 
       {selectedWorker && (

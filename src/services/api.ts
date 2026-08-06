@@ -490,4 +490,27 @@ getDailyProductionReport: (date: string) =>
 
 };
 
+export interface AttendanceReport {
+  employeeId: string;
+  employeeName: string;
+  designation: string;
+  presentDays: number;
+  absentDays: number;
+  halfDays: number;
+  overtimeHours: number;
+}
+
+export const attendanceAPI = {
+
+  getAttendanceReport: (
+    month: number,
+    year: number
+  ) => {
+    return api.get<ApiResponse<AttendanceReport[]>>(
+      `/attendance/report?month=${month}&year=${year}`
+    );
+  },
+
+};
+
 export default api;

@@ -349,3 +349,9 @@
     align-items: stretch;
   }
 }
+
+.status-halfday {
+    background: #fff3cd;
+    border: 1px solid #f6c23e;
+    color: #856404;
+}

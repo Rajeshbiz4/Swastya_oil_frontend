@@ -5,7 +5,7 @@ interface Attendance {
   _id: string;
   workerId: string;
   date: string;
-  status: 'Present' | 'Absent' | 'Leave' | 'WeeklyOff' | 'Holiday';
+  status: 'Present' | 'Absent' | 'HalfDay' | 'Leave' | 'WeeklyOff' | 'Holiday';
   hoursWorked: number;
   overtimeHours: number;
   notes?: string;
@@ -25,8 +25,19 @@ interface AttendanceSummary {
   totalOvertime: number;
 }
 
+interface AttendanceReport {
+  employeeId: string;
+  employeeName: string;
+  designation: string;
+  presentDays: number;
+  absentDays: number;
+  halfDays: number;
+  overtimeHours: number;
+}
+
 interface AttendanceState {
   attendance: Attendance[];
+  attendanceReport: AttendanceReport[];
   summary: AttendanceSummary | null;
   loading: boolean;
   error: string | null;
@@ -40,6 +51,8 @@ interface AttendanceState {
 
 const initialState: AttendanceState = {
   attendance: [],
+  attendanceReport: [],
+
   summary: null,
   loading: false,
   error: null,
@@ -53,7 +66,7 @@ export const recordAttendance = createAsyncThunk(
     data: {
       workerId: string;
       date: string;
-      status: 'Present' | 'Absent' | 'Leave' | 'WeeklyOff' | 'Holiday';
+      status: 'Present' | 'Absent' | 'HalfDay' | 'Leave' | 'WeeklyOff' | 'Holiday';
       hoursWorked?: number;
       overtimeHours?: number;
       notes?: string;
@@ -132,7 +145,7 @@ export const bulkRecordAttendance = createAsyncThunk(
     data: { records: Array<{
       workerId: string;
       date: string;
-      status: 'Present' | 'Absent' | 'Leave' | 'WeeklyOff' | 'Holiday';
+      status: 'Present' | 'Absent' | 'HalfDay' | 'Leave' | 'WeeklyOff' | 'Holiday';
       hoursWorked?: number;
       overtimeHours?: number;
       notes?: string;
@@ -164,11 +177,32 @@ export const getMonthlyAttendance = createAsyncThunk(
   }
 );
 
+export const getAttendanceReport = createAsyncThunk(
+  "attendance/getAttendanceReport",
+  async (
+    { month, year }: { month: number; year: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.get(
+        `/attendance/report?month=${month}&year=${year}`
+      );
+
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.error?.message ||
+          "Failed to fetch attendance report"
+      );
+    }
+  }
+);
+
 export const updateAttendance = createAsyncThunk(
   'attendance/updateAttendance',
   async (
     { id, data }: { id: string; data: Partial<{
-      status: 'Present' | 'Absent' | 'Leave' | 'WeeklyOff' | 'Holiday';
+      status: 'Present' | 'Absent' | 'HalfDay' | 'Leave' | 'WeeklyOff' | 'Holiday';
       hoursWorked: number;
       overtimeHours: number;
       notes: string;
@@ -301,6 +335,25 @@ const attendanceSlice = createSlice({
       state.loading = false;
       state.error = action.payload as string;
     });
+
+    builder.addCase(getAttendanceReport.pending, (state) => {
+  state.loading = true;
+  state.error = null;
+});
+
+builder.addCase(
+  getAttendanceReport.fulfilled,
+  (state, action: PayloadAction<AttendanceReport[]>) => {
+    state.loading = false;
+    state.attendanceReport = action.payload;
+  }
+);
+
+builder.addCase(getAttendanceReport.rejected, (state, action) => {
+  state.loading = false;
+  state.error = action.payload as string;
+});
+
   }
 });
 

@@ -7,6 +7,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logo from "../assets/logo.png";
 import QRCode from "qrcode";
+import CustomerLedger from '../components/Reports/CustomerLedger';
 
 import { appConfig  } from "../config/appConfig";
 import {
@@ -94,6 +95,7 @@ const InvoicePage: React.FC = () => {
   const [gstNo, setGstNo] = useState("");
   const [stateName, setStateName] = useState(" ");
   const [note, setNote] = useState("");
+  const [paidAmount, setPaidAmount] = useState(0);
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [transporterName, setTransporterName] = useState("");
   const [driverName, setDriverName] = useState("");
@@ -358,6 +360,7 @@ if (!distance || isNaN(Number(distance))) {
           qty: Number(p.qty)
         })),
         note,
+        paidAmount,
         status: 'pending',
         createdBy: 'admin'
       };
@@ -451,6 +454,7 @@ const generateInvoicePdf = async (invoiceData?: any) => {
     stateName,
     products,
     note,
+    paidAmount,
     vehicleNumber,
     transporterName,
     driverName,
@@ -1025,12 +1029,26 @@ let totalRowY = fixedTableBottom;
     finalY + 4
   );
 
-  bold(10);
+  bold(9);
   doc.text(
     `${convertToWords(Math.round(finalTotal))} Only`,
     12,
     finalY + 8
   );
+  const paid = Number(data.paidAmount || 0);
+
+doc.setFontSize(9);
+// Heading
+doc.setFont("helvetica", "bold");
+doc.text("Paid Amount", 190, finalY + 4, {
+  align: "right",
+});
+
+// Value
+doc.setFont("helvetica", "normal");
+doc.text(`Rs. ${fmt(paid)}`, 190, finalY + 8, {
+  align: "right",
+});
 
   finalY += 9;
 
@@ -1454,20 +1472,21 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
     // { key: 'product', title: 'Product' },
     // { key: 'quantity', title: 'Qty' },
     // { key: 'rate', title: 'Rate', render: (v: number) => `${v}` },
-    {
-  key: 'products', // must match your data field
-  title: 'Total',
-  render: (products: { type: string; rate: number; qty: number }[]) => {
-    if (!products || products.length === 0) return "0";
+   {
+  key: "products",
+  title: "Total",
+  render: (products: { rate: number; qty: number }[]) => {
+    if (!products || products.length === 0) return "₹0.00";
 
     const total = products.reduce((sum, p) => {
-      const rate = Number(p.rate) || 0;
-      const qty = Number(p.qty) || 0;
-      return sum + rate * qty;
+      return sum + (Number(p.rate) || 0) * (Number(p.qty) || 0);
     }, 0);
 
-    return `${total}`;
-  }
+    return `₹${total.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  },
 },
    
     {
@@ -1511,6 +1530,7 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
               ewayBillNumber: row.ewayBillNumber,
               dispatchAddress: row.dispatchAddress,
               destinationAddress: row.destinationAddress,
+              paidAmount: row.paidAmount,
               products: row.products.map((p: any) => ({
                 oilType: p.oilType,
                 type: p.type,
@@ -1736,6 +1756,27 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
       <button style={{ ...styles.button, ...styles.primaryBtn, marginTop: 10 }} onClick={addRow}>Add Row</button>
 
       <h3 style={{ marginTop: 20 }}>Grand Total: ₹ {grandTotal}</h3>
+      <div style={{ marginTop: 15 }}>
+      <label style={{ fontWeight: "bold" }}>
+        Paid Amount
+        </label>
+
+          <input  
+          type="number"
+          style={{
+          ...styles.input,
+          width: "250px",
+          marginTop: "5px",
+          display: "block"
+        }}
+        value={paidAmount}
+        onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
+      />
+      </div>
+
+        <h3 style={{ marginTop: 10 }}>
+        Outstanding : ₹ {(grandTotal - paidAmount).toFixed(2)}
+      </h3>
 
       <textarea
         style={{ ...styles.input, marginTop: 10, width: "100%" }}
@@ -1843,6 +1884,7 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
 
       <h1>Invoice Management</h1>
       <div className="tabs invoice-tabs">
+
   <button
     className={`tab-button ${
       activeTab === "invoiceList" ? "active" : ""
@@ -1858,7 +1900,7 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
     }`}
     onClick={() => setActiveTab("customerLedger")}
   >
-     Customer Ledger
+    👤 Customer Ledger
   </button>
 
   <button
@@ -1867,9 +1909,12 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
     }`}
     onClick={() => setActiveTab("vendorLedger")}
   >
-     Vendor Ledger
+    🏭 Vendor Ledger
   </button>
-</div>
+
+      </div>
+      {activeTab === "invoiceList" && (
+  <>
       {error && <div className="error-message">{error}</div>}
 
       <button style={{ ...styles.button, ...styles.primaryBtn, marginTop: 10, marginBottom: 10 }} onClick={() => {
@@ -1937,6 +1982,19 @@ const getAdjustedRate = (finalTotal:number, quantity: number, gstPercent: number
     </div>
   )}
 />
+
+  </>
+)}
+
+{activeTab === "customerLedger" && (
+  <CustomerLedger />
+)}
+{activeTab === "vendorLedger" && (
+  <div className="table-section">
+    <h2>Vendor Ledger</h2>
+  </div>
+)}
+
     </div>
   );
 };

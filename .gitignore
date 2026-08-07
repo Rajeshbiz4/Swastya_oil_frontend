@@ -189,5 +189,4 @@ ehthumbs.db
 Thumbs.db
 
 config.bat
-.env
 node_modules/

@@ -48,7 +48,7 @@ export interface BookingSummary {
   // const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
   // const baseURL =  'http://localhost:5000/api';
 
-  const baseURL = 'http://localhost:5000/api';
+  export const baseURL = 'http://localhost:5000/api';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({

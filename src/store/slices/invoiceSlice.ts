@@ -19,6 +19,7 @@ export interface Invoice {
   address: string;
   gstNo?: string;
   products: InvoiceProduct[];
+  paidAmount?: number;
   note?: string;
   status?: 'pending' | 'paid' | 'failed';
   createdBy: string;
@@ -32,14 +33,36 @@ dispatchAddress?: string;
 destinationAddress?: string;
 }
 
+export interface CustomerLedger {
+  customerName: string;
+  totalAmount: number;
+  paidAmount: number;
+  outstanding: number;
+  totalInvoices: number;
+}
+
+export interface CustomerLedgerDetails {
+  _id: string;
+  invoiceNumber: string;
+  date: string;
+  status: string;
+  amount: number;
+}
+
 interface InvoiceState {
   invoices: Invoice[];
+  CustomerLedger: CustomerLedger[];
+  customerLedgerDetails: CustomerLedgerDetails[];
+
   loading: boolean;
   error: string | null;
 }
 
 const initialState: InvoiceState = {
   invoices: [],
+  customerLedger: [],
+  customerLedgerDetails: [],
+
   loading: false,
   error: null,
 };
@@ -127,6 +150,47 @@ export const updateInvoiceStatus = createAsyncThunk<
   }
 );
 
+export const fetchCustomerLedger = createAsyncThunk<
+  CustomerLedger[],
+  void,
+  { rejectValue: string }
+>(
+  "invoice/fetchCustomerLedger",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/invoices/customer-ledger");
+      return res.data.data || res.data;
+    } catch (err: any) {
+      return rejectWithValue(
+        err?.response?.data?.message || "Failed to fetch customer ledger"
+      );
+    }
+  }
+);
+
+export const fetchCustomerLedgerDetails = createAsyncThunk<
+  CustomerLedgerDetails[],
+  string,
+  { rejectValue: string }
+>(
+  "invoice/fetchCustomerLedgerDetails",
+  async (customerName, { rejectWithValue }) => {
+    try {
+      const res = await api.get(
+        `/invoices/customer-ledger/${customerName}`
+      );
+
+      return res.data.data || res.data;
+    } catch (err: any) {
+      return rejectWithValue(
+        err?.response?.data?.message ||
+          "Failed to fetch customer invoices"
+      );
+    }
+  }
+);
+
+
 
 // ✅ Slice
 
@@ -172,13 +236,44 @@ const invoiceSlice = createSlice({
         state.invoices = state.invoices.filter(i => i._id !== action.payload);
       })
 
-      // STATUS UPDATE
-      .addCase(updateInvoiceStatus.fulfilled, (state, action: PayloadAction<Invoice>) => {
-        const index = state.invoices.findIndex(i => i._id === action.payload._id);
-        if (index !== -1) {
-          state.invoices[index] = action.payload;
-        }
-      });
+     // STATUS UPDATE
+.addCase(updateInvoiceStatus.fulfilled, (state, action: PayloadAction<Invoice>) => {
+  const index = state.invoices.findIndex(i => i._id === action.payload._id);
+  if (index !== -1) {
+    state.invoices[index] = action.payload;
+  }
+})
+
+// CUSTOMER LEDGER
+.addCase(fetchCustomerLedger.pending, (state) => {
+  state.loading = true;
+})
+
+.addCase(fetchCustomerLedger.fulfilled, (state, action) => {
+  state.loading = false;
+  state.customerLedger = action.payload;
+})
+
+.addCase(fetchCustomerLedger.rejected, (state, action) => {
+  state.loading = false;
+  state.error = action.payload || "Error";
+})
+
+// CUSTOMER LEDGER DETAILS
+.addCase(fetchCustomerLedgerDetails.pending, (state) => {
+  state.loading = true;
+})
+
+.addCase(fetchCustomerLedgerDetails.fulfilled, (state, action) => {
+  state.loading = false;
+  state.customerLedgerDetails = action.payload;
+})
+
+.addCase(fetchCustomerLedgerDetails.rejected, (state, action) => {
+  state.loading = false;
+  state.error = action.payload || "Error";
+});
+
   }
 });
 

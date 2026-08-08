@@ -298,6 +298,13 @@ export const oilPurchaseAPI = {
 
 // Packaging Purchase API functions
 export const packagingPurchaseAPI = {
+  getPackagingTypes: () => {
+  return api.get<
+    ApiResponse<{
+      packagingTypes: string[];
+    }>
+  >('/procurement/packaging-purchases/types');
+},
   // Get all packaging purchases with optional filters
   getAll: (params?: { 
     page?: number;

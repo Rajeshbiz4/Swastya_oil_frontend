@@ -4,8 +4,7 @@ import DataTable from '../components/UI/DataTable';
 import Popup from '../components/UI/Popup';
 import { FormField } from '../types';
 import { OilTypes } from '../types/enums';
-import { PRODUCT_TYPES } from '../utils/constants';
-import {baseURL} from '../services/api';
+import { baseURL, packagingPurchaseAPI } from '../services/api';
 import './Pages.css';
 
 
@@ -42,6 +41,18 @@ const OilBatchProcessing: React.FC = () => {
     type: 'info',
     message: ''
   });
+
+  const [productTypeOptions, setProductTypeOptions] = useState<
+    { value: string; label: string }[]
+  >([
+    {
+      value: '',
+      label: 'Select product type'
+    }
+  ]);
+
+  const [productTypeLoading, setProductTypeLoading] =
+    useState(false);
 
   const [formData, setFormData] = useState({
     batchNumber: '',
@@ -94,21 +105,104 @@ const OilBatchProcessing: React.FC = () => {
     }
   }, []);
 
+  const fetchProductTypeOptions = useCallback(async () => {
+    try {
+      setProductTypeLoading(true);
+
+      const response =
+        await packagingPurchaseAPI.getPackagingTypes();
+
+      const packagingTypes =
+        response.data?.data?.packagingTypes || [];
+
+      const dropdownValues: string[] = [];
+
+      packagingTypes.forEach((packagingType) => {
+        const type = packagingType?.trim();
+
+        if (!type) {
+          return;
+        }
+
+        /*
+         * Special condition:
+         *
+         * Do NOT show:
+         * Polythene Bundle
+         *
+         * Show instead:
+         * 1L Packet
+         * 500ML Packet
+         */
+        if (
+          type.toLowerCase() ===
+          'polythene bundle'.toLowerCase()
+        ) {
+          dropdownValues.push('1L Packet');
+          dropdownValues.push('500ML Packet');
+        } else {
+          dropdownValues.push(type);
+        }
+      });
+
+      // Remove duplicate values
+      const uniqueValues = Array.from(
+        new Set(dropdownValues)
+      );
+
+      const options = [
+        {
+          value: '',
+          label: 'Select product type'
+        },
+        ...uniqueValues.map((value) => ({
+          value,
+          label: value
+        }))
+      ];
+
+      setProductTypeOptions(options);
+
+    } catch (error) {
+      console.error(
+        'Failed to load product types:',
+        error
+      );
+
+      setProductTypeOptions([
+        {
+          value: '',
+          label: 'Select product type'
+        }
+      ]);
+
+    } finally {
+      setProductTypeLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    // Initialize form data with auto-generated batch number
     setFormData((prev) => ({
       ...prev,
       batchNumber: generateBatchNumber(),
     }));
 
     fetchOilBatches();
-  }, [generateBatchNumber, fetchOilBatches]);
+
+    // Load Product Type dropdown from packagingpurchases
+    fetchProductTypeOptions();
+
+  }, [
+    generateBatchNumber,
+    fetchOilBatches,
+    fetchProductTypeOptions
+  ]);
 
   const batchColumns = [
     { key: 'batchNumber', title: 'Batch Number', sortable: true },
-    { 
-      key: 'oilType', 
-      title: 'Oil Type', 
+    {
+      key: 'oilType',
+      title: 'Oil Type',
       sortable: true,
       render: (value: string) => value ? value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) : '-'
     },
@@ -116,9 +210,9 @@ const OilBatchProcessing: React.FC = () => {
     { key: 'code', title: 'Product Code', sortable: true },
     { key: 'weight', title: 'Weight', sortable: true, render: (value: number) => value ? `${value.toLocaleString()} g` : '-' },
     { key: 'quantity', title: 'Quantity', sortable: true, render: (value: number) => value.toLocaleString() },
-    { 
-      key: 'status', 
-      title: 'Status', 
+    {
+      key: 'status',
+      title: 'Status',
       render: (value: string) => {
         const statusColors: Record<string, string> = {
           'pending': '#f39c12',
@@ -130,26 +224,18 @@ const OilBatchProcessing: React.FC = () => {
         return <span style={{ color: statusColors[value] || '#95a5a6' }}>● {value || 'pending'}</span>;
       }
     },
-    { 
-      key: 'createdAt', 
-      title: 'Created Date', 
+    {
+      key: 'createdAt',
+      title: 'Created Date',
       render: (value: string) => value ? new Date(value).toLocaleDateString() : '-'
     },
   ];
 
-  const productTypeOptions = [
-    { value: '', label: 'Select product type' },
-    ...PRODUCT_TYPES.map((productType) => ({
-      value: productType.value,
-      label: productType.label,
-    })),
-  ];
-
   const batchFormFields: FormField[] = [
-    { 
-      name: 'batchNumber', 
-      label: 'Batch Number', 
-      type: 'text', 
+    {
+      name: 'batchNumber',
+      label: 'Batch Number',
+      type: 'text',
       required: true,
       disabled: true,
     },
@@ -160,21 +246,24 @@ const OilBatchProcessing: React.FC = () => {
       required: true,
       options: productTypeOptions
     },
-    { 
-      name: 'oilType', 
-      label: 'Oil Type (Auto-populated)', 
-      type: 'select', 
+    {
+      name: 'oilType',
+      label: 'Oil Type',
+      type: 'select',
       required: true,
       options: Object.keys(OilTypes).map((key) => {
         const value = (OilTypes as any)[key];
-        return { value, label: value };
-      }),
-      disabled: true
+
+        return {
+          value,
+          label: value
+        };
+      })
     },
-    { 
-      name: 'quantity', 
-      label: 'Quantity', 
-      type: 'number', 
+    {
+      name: 'quantity',
+      label: 'Quantity',
+      type: 'number',
       required: true,
       min: '1'
     },
@@ -190,25 +279,76 @@ const OilBatchProcessing: React.FC = () => {
   };
 
   const handleChange = (name: string, value: any) => {
-    setFormData((prev) => {
-      const newData = { ...prev, [name]: value };
-      
-      // Auto-populate oilType when productTypeId changes
-      if (name === 'productTypeId' && value) {
-        const selectedProductType = PRODUCT_TYPES.find((productType) => productType.value === value);
-        if (selectedProductType) {
-          // Map the product code to the display value from OilTypes enum
-          newData.oilType = OilTypes[selectedProductType.code as keyof typeof OilTypes] || selectedProductType.code;
-          // Fetch available quantity for this oil type
-          fetchAvailableQuantity(selectedProductType.code);
-        }
-      } else if (name === 'productTypeId' && !value) {
-        // Clear available quantity when no product type is selected
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Oil Type is now selected separately.
+    // Load available raw oil stock when oil changes.
+    if (name === 'oilType') {
+      if (value) {
+        const oilTypeCode = getOilTypeCode(value);
+
+        fetchAvailableQuantity(oilTypeCode);
+      } else {
         setAvailableQuantity(null);
       }
-      
-      return newData;
-    });
+    }
+
+    // Clear stock when Product Type is cleared
+    if (name === 'productTypeId' && !value) {
+      setAvailableQuantity(null);
+    }
+  };
+
+  const getOilTypeCode = (oilType: string): string => {
+    const oilEntry = Object.entries(OilTypes).find(
+      ([, label]) => label === oilType
+    );
+
+    return oilEntry?.[0] || oilType;
+  };
+
+  const getPackageSizeInLiters = (productType: string): number => {
+    const value = productType.trim();
+
+    // Examples:
+    // 500ML Packet -> 0.5
+    // 1L Packet    -> 1
+    // 5L Can       -> 5
+    // 10L Can      -> 10
+    // 15L Can      -> 15
+
+    const match = value.match(
+      /^(\d+(?:\.\d+)?)\s*(ML|L)\b/i
+    );
+
+    if (!match) {
+      throw new Error(
+        `Unable to determine package size from "${productType}"`
+      );
+    }
+
+    const size = Number(match[1]);
+    const unit = match[2].toUpperCase();
+
+    return unit === 'ML'
+      ? size / 1000
+      : size;
+  };
+
+  const getInventoryPackagingType = (
+    productType: string
+  ): string => {
+    if (
+      productType === '1L Packet' ||
+      productType === '500ML Packet'
+    ) {
+      return 'Polythene Bundle';
+    }
+
+    return productType;
   };
 
   const fetchAvailableQuantity = async (productTypeCode: string) => {
@@ -269,7 +409,7 @@ const OilBatchProcessing: React.FC = () => {
       }
       // Calculate total available quantity for this oil type
       const totalAvailableQuantity = data.data.inventory
-        .filter((item: any) =>  item.totalQuantity > 0)
+        .filter((item: any) => item.totalQuantity > 0)
         .reduce((sum: number, item: any) => sum + item.totalQuantity, 0);
 
       if (totalAvailableQuantity < requiredQuantity) {
@@ -287,7 +427,7 @@ const OilBatchProcessing: React.FC = () => {
   };
 
   const updatePackagingInventory = async (packagingType: string, quantity: number, batchId: string): Promise<boolean> => {
-     let isSuccess:boolean = false;
+    let isSuccess: boolean = false;
     try {
       const token = localStorage.getItem('authToken');
       if (!token) {
@@ -331,8 +471,8 @@ const OilBatchProcessing: React.FC = () => {
     return isSuccess;
   };
 
-   const revertPackagingInventory = async (packagingType: string, quantity: number, batchId: string): Promise<boolean> => {
-    let isSuccess:boolean = false;
+  const revertPackagingInventory = async (packagingType: string, quantity: number, batchId: string): Promise<boolean> => {
+    let isSuccess: boolean = false;
     try {
       const token = localStorage.getItem('authToken');
       if (!token) {
@@ -380,27 +520,77 @@ const OilBatchProcessing: React.FC = () => {
     if (!validateForm()) return;
     let createdBatch: BatchRecord = {} as BatchRecord;
     const token = localStorage.getItem('authToken');
-      if (!token) {
-        setModalError('Authentication token is missing. Please login again.');
-        return;
-      }
+    if (!token) {
+      setModalError('Authentication token is missing. Please login again.');
+      return;
+    }
     try {
       setFormLoading(true);
-     
 
-      const selectedProductType = PRODUCT_TYPES.find((productType) => productType.value === formData.productTypeId);
-      if (!selectedProductType) {
-        setModalError('Selected product type not found');
+
+      if (!formData.productTypeId) {
+        setModalError('Please select a product type');
         return;
       }
 
-      // Check inventory stock before creating batch
-      const hasStock = await checkOilInventoryStock(selectedProductType.code, formData.quantity * selectedProductType.weight / 1000); // Convert liters to weight in kg for stock check
-      if (!hasStock) {
-        return; // Error already set by checkOilInventoryStock  
+      if (!formData.oilType) {
+        setModalError('Please select an oil type');
+        return;
       }
 
-      const packagingType = selectedProductType.packagingType;
+      const selectedProductType = formData.productTypeId;
+
+      // Example:
+      // "Soybean Oil" -> "SOYABEAN_OIL"
+      const oilTypeCode = getOilTypeCode(
+        formData.oilType
+      );
+
+      // Example:
+      // "5L Can" -> 5
+      // "1L Packet" -> 1
+      // "500ML Packet" -> 0.5
+      const packageSizeInLiters =
+        getPackageSizeInLiters(selectedProductType);
+
+      /*
+       * Your old PRODUCT_TYPES used approximately
+       * 910 grams per litre:
+       *
+       * 1L  = 910g
+       * 5L  = 4550g
+       * 10L = 9100g
+       * 15L = 13650g
+       *
+       * Keep the same existing calculation.
+       */
+      const weightPerUnit =
+        packageSizeInLiters * 910;
+
+      // Total oil weight required in KG
+      const requiredOilWeight =
+        formData.quantity *
+        (weightPerUnit / 1000);
+
+      // Check raw oil stock
+      const hasStock = await checkOilInventoryStock(
+        oilTypeCode,
+        requiredOilWeight
+      );
+
+      if (!hasStock) {
+        return;
+      }
+
+      // Value stored against the Oil Batch
+      const packagingType =
+        selectedProductType;
+
+      // Value used for Packaging Inventory
+      const inventoryPackagingType =
+        getInventoryPackagingType(
+          selectedProductType
+        );
 
       const response = await fetch(`${baseURL}/oil-batches`, {
         method: 'POST',
@@ -413,8 +603,13 @@ const OilBatchProcessing: React.FC = () => {
           oilType: formData.oilType,
           packagingType,
           quantity: formData.quantity,
-          code: selectedProductType.code,
-          weight: selectedProductType.weight,
+
+          // no longer from PRODUCT_TYPES
+          code: oilTypeCode,
+
+          // calculated from selected packaging size
+          weight: weightPerUnit,
+
           status: 'completed'
         })
       });
@@ -438,44 +633,64 @@ const OilBatchProcessing: React.FC = () => {
         quantity: 0,
       });
       setAvailableQuantity(null); // Clear available quantity on success
-      const totalWeight = formData.quantity * (selectedProductType.weight / 1000);
-      //Update raw oil inventory stock after created batch
-      let rawInvUpdated:boolean = await updateRawOilInventory(selectedProductType.code,totalWeight );
-      if(rawInvUpdated){
-        // Update packaging inventory after batch creation
-      let packagingInvUpdated= await updatePackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);
-      if(packagingInvUpdated){
-// ✅ Update finished goods inventory
-      let finishedInvUpdated = await updateFinishedGoodsInventory(
-        selectedProductType.code,
-        selectedProductType.packagingType, // IMPORTANT: use `packagingType` not type for finished goods
-        formData.quantity,
-        createdBatch._id
-      );
-      if(!finishedInvUpdated){
-        // revert packaging inventory
-        await revertPackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);
-        // revert raw oil inventory
-        await revertRawOilInventory(selectedProductType.code,totalWeight);
-        throw new Error('Failed to update finished goods inventory.');
-      }
-      }
-      else {
-        // revert raw oil inventory
-        await revertRawOilInventory(selectedProductType.code,totalWeight);
-        throw new Error('Failed to update finished goods inventory.');
-      }
-      
+      const totalWeight =
+        formData.quantity *
+        (weightPerUnit / 1000);
+
+      const rawInvUpdated =
+        await updateRawOilInventory(
+          oilTypeCode,
+          totalWeight
+        );
+      if (rawInvUpdated) {
+
+        const packagingInvUpdated =
+          await updatePackagingInventory(
+            inventoryPackagingType,
+            formData.quantity,
+            createdBatch._id
+          );
+        if (packagingInvUpdated) {
+          // ✅ Update finished goods inventory
+          const finishedInvUpdated =
+            await updateFinishedGoodsInventory(
+              oilTypeCode,
+              selectedProductType,
+              formData.quantity,
+              createdBatch._id
+            );
+          if (!finishedInvUpdated) {
+            // revert packaging inventory
+            //await revertPackagingInventory(selectedProductType.type, formData.quantity, createdBatch._id);
+            await revertPackagingInventory(
+              inventoryPackagingType,
+              formData.quantity,
+              createdBatch._id
+            );
+
+            await revertRawOilInventory(
+              oilTypeCode,
+              totalWeight
+            );
+            throw new Error('Failed to update finished goods inventory.');
+          }
+        }
+        else {
+          // revert raw oil inventory
+          await revertRawOilInventory(oilTypeCode, totalWeight);
+          throw new Error('Failed to update finished goods inventory.');
+        }
+
       }
       else {
         throw new Error('Batch created but failed to update inventory. Please check inventory levels and update manually if needed.');
       }
-     setPopup({
-          isOpen: true,
-          type: 'success',
-          title: 'Batch Created Successfully',
-          message: 'Batch created and inventory updated successfully.'
-        });
+      setPopup({
+        isOpen: true,
+        type: 'success',
+        title: 'Batch Created Successfully',
+        message: 'Batch created and inventory updated successfully.'
+      });
       fetchOilBatches();
     } catch (err: unknown) {
       const anyErr = err as Error;
@@ -489,12 +704,12 @@ const OilBatchProcessing: React.FC = () => {
         },
         body: JSON.stringify({ status: 'failed' })
       });
-       setPopup({
-          isOpen: true,
-          type: 'warning',
-          title: 'Partial Failure',
-          message: 'Batch created but failed to update packaging inventory. Please check inventory levels and update manually if needed.'
-        });
+      setPopup({
+        isOpen: true,
+        type: 'warning',
+        title: 'Partial Failure',
+        message: 'Batch created but failed to update packaging inventory. Please check inventory levels and update manually if needed.'
+      });
       fetchOilBatches();
       setModalError(anyErr.message || 'Batch failed during processing. Marked as FAILED.');
     } finally {
@@ -503,129 +718,129 @@ const OilBatchProcessing: React.FC = () => {
   };
 
   const updateFinishedGoodsInventory = async (
-  oilType: string,
-  packagingType: string,
-  quantity: number,
-  batchId: string
-): Promise<boolean> => {
-  try {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      console.warn('Auth token missing for finished goods update');
+    oilType: string,
+    packagingType: string,
+    quantity: number,
+    batchId: string
+  ): Promise<boolean> => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.warn('Auth token missing for finished goods update');
+        return false;
+      }
+
+      const response = await fetch(`${baseURL}/inventory/finished-goods/upsert`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          oilType,
+          packagingType,
+          quantity,
+          unitCost: 0, // you can improve later (optional)
+          productionDate: new Date(),
+          expiryDate: new Date(new Date().setMonth(new Date().getMonth() + 6)), // default 6 months
+          batchId
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        console.error('Failed to update finished goods inventory:', data);
+        return false;
+      }
+
+      console.log('Finished goods inventory updated successfully');
+      return true;
+
+    } catch (err) {
+      console.error('Error updating finished goods inventory:', err);
+      // Don't break main flow
       return false;
     }
+  };
 
-    const response = await fetch(`${baseURL}/inventory/finished-goods/upsert`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        oilType,
-        packagingType,
-        quantity,
-        unitCost: 0, // you can improve later (optional)
-        productionDate: new Date(),
-        expiryDate: new Date(new Date().setMonth(new Date().getMonth() + 6)), // default 6 months
-        batchId
-      })
-    });
+  const updateRawOilInventory = async (
+    code: string,
+    totalWeight: number
+  ): Promise<boolean> => {
+    try {
+      const token = localStorage.getItem("authToken");
 
-    const data = await response.json();
+      if (!token) {
+        console.warn("Auth token missing for raw oil reduction");
+        return false;
+      }
 
-    if (!response.ok || !data.success) {
-      console.error('Failed to update finished goods inventory:', data);
+      const response = await fetch(`${baseURL}/inventory/raw-oil/reduceRawOilInventory`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code,
+          totalWeight,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        console.error("Failed to reduce raw oil inventory:", data);
+        return false;
+      }
+
+      console.log("Raw oil inventory reduced successfully");
+      return true;
+    } catch (err) {
+      console.error("Error reducing raw oil inventory:", err);
+      // Do not break main flow
       return false;
     }
+  };
 
-    console.log('Finished goods inventory updated successfully');
-    return true;
+  const revertRawOilInventory = async (
+    oilType: string,
+    quantity: number
+  ): Promise<void> => {
+    try {
+      const token = localStorage.getItem("authToken");
 
-  } catch (err) {
-    console.error('Error updating finished goods inventory:', err);
-    // Don't break main flow
-    return false;
-  }
-};
+      if (!token) {
+        console.warn("Auth token missing for raw oil revert");
+        return;
+      }
 
- const updateRawOilInventory = async (
-  code: string,
-  totalWeight: number
-): Promise<boolean> => {
-  try {
-    const token = localStorage.getItem("authToken");
+      const response = await fetch(`${baseURL}/inventory/raw-oil/revert`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          oilType,
+          quantity,
+        }),
+      });
 
-    if (!token) {
-      console.warn("Auth token missing for raw oil reduction");
-      return false;
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        console.error("Failed to revert raw oil inventory:", data);
+        return;
+      }
+
+      console.log("Raw oil inventory reverted successfully");
+    } catch (err) {
+      console.error("Error reverting raw oil inventory:", err);
+      // Do not break main flow
     }
-
-    const response = await fetch(`${baseURL}/inventory/raw-oil/reduceRawOilInventory`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        code,
-        totalWeight,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      console.error("Failed to reduce raw oil inventory:", data);
-      return false;
-    }
-
-    console.log("Raw oil inventory reduced successfully");
-    return true;
-  } catch (err) {
-    console.error("Error reducing raw oil inventory:", err);
-    // Do not break main flow
-    return false;
-  }
-};
-
-const revertRawOilInventory = async (
-  oilType: string,
-  quantity: number
-): Promise<void> => {
-  try {
-    const token = localStorage.getItem("authToken");
-
-    if (!token) {
-      console.warn("Auth token missing for raw oil revert");
-      return;
-    }
-
-    const response = await fetch(`${baseURL}/inventory/raw-oil/revert`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        oilType,
-        quantity,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      console.error("Failed to revert raw oil inventory:", data);
-      return;
-    }
-
-    console.log("Raw oil inventory reverted successfully");
-  } catch (err) {
-    console.error("Error reverting raw oil inventory:", err);
-    // Do not break main flow
-  }
-};
+  };
 
   return (
     <div className="module-page">
@@ -687,10 +902,10 @@ const revertRawOilInventory = async (
               />
 
               {availableQuantity !== null && formData.productTypeId && (
-                <div style={{ 
-                  marginTop: '10px', 
-                  padding: '8px 12px', 
-                  backgroundColor: '#f8f9fa', 
+                <div style={{
+                  marginTop: '10px',
+                  padding: '8px 12px',
+                  backgroundColor: '#f8f9fa',
                   borderRadius: '4px',
                   border: '1px solid #dee2e6',
                   fontSize: '14px',

@@ -142,9 +142,7 @@ const InvoicePage: React.FC = () => {
     paidAmount: 0,
     remarks: '',
   });
-    packagingTypes.push("14 ltrs");
-    packagingTypes.push("1 ltr pp box");
-    packagingTypes.push("14 Liter Cane");
+  
   // Load invoices and finished goods inventory for packaging type options
   useEffect(() => {
 
@@ -214,14 +212,53 @@ const InvoicePage: React.FC = () => {
     }
 
     try {
-      const response = await api.get<ApiResponse<{ packagingType: string; oilType: string; ratePerUnit: number; averageRate: number; totalRate: number }>>(
+      // const response = await api.get<ApiResponse<{ packagingType: string; oilType: string; ratePerUnit: number; averageRate: number; totalRate: number }>>(
+      //   `/inventory/packaging/rate/${encodeURIComponent(packagingType)}/${encodeURIComponent(oilType)}`
+      // );
+
+      const response = await api.get<ApiResponse<{
+        packagingType: string;
+        oilType: string;
+        ratePerUnit: number;
+        averageRate: number;
+        totalRate: number;
+        packageSize: number;
+        finalRate: number;
+      }>>(
         `/inventory/packaging/rate/${encodeURIComponent(packagingType)}/${encodeURIComponent(oilType)}`
       );
 
+      // if (response.data && response.data.data) {
+      //   const totalRate = response.data.data.totalRate || 0;
+      //   setPackagingRateCache((prev) => ({ ...prev, [cacheKey]: totalRate }));
+      //   return totalRate;
+      // }
       if (response.data && response.data.data) {
-        const totalRate = response.data.data.totalRate || 0;
-        setPackagingRateCache((prev) => ({ ...prev, [cacheKey]: totalRate }));
-        return totalRate;
+        const {
+          finalRate,
+          totalRate,
+          packageSize
+        } = response.data.data;
+
+        console.log(
+          'Packaging Rate Calculation:',
+          {
+            packagingType,
+            oilType,
+            totalRate,
+            packageSize,
+            finalRate
+          }
+        );
+
+        const invoiceRate = finalRate ?? 0;
+
+        setPackagingRateCache((prev) => ({
+          ...prev,
+          [cacheKey]: invoiceRate
+        }));
+
+        return invoiceRate;
       }
     } catch (error: any) {
       console.error('Error fetching packaging rate:', error);
@@ -248,15 +285,39 @@ const InvoicePage: React.FC = () => {
       row.rate = value;
     }
 
+    // if (field === "type") {
+    //   if (row.oilType && value) {
+    //     const totalRate = await fetchPackagingTypeRate(value, row.oilType);
+    //     row.rate = totalRate;
+    //   }
+    // } else if (field === "oilType") {
+    //   if (row.type && value) {
+    //     const totalRate = await fetchPackagingTypeRate(row.type, value);
+    //     row.rate = totalRate;
+    //   }
+    // }
+
     if (field === "type") {
       if (row.oilType && value) {
-        const totalRate = await fetchPackagingTypeRate(value, row.oilType);
-        row.rate = totalRate;
+        const invoiceRate =
+          await fetchPackagingTypeRate(
+            value,
+            row.oilType
+          );
+
+        row.rate = invoiceRate;
       }
+
     } else if (field === "oilType") {
+
       if (row.type && value) {
-        const totalRate = await fetchPackagingTypeRate(row.type, value);
-        row.rate = totalRate;
+        const invoiceRate =
+          await fetchPackagingTypeRate(
+            row.type,
+            value
+          );
+
+        row.rate = invoiceRate;
       }
     }
 

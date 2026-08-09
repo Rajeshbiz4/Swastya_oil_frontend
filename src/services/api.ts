@@ -45,10 +45,10 @@ export interface BookingSummary {
 }
 
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
-  const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
+  // const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
   // const baseURL =  'http://localhost:5000/api';
 
-  //const baseURL = 'http://localhost:5000/api';
+  export const baseURL = 'http://localhost:5000/api';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -298,6 +298,13 @@ export const oilPurchaseAPI = {
 
 // Packaging Purchase API functions
 export const packagingPurchaseAPI = {
+  getPackagingTypes: () => {
+  return api.get<
+    ApiResponse<{
+      packagingTypes: string[];
+    }>
+  >('/procurement/packaging-purchases/types');
+},
   // Get all packaging purchases with optional filters
   getAll: (params?: { 
     page?: number;

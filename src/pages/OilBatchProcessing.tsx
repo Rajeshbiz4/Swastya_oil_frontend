@@ -5,6 +5,8 @@ import Popup from '../components/UI/Popup';
 import { FormField } from '../types';
 import { OilTypes } from '../types/enums';
 import { baseURL, packagingPurchaseAPI } from '../services/api';
+// Ignore missing type declarations for CSS side-effect import
+// @ts-ignore
 import './Pages.css';
 
 
@@ -302,13 +304,16 @@ const OilBatchProcessing: React.FC = () => {
     }
   };
 
-  const getOilTypeCode = (oilType: string): string => {
-    const oilEntry = Object.entries(OilTypes).find(
-      ([, label]) => label === oilType
-    );
+ const getOilTypeCode = (oilType: string): string => {
+  for (const key in OilTypes) {
+    const typedKey = key as keyof typeof OilTypes;
+    if (OilTypes[typedKey] === oilType) {
+      return key;
+    }
+  }
 
-    return oilEntry?.[0] || oilType;
-  };
+  return oilType;
+};
 
   const getPackageSizeInLiters = (productType: string): number => {
     const value = productType.trim();
@@ -623,7 +628,6 @@ const OilBatchProcessing: React.FC = () => {
       createdBatch = data.data as BatchRecord;
       setBatches((prev) => [createdBatch, ...prev]);
 
-      setSuccess('Oil batch created successfully');
       setModalError(null); // Clear modal error on success
       setShowForm(false);
       setFormData({
@@ -633,6 +637,9 @@ const OilBatchProcessing: React.FC = () => {
         quantity: 0,
       });
       setAvailableQuantity(null); // Clear available quantity on success
+
+      setSuccess('Oil batch created successfully');
+      
       const totalWeight =
         formData.quantity *
         (weightPerUnit / 1000);
@@ -694,24 +701,39 @@ const OilBatchProcessing: React.FC = () => {
       fetchOilBatches();
     } catch (err: unknown) {
       const anyErr = err as Error;
+
       console.error('Post-processing failed:', err);
-      // Mark batch as FAILED
-      await fetch(`${baseURL}/oil-batches/${createdBatch._id}/status`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: 'failed' })
-      });
-      setPopup({
-        isOpen: true,
-        type: 'warning',
-        title: 'Partial Failure',
-        message: 'Batch created but failed to update packaging inventory. Please check inventory levels and update manually if needed.'
-      });
-      fetchOilBatches();
-      setModalError(anyErr.message || 'Batch failed during processing. Marked as FAILED.');
+
+      if (createdBatch?._id) {
+        await fetch(
+          `${baseURL}/oil-batches/${createdBatch._id}/status`,
+          {
+            method: 'PATCH',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              status: 'failed'
+            })
+          }
+        );
+
+        setPopup({
+          isOpen: true,
+          type: 'warning',
+          title: 'Partial Failure',
+          message:
+            'Batch created but inventory update failed. Please check inventory levels.'
+        });
+
+        fetchOilBatches();
+      }
+
+      setModalError(
+        anyErr.message ||
+        'Batch processing failed.'
+      );
     } finally {
       setFormLoading(false);
     }

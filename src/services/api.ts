@@ -45,7 +45,7 @@ export interface BookingSummary {
 }
 
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
-  const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
+  export const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
   // const baseURL =  'http://localhost:5000/api';
 
   // export const baseURL = 'http://localhost:5000/api';

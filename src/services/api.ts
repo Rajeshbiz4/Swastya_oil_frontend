@@ -11,6 +11,35 @@ export interface ApiResponse<T = unknown> {
   };
 }
 
+// Vendor interface
+export interface Vendor {
+  _id: string;
+  vendorId: string;
+  vendorName: string;
+  contactPerson?: string;
+  mobileNumber: string;
+  alternateMobile?: string;
+  email?: string;
+  gstin: string;
+  panNumber: string;
+  address: string;
+  city?: string;
+  state?: string;
+  stateCode?: string;
+  pinCode: string;
+  vendorType: string;
+  paymentTerms?: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  openingBalance?: number;
+  balanceType?: 'Payable' | 'Advance';
+  status: 'Active' | 'Inactive';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Booking interfaces
 export interface TankerBooking {
   _id: string;
@@ -174,6 +203,7 @@ export interface OilPurchase {
   brokerage?: number;
   actualWeight?: number;
   tankerTransport?: number;
+  gstAmount: number;
   extraCharges?: number;
   isPaid: boolean;
   createdBy: {
@@ -276,6 +306,7 @@ export const oilPurchaseAPI = {
     brokerage?: number;
     actualWeight?: number;
     tankerTransport?: number;
+    gstAmount: number;
     extraCharges?: number;
   }) => {
     return api.post<ApiResponse<{ oilPurchase: OilPurchase; rawOilInventory: any }>>('/procurement/oil-purchases', purchaseData);
@@ -488,6 +519,82 @@ getDailyProductionReport: (date: string) =>
   ),
   
 
+};
+
+// Vendor API functions
+export const vendorAPI = {
+
+  // Get all vendors
+  getAll: () => {
+    return api.get<ApiResponse<Vendor[]>>('/vendors');
+  },
+
+  // Get vendor by ID
+  getById: (id: string) => {
+    return api.get<ApiResponse<Vendor>>(`/vendors/${id}`);
+  },
+
+  // Create vendor
+  create: (vendorData: {
+    vendorName: string;
+    contactPerson?: string;
+    mobileNumber: string;
+    alternateMobile?: string;
+    email?: string;
+    gstin: string;
+    panNumber: string;
+    address: string;
+    city?: string;
+    state?: string;
+    stateCode?: string;
+    pinCode: string;
+    vendorType: string;
+    paymentTerms?: string;
+    bankName: string;
+    accountNumber: string;
+    ifscCode: string;
+    openingBalance?: number;
+    balanceType?: 'Payable' | 'Advance';
+    status: 'Active' | 'Inactive';
+    notes?: string;
+  }) => {
+    return api.post<ApiResponse<Vendor>>('/vendors', vendorData);
+  },
+
+  // Update vendor
+  update: (
+    id: string,
+    vendorData: Partial<{
+      vendorName: string;
+      contactPerson: string;
+      mobileNumber: string;
+      alternateMobile: string;
+      email: string;
+      gstin: string;
+      panNumber: string;
+      address: string;
+      city: string;
+      state: string;
+      stateCode: string;
+      pinCode: string;
+      vendorType: string;
+      paymentTerms: string;
+      bankName: string;
+      accountNumber: string;
+      ifscCode: string;
+      openingBalance: number;
+      balanceType: 'Payable' | 'Advance';
+      status: 'Active' | 'Inactive';
+      notes: string;
+    }>
+  ) => {
+    return api.put<ApiResponse<Vendor>>(`/vendors/${id}`, vendorData);
+  },
+
+  // Delete vendor
+  delete: (id: string) => {
+    return api.delete<ApiResponse<{ message: string }>>(`/vendors/${id}`);
+  },
 };
 
 export default api;

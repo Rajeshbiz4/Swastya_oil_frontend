@@ -2,7 +2,13 @@ import React, { useState, useEffect } from 'react';
 import DataTable from '../components/UI/DataTable';
 import { FormField } from '../types';
 import ConfirmModal from '../components/common/confirm';
-import { bookingAPI, TankerBooking, BookingSummary } from '../services/api';
+import {
+  bookingAPI,
+  vendorAPI,
+  TankerBooking,
+  BookingSummary,
+  Vendor
+} from '../services/api';
 import './Pages.css';
 import { OilTypes } from '../types/enums';
 
@@ -57,6 +63,8 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [loadingVendors, setLoadingVendors] = useState(false);
 
   // Date range filter
   const [startDate, setStartDate] = useState('');
@@ -127,7 +135,9 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   useEffect(() => {
     loadBookings();
     loadSummary();
+    loadVendors();
   }, []);
+
 
   // Reset form when opening
   useEffect(() => {
@@ -170,7 +180,7 @@ const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
         { 
       name: 'supplierName', 
       label: 'Supplier Name', 
-      type: 'text', 
+      type: 'select', 
       required: true 
     },
     { 
@@ -369,6 +379,29 @@ const confirmDeleteBooking = async () => {
   }
 };
 
+const loadVendors = async () => {
+  try {
+    setLoadingVendors(true);
+
+    const response = await vendorAPI.getAll();
+
+    if (response.data.success) {
+      const oilSuppliers = (response.data.data || []).filter(
+        (vendor) =>
+          vendor.vendorType?.toLowerCase() === 'oil supplier' &&
+          vendor.status === 'Active'
+      );
+
+      setVendors(oilSuppliers);
+    }
+  } catch (err: any) {
+    console.error('Failed to load vendors:', err);
+    setError('Failed to load suppliers');
+  } finally {
+    setLoadingVendors(false);
+  }
+};
+
   // Form handlers
   const handleFormChange = (name: string, value: any) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -547,20 +580,37 @@ const confirmDeleteBooking = async () => {
                       {field.required && <span style={{ color: '#e74c3c' }}> *</span>}
                     </label>
                     {field.type === 'select' ? (
-                      <select
-                        id={field.name}
-                        value={formData.oilType || "SOYABEAN_OIL"}
-                        onChange={(e) => handleFormChange(field.name, e.target.value)}
-                      >
-                        <option value="" disabled>Select Oil Type</option>
+  <select
+    id={field.name}
+    value={formData[field.name as keyof typeof formData] || ''}
+    onChange={(e) =>
+      handleFormChange(field.name, e.target.value)
+    }
+    required={field.required}
+  >
+    {field.name === 'supplierName' ? (
+      <>
+        <option value="">Select Supplier</option>
 
-                        {Object.entries(OilTypes).map(([key, label]) => (
-                          <option key={key} value={key}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    ) : field.type === 'textarea' ? (
+        {vendors.map((vendor) => (
+          <option key={vendor._id} value={vendor.vendorName}>
+            {vendor.vendorName}
+          </option>
+        ))}
+      </>
+    ) : (
+      <>
+        <option value="">Select Oil Type</option>
+
+        {Object.entries(OilTypes).map(([key, label]) => (
+          <option key={key} value={key}>
+            {label}
+          </option>
+        ))}
+      </>
+    )}
+  </select>
+) :  field.type === 'textarea' ? (
                       <textarea
                         id={field.name}
                         value={formData[field.name as keyof typeof formData] || ''}

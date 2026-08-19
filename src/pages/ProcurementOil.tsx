@@ -34,6 +34,7 @@ const ProcurementOil: React.FC = () => {
     actualWeight: 0,
     brokerage: 0,
     extraCharges: 0,
+    gstAmount: 0,
     tankerTransport: 0,
     invoiceDate: new Date().toISOString().split('T')[0],
     deliveryDate: new Date().toISOString().split('T')[0],
@@ -131,6 +132,15 @@ const ProcurementOil: React.FC = () => {
       missingFields.push('oilType');
     }
 
+    if (
+  formData.gstAmount === undefined ||
+  formData.gstAmount === null ||
+  formData.gstAmount < 0
+) {
+  errors.gstAmount = 'GST amount is required';
+  missingFields.push('gstAmount');
+} 
+
     setFormErrors(errors);
     setFormErrorSummary(
       missingFields.length
@@ -160,6 +170,7 @@ const ProcurementOil: React.FC = () => {
       oilType: booking?.oilType || '',
       quantity: booking ? booking.tankerCapacity : 0,
       ratePerLiter: booking ? booking.rate : 0,
+      gstAmount: 0,
       deliveryDate: booking ? new Date(booking.bookingDate).toISOString().split('T')[0] : prev.deliveryDate,
     }));
 
@@ -200,6 +211,7 @@ const ProcurementOil: React.FC = () => {
     { name: 'invoiceDate', label: 'Invoice Date', type: 'date', required: true },
     { name: 'deliveryDate', label: 'Delivery Date', type: 'date', required: true },
      { name: 'brokerage', label: 'Brokerage (optional)', type: 'number', required: false, min: '0' },
+     {name: 'gstAmount', label: 'GST Amount ', type: 'number', required: true, min: '0' },
     { name: 'extraCharges', label: 'Extra Charges (optional)', type: 'number', required: false, min: '0' },
   ];
 
@@ -229,6 +241,7 @@ const ProcurementOil: React.FC = () => {
           actualWeight: 0,
           brokerage: 0,
           extraCharges: 0,
+          gstAmount: 0,
           tankerTransport: 0,
           invoiceDate: new Date().toISOString().split('T')[0],
           deliveryDate: new Date().toISOString().split('T')[0],

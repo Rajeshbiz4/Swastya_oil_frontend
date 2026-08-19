@@ -29,6 +29,7 @@ import UserManagement from './pages/UserManagement';
 import EmployeeManagement from './pages/EmployeeManagement';
 import Maintenance from './pages/Maintenance';
 import Profile from './pages/Profile';
+import Vendors from './pages/Vendors';
 
 // Placeholder components for future implementation
 const NotFound = () => <div className="page-placeholder">Page Not Found</div>;
@@ -133,6 +134,13 @@ const AppContent: React.FC = () => {
             </ProtectedRoute>
           } />
           
+          <Route path="vendors" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+            <Vendors />
+            </ProtectedRoute>
+          } />
+
+
           {/* User-only routes */}
           <Route path="inventory" element={
             <ProtectedRoute requiredRoles={[UserRole.USER, UserRole.ADMIN]}>

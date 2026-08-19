@@ -160,7 +160,6 @@ temp/
 
 # Editor directories and files
 
-.vscode/
 
 .idea/
 
@@ -189,7 +188,6 @@ ehthumbs.db
 Thumbs.db
 
 config.bat
-.env
 node_modules/
 
 /.pnp
@@ -350,7 +348,6 @@ temp/
 
 # Editor directories and files
 
-.vscode/
 
 .idea/
 
@@ -379,7 +376,6 @@ ehthumbs.db
 Thumbs.db
 
 config.bat
-.env
 
 /node_modules
 >>>>>>>>> Temporary merge branch 2

@@ -30,6 +30,7 @@ import EmployeeManagement from './pages/EmployeeManagement';
 import Maintenance from './pages/Maintenance';
 import Profile from './pages/Profile';
 import Vendors from './pages/Vendors';
+import CustomerManagement from './pages/CustomerManagement';
 
 // Placeholder components for future implementation
 const NotFound = () => <div className="page-placeholder">Page Not Found</div>;
@@ -138,6 +139,12 @@ const AppContent: React.FC = () => {
             <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
             <Vendors />
             </ProtectedRoute>
+          } />
+
+          <Route path="customers" element={
+          <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+          <CustomerManagement />
+          </ProtectedRoute>
           } />
 
 

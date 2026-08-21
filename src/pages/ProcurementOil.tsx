@@ -18,6 +18,7 @@ const ProcurementOil: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [viewPurchase, setViewPurchase] = useState<OilPurchase | null>(null);
 
   // date range filters
   const [startDate, setStartDate] = useState('');
@@ -217,6 +218,13 @@ const ProcurementOil: React.FC = () => {
 
   const calculatedOilAmount = formData.quantity * formData.ratePerLiter;
 
+  const calculatedTotalAmount =
+  Number(formData.quantity) * Number(formData.ratePerLiter) +
+  Number(formData.gstAmount) +
+  Number(formData.brokerage) +
+  Number(formData.tankerTransport) +
+  Number(formData.extraCharges);
+
   const submitForm = async () => {
     console.log('Submitting form with data:', formData);
     if (!validateForm()) return;
@@ -262,6 +270,28 @@ const ProcurementOil: React.FC = () => {
     { key: 'quantity', title: 'Quantity (L)', sortable: true },
     { key: 'ratePerLiter', title: 'Rate/L', sortable: true },
     { key: 'totalAmount', title: 'Total Amount', sortable: true, render: (val: number) => `₹${val?.toLocaleString()}` },
+    {
+    key: '_id',
+    title: 'Action',
+    sortable: false,
+    render: (id: string) => (
+      <button
+        type="button"
+        className="secondary-button"
+        onClick={() => {
+          const purchase = oilPurchases.find(
+            (item) => item._id === id
+          );
+
+          if (purchase) {
+            setViewPurchase(purchase);
+          }
+        }}
+      >
+        View
+      </button>
+    ),
+  },
   ];
 
   return (
@@ -304,14 +334,6 @@ const ProcurementOil: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* {oilSummary && (
-          <div className="summary-row">
-            <span>Total Qty: {oilSummary.totalQuantity}</span>
-            <span>Total Amount: ₹{oilSummary.totalAmount?.toLocaleString()}</span>
-            <span>Avg Rate: ₹{oilSummary.averageRate?.toFixed(2)}</span>
-          </div>
-        )} */}
 
         <div className="data-table-wrapper">
           <DataTable
@@ -380,9 +402,15 @@ const ProcurementOil: React.FC = () => {
               {formData.quantity > 0 && formData.ratePerLiter > 0 && (
                 <div className="summary-card" style={{ margin: '1.5rem', textAlign: 'center' }}>
                   <h4>Calculated Purchase Amount</h4>
-                  <div className="summary-value" style={{ color: '#27ae60', fontSize: '1.75rem' }}>
-                    ₹{(calculatedOilAmount + formData.brokerage + formData.tankerTransport + formData.extraCharges).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
+                  <div
+  className="summary-value"
+  style={{ color: '#27ae60', fontSize: '1.75rem' }}
+>
+  ₹{calculatedTotalAmount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}
+</div>
                   <p style={{ color: '#7f8c8d', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>
                     ₹{formData.quantity.toLocaleString()} L × ₹{formData.ratePerLiter.toFixed(2)} per liter
                   </p>
@@ -400,6 +428,188 @@ const ProcurementOil: React.FC = () => {
           </div>
         )}
       </div>
+      {viewPurchase && (
+  <div
+    className="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="view-purchase-title"
+  >
+    <div className="modal-content">
+
+      <div className="modal-header">
+        <h3 id="view-purchase-title">
+          Oil Purchase Details
+        </h3>
+
+        <button
+          className="modal-close"
+          aria-label="Close"
+          onClick={() => setViewPurchase(null)}
+        >
+          ×
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '20px 24px',
+          padding: '20px',
+        }}
+      >
+
+        <div>
+          <strong>Booking</strong>
+          <div>
+            {viewPurchase.bookingId || '-'}
+          </div>
+        </div>
+
+        <div>
+          <strong>Supplier Name</strong>
+          <div>
+            {viewPurchase.supplierName || '-'}
+          </div>
+        </div>
+
+        <div>
+          <strong>Oil Type</strong>
+          <div>
+            {viewPurchase.oilType
+              ? viewPurchase.oilType
+                  .replace(/_/g, ' ')
+                  .toLowerCase()
+                  .replace(/\b\w/g, (l) => l.toUpperCase())
+              : '-'}
+          </div>
+        </div>
+
+        <div>
+          <strong>Actual Weight (kg)</strong>
+          <div>
+            {Number(
+              viewPurchase.actualWeight || 0
+            ).toLocaleString()}
+          </div>
+        </div>
+
+        <div>
+          <strong>Tanker Transport Charges</strong>
+          <div>
+            ₹{Number(
+              viewPurchase.tankerTransport || 0
+            ).toLocaleString()}
+          </div>
+        </div>
+
+        <div>
+          <strong>Booking Quantity</strong>
+          <div>
+            {Number(
+              viewPurchase.quantity || 0
+            ).toLocaleString()} KG
+          </div>
+        </div>
+
+        <div>
+          <strong>Rate per Liter</strong>
+          <div>
+            ₹{Number(
+              viewPurchase.ratePerLiter || 0
+            ).toLocaleString()}
+          </div>
+        </div>
+
+        <div>
+          <strong>Payment Mode</strong>
+          <div>
+            {viewPurchase.paymentMode || '-'}
+          </div>
+        </div>
+
+        <div>
+          <strong>Invoice Number</strong>
+          <div>
+            {viewPurchase.invoiceNumber || '-'}
+          </div>
+        </div>
+
+        <div>
+          <strong>Invoice Date</strong>
+          <div>
+            {viewPurchase.invoiceDate
+              ? new Date(
+                  viewPurchase.invoiceDate
+                ).toLocaleDateString()
+              : '-'}
+          </div>
+        </div>
+
+        <div>
+          <strong>Delivery Date</strong>
+          <div>
+            {viewPurchase.deliveryDate
+              ? new Date(
+                  viewPurchase.deliveryDate
+                ).toLocaleDateString()
+              : '-'}
+          </div>
+        </div>
+
+        <div>
+          <strong>Brokerage</strong>
+          <div>
+            ₹{Number(
+              viewPurchase.brokerage || 0
+            ).toLocaleString()}
+          </div>
+        </div>
+
+        <div>
+          <strong>GST Amount</strong>
+          <div>
+            ₹{Number(
+              viewPurchase.gstAmount || 0
+            ).toLocaleString()}
+          </div>
+        </div>
+
+        <div>
+          <strong>Extra Charges</strong>
+          <div>
+            ₹{Number(
+              viewPurchase.extraCharges || 0
+            ).toLocaleString()}
+          </div>
+        </div>
+
+        <div>
+          <strong>Total Amount</strong>
+          <div>
+            <strong>
+              ₹{Number(
+                viewPurchase.totalAmount || 0
+              ).toLocaleString()}
+            </strong>
+          </div>
+        </div>
+
+      </div>
+
+      <div className="modal-actions">
+        <button
+          className="secondary-button"
+          onClick={() => setViewPurchase(null)}
+        >
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
     </div>
   );
 };

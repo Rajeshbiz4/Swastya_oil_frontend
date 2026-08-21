@@ -1,572 +1,84 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import DataTable from '../components/UI/DataTable';
-import FormBuilder from '../components/UI/FormBuilder';
-import { PackagingPurchase } from '../services/api';
-import { packagingPurchaseAPI } from '../services/api';
-import { PackagingType, FormField } from '../types';
+import React, { useEffect, useMemo, useState } from 'react';
+import api from '../services/api';
+import { settingsApi } from '../services/businessApi';
 import './Pages.css';
-import { appConfig } from '../config/appConfig';
+
+const today = () => new Date().toISOString().slice(0, 10);
+const n = (v: any) => Number(v) || 0;
+
+type Item = { materialType: string; materialVariant: string; subtypeCode: string; subtypeLabel: string; description: string; hsnCode: string; invoiceQuantity: number; purchaseUnit: string };
+const emptyItem = (): Item => ({ materialType: '', materialVariant: '', subtypeCode: '', subtypeLabel: '', description: '', hsnCode: '', invoiceQuantity: 0, purchaseUnit: '' });
 
 const ProcurementPackaging: React.FC = () => {
-  const [showForm, setShowForm] = useState(false);
-  const [packagingPurchases, setPackagingPurchases] = useState<PackagingPurchase[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [rows, setRows] = useState<any[]>([]); const [show, setShow] = useState(false); const [saving, setSaving] = useState(false); const [message, setMessage] = useState('');
+  const [settings, setSettings] = useState<any>({ packagingTypes: [], packagingSubtypes: [], polytheneSubtypes: [] });
+  const [form, setForm] = useState<any>({ supplierName: '', supplierGSTIN: '', invoiceNumber: '', invoiceDate: today(), deliveryDate: '', paymentMode: 'Cash', cgstAmount: 0, sgstAmount: 0, igstAmount: 0, invoiceTotal: 0, ewayBillNumber: '', transportCharges: 0 });
+  const [items, setItems] = useState<Item[]>([emptyItem()]);
+  const load = async () => { const [p, s] = await Promise.all([api.get('/procurement/packaging-purchases'), settingsApi.get()]); setRows(p.data?.data?.purchases || []); setSettings(s.data?.data || {}); };
+  useEffect(() => { load().catch(() => setMessage('Failed to load packaging purchases')); }, []);
+  const activeTypes = useMemo(() => ((settings.packagingTypes || []).filter((x: any) => x.active)), [settings]);
+  const variants = (item: Item) => { const parent = activeTypes.find((x: any) => x.label === item.materialType); if (!parent) return []; if (parent.code === 'POLYTHENE_BUNDLE') return (settings.polytheneSubtypes || []).filter((x: any) => x.active && x.purchaseDropdownVisible).map((x: any) => ({ code: x.code, label: x.finishedProductLabel || x.label, unitsPerBundle: x.unitsPerBundle })); return (settings.packagingSubtypes || []).filter((x: any) => x.active && x.parentPackagingCode === parent.code).map((x: any) => ({ code: x.code, label: x.label })); };
+  const updateItem = (i: number, k: keyof Item, v: any) => {
+    const a = items.slice();
+    let x = { ...a[i], [k]: v };
+    if (k === 'materialType') {
+      const parent = activeTypes.find((p: any) => p.label === v);
+      x.materialVariant = parent?.code === 'POLYTHENE_BUNDLE' ? 'Polythene Bundle' : (parent?.hasSubtypes ? '' : v);
+      x.subtypeCode = ''; x.subtypeLabel = ''; x.purchaseUnit = parent?.purchaseUnit || '';
+    }
+    if (k === 'subtypeCode') {
+      const opt = variants(x).find(
+        (o: any) => o.code === v
+      );
 
-  useEffect(() => {
-  if (showForm) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = 'auto';
-  }
+      const parent = activeTypes.find(
+        (p: any) => p.label === x.materialType
+      );
 
-  return () => {
-    document.body.style.overflow = 'auto';
-  };
-}, [showForm]);
+      x.subtypeCode = v;
+      x.subtypeLabel = opt?.label || '';
 
-  // ✅ COMMON FIELDS (no packagingType here now)
-  const [formData, setFormData] = useState({
-    supplierName: '',
-    paymentMode: 'Cash',
-    deliveryDate: new Date().toISOString().split('T')[0],
-    invoiceNumber: '',
-    invoiceDate: new Date().toISOString().split('T')[0],
-    items: [
-      { packagingType: '', unit: '', quantity: 0, ratePerUnit: 0 }
-    ]
-  });
-
-  const fetchPackagingPurchases = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await packagingPurchaseAPI.getAll({ limit: 100 });
-      if (response.data.success) {
-        setPackagingPurchases(response.data.data?.purchases || []);
+      if (parent?.code === 'POLYTHENE_BUNDLE') {
+        x.materialVariant = 'Polythene Bundle';
+      } else {
+        x.materialVariant = opt?.label || '';
       }
-    } finally {
-      setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchPackagingPurchases();
-  }, [fetchPackagingPurchases]);
-
-  // ✅ COMMON FORM (NO packagingType here)
-  const packagingFormFields: FormField[] = [
-    { name: 'deliveryDate', label: 'Delivery Date', type: 'date', required: true },
-    { name: 'invoiceNumber', label: 'Invoice Number', type: 'text', required: true },
-  ];
-
-  const handleChange = (name: string, value: unknown) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    a[i] = x; setItems(a);
   };
-
-  // ✅ ITEM CHANGE
-  const handleItemChange = (index: number, field: string, value: unknown) => {
-    const updated = [...formData.items];
-    updated[index] = { ...updated[index], [field]: value };
-
-    setFormData(prev => ({
-      ...prev,
-      items: updated
-    }));
-  };
-
-  const addRow = () => {
-    setFormData(prev => ({
-      ...prev,
-      items: [...prev.items, { packagingType: '', unit: '', quantity: 0, ratePerUnit: 0 }]
-    }));
-  };
-
-  const removeRow = (index: number) => {
-    if (formData.items.length === 1) return;
-
-    setFormData(prev => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index)
-    }));
-  };
-
-  // ✅ SUBMIT WITH packagingType INSIDE EACH ITEM
-  const submitForm = async () => {
-    try {
-      setFormLoading(true);
-
-      const payload = formData.items.map(item => {
-        const isBundle = item.packagingType === PackagingType.POLYTHENE_BUNDLE;
-        const adjustedQuantity = isBundle ? item.quantity * (appConfig.packaging?.bundles?.[PackagingType.POLYTHENE_BUNDLE]?.quantity ?? 210) : item.quantity;
-        const adjustedRatePerUnit = isBundle ? item.ratePerUnit / (appConfig.packaging?.bundles?.[PackagingType.POLYTHENE_BUNDLE]?.quantity ?? 210) : item.ratePerUnit;
-
-        return {
-          supplierName: formData.supplierName,
-          packagingType: item.packagingType,
-          quantity: adjustedQuantity,
-          ratePerUnit: adjustedRatePerUnit,
-          paymentMode: formData.paymentMode,
-          invoiceNumber: formData.invoiceNumber,
-          invoiceDate: formData.invoiceDate,
-          deliveryDate: formData.deliveryDate
-        };
-      });
-
-      await packagingPurchaseAPI.create(payload);
-
-      setShowForm(false);
-      fetchPackagingPurchases();
-
-      setFormData({
-        supplierName: '',
-        paymentMode: 'Cash',
-        deliveryDate: new Date().toISOString().split('T')[0],
-        invoiceNumber: '',
-        invoiceDate: new Date().toISOString().split('T')[0],
-        items: [{ packagingType: '', unit: '', quantity: 0, ratePerUnit: 0 }]
-      });
-
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  // Calculate statistics by packaging type
-  const statsByPackagingType = packagingPurchases.reduce((acc, purchase) => {
-    const type = purchase.packagingType || 'Unknown';
-    if (!acc[type]) {
-      acc[type] = {
-        totalQuantity: 0,
-        totalValue: 0,
-        count: 0,
-        rates: []
-      };
-    }
-    acc[type].totalQuantity += purchase.quantity || 0;
-    acc[type].totalValue += (purchase.quantity || 0) * (purchase.ratePerUnit || 0);
-    acc[type].count += 1;
-    acc[type].rates.push(purchase.ratePerUnit || 0);
-    return acc;
-  }, {} as Record<string, { totalQuantity: number; totalValue: number; count: number; rates: number[] }>);
-
-  // Calculate average rate for each packaging type
-  const packagingTypeStats = Object.entries(statsByPackagingType).map(([type, data]) => ({
-    type,
-    totalQuantity: data.totalQuantity,
-    averageRate: data.rates.length > 0 ? data.rates.reduce((sum, rate) => sum + rate, 0) / data.rates.length : 0,
-    totalValue: data.totalValue,
-    purchaseCount: data.count
-  }));
-
-  // Overall stats
-  const overallStats = {
-    totalPurchases: packagingPurchases.length,
-    totalQuantity: packagingPurchases.reduce((sum, p) => sum + (p.quantity || 0), 0),
-    totalValue: packagingPurchases.reduce((sum, p) => sum + ((p.quantity || 0) * (p.ratePerUnit || 0)), 0),
-  };
-
-  // Filter purchases
-  const filteredPurchases = packagingPurchases.filter(p =>
-    p.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.packagingType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.supplierName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const packagingColumns = [
-    { 
-      key: 'invoiceNumber', 
-      title: 'Invoice #', 
-      sortable: true,
-      render: (value: string) => value || '-'
-    },
-    { 
-      key: 'packagingType', 
-      title: 'Type', 
-      sortable: true,
-      render: (value: string) => value || '-'
-    },
-    { 
-      key: 'quantity', 
-      title: 'Quantity', 
-      sortable: true,
-      render: (value: number) => value ? value.toLocaleString() : '-'
-    },
-    { 
-      key: 'ratePerUnit', 
-      title: 'Rate', 
-      render: (value: number) => value ? `₹${value.toFixed(2)}` : '-'
-    },
-    {
-      key: 'totalAmount',
-      title: 'Total Amount',
-      render: (_: any, record: any) => `₹${((record.quantity || 0) * (record.ratePerUnit || 0)).toLocaleString()}`
-    },
-    { 
-      key: 'invoiceDate', 
-      title: 'Invoice Date', 
-      render: (value: string) => value ? new Date(value).toLocaleDateString() : '-'
-    },
-    { 
-      key: 'supplierName', 
-      title: 'Supplier', 
-      render: (value: string) => value || 'Not Specified'
-    },
-  ];
-
-  return (
-    <div className="module-page">
-      <div className="module-header">
-        <div>
-          <h1>🛍️ Packaging Purchases</h1>
-          <p>Manage packaging material procurement and inventory</p>
-        </div>
-        <button 
-          className="primary-button"
-          onClick={() => setShowForm(true)}
-          style={{ padding: '12px 24px', fontSize: '1rem' }}
-        >
-          ➕ Add Purchase
-        </button>
+  const save = async () => { setMessage(''); if (!form.supplierName || !form.supplierGSTIN || !form.invoiceNumber || !form.invoiceDate) { setMessage('Supplier Name, GSTIN, Invoice Number and Invoice Date are required'); return; } setSaving(true); try { await api.post('/procurement/packaging-purchases', { ...form, packagingItems: items.filter(x => x.materialType && n(x.invoiceQuantity) > 0) }); setShow(false); setForm({ supplierName: '', supplierGSTIN: '', invoiceNumber: '', invoiceDate: today(), deliveryDate: '', paymentMode: 'Cash', cgstAmount: 0, sgstAmount: 0, igstAmount: 0, invoiceTotal: 0, ewayBillNumber: '', transportCharges: 0 }); setItems([emptyItem()]); await load(); } catch (e: any) { setMessage(e?.error?.message || 'Failed to save purchase'); } finally { setSaving(false); } };
+  return <div className="module-page">
+    <div className="module-header"><div><h1>Packaging Purchases</h1><p>Purchase primary and secondary packaging materials</p></div><button className="primary-button" onClick={() => setShow(true)}>+ New Packaging Purchase</button></div>
+    {message && <div className="error-message">{message}</div>}
+    <div style={{ overflowX: 'auto' }}><table className="data-table"><thead><tr><th>Invoice</th><th>Date</th><th>Supplier</th><th>GSTIN</th><th>Items</th><th>GST</th><th>Total</th></tr></thead><tbody>{rows.map(r => <tr key={r._id}><td>{r.invoiceNumber}</td><td>{r.invoiceDate ? new Date(r.invoiceDate).toLocaleDateString() : '-'}</td><td>{r.supplierName}</td><td>{r.supplierGSTIN}</td><td>{(r.packagingItems || []).map((x: any) => x.subtypeLabel || x.materialVariant).join(', ') || '-'}</td><td>₹{n(r.cgstAmount) + n(r.sgstAmount) + n(r.igstAmount)}</td><td>₹{n(r.invoiceTotal).toLocaleString('en-IN')}</td></tr>)}</tbody></table></div>
+    {show && <div className="modal"><div className="modal-content" style={{ maxWidth: 1000 }}><div className="modal-header"><h3>📦 New Packaging Purchase</h3><button className="modal-close" onClick={() => setShow(false)}>×</button></div>
+      <h4>📋 Invoice & Supplier Details</h4><div className="form-grid">
+        {[['supplierName', 'Supplier Name *', 'text'], ['supplierGSTIN', 'Supplier GSTIN *', 'text'], ['invoiceNumber', 'Invoice Number *', 'text'], ['invoiceDate', 'Invoice Date *', 'date'], ['deliveryDate', 'Delivery Date', 'date']].map(([k, l, t]) => <div className="form-group" key={k}><label>{l}</label><input type={t} value={form[k]} onChange={e => setForm({ ...form, [k]: e.target.value })} /></div>)}
+        <div className="form-group"><label>Payment Mode</label><select value={form.paymentMode} onChange={e => setForm({ ...form, paymentMode: e.target.value })}>{['Cash', 'Bank Transfer', 'Cheque', 'Credit', 'To Pay'].map(x => <option key={x}>{x}</option>)}</select></div>
       </div>
-
-  
-      {/* Search Bar */}
-      <div className="search-section" style={{ marginBottom: '1.5rem' }}>
-        <input
-          type="text"
-          placeholder="🔍 Search by Invoice #, Type, or Supplier..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            fontSize: '1rem'
-          }}
-        />
-      </div>
-
-      {/* Table */}
-      <DataTable 
-        data={filteredPurchases} 
-        columns={packagingColumns} 
-        loading={loading} 
-        rowKey="_id"
-      />
-
-      {/* Modal Form */}
-      {showForm && (
-        <div className="modal modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '900px' }}>
-
-            {/* HEADER */}
-            <div className="modal-header" style={{ borderBottom: '2px solid #f0f0f0', paddingBottom: '1rem' }}>
-              <h2 style={{ margin: 0 }}>📦 New Packaging Purchase</h2>
-              <button
-                className="close-btn"
-                onClick={() => setShowForm(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  color: '#666'
-                }}
-              >
-                ✕
-              </button>
+      <h4 style={{ marginTop: 24 }}>📦 Packaging Items</h4>{items.map((it, i) => <div key={i} className="form-grid" style={{ padding: '12px', border: '1px solid #e4e8ec', borderRadius: 8, marginBottom: 12 }}>
+        <div className="form-group"><label>Packaging Type</label><select value={it.materialType} onChange={e => updateItem(i, 'materialType', e.target.value)}><option value="">-- Select Type --</option>{activeTypes.map((x: any) => <option key={x.code} value={x.label}>{x.label}</option>)}</select></div>
+        {variants(it).length > 0 && 
+        <div className="form-group">
+          <label>Subtype / Variant</label>
+          <select value={it.subtypeCode || ''}
+          onChange={e => updateItem(i, 'subtypeCode', e.target.value)}>
+            <option value="">-- Select --</option>
+            {
+            variants(it).map((x: any) => 
+            <option key={x.code} value={x.code}>{x.label}
+            {x.unitsPerBundle ? ` (${x.unitsPerBundle}/bundle)` : ''}
+            </option>)}
+            </select>
             </div>
-
-            {/* SCROLL CONTAINER */}
-                <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-
-                
-            
-              {/* SUPPLIER & INVOICE SECTION */}
-              <div style={{ padding: '1.5rem', borderBottom: '1px solid #eee' }}>
-                <h4 style={{ marginBottom: '1rem', color: '#333' }}>📋 Invoice & Supplier Details</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Supplier Name</label>
-                    <input
-                      type="text"
-                      placeholder="Supplier name"
-                      value={formData.supplierName}
-                      onChange={(e) => handleChange('supplierName', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Invoice Number *</label>
-                    <input
-                      type="text"
-                      placeholder="INV-001"
-                      value={formData.invoiceNumber}
-                      onChange={(e) => handleChange('invoiceNumber', e.target.value)}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Invoice Date</label>
-                    <input
-                      type="date"
-                      value={formData.invoiceDate}
-                      onChange={(e) => handleChange('invoiceDate', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Delivery Date *</label>
-                    <input
-                      type="date"
-                      value={formData.deliveryDate}
-                      onChange={(e) => handleChange('deliveryDate', e.target.value)}
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Payment Mode</label>
-                    <select
-                      value={formData.paymentMode}
-                      onChange={(e) => handleChange('paymentMode', e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        boxSizing: 'border-box'
-                      }}
-                    >
-                      <option value="Not Specified">Not Specified</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Credit">Credit</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="Online">Online</option>
-                    </select>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* ITEMS TABLE SECTION */}
-              <div style={{ padding: '1.5rem' }}>
-                <h4 style={{ marginBottom: '1rem', color: '#333' }}>📦 Packaging Items</h4>
-                
-                <div className="table-responsive">
-                  <table className="form-table" style={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    fontSize: '0.95rem'
-                  }}>
-                    <thead>
-                      <tr style={{ backgroundColor: '#f5f5f5', borderBottom: '2px solid #ddd' }}>
-                        <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Packaging Type *</th>
-                        <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Quantity *</th>
-                        <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Rate/Unit *</th>
-                        <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>Amount</th>
-                        <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', width: '60px' }}>Action</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {formData.items.map((item, index) => (
-                        <tr key={index} style={{ borderBottom: '1px solid #eee', backgroundColor: index % 2 === 0 ? '#fafafa' : '#fff' }}>
-                          
-                          {/* TYPE - DROPDOWN */}
-                          <td style={{ padding: '12px' }}>
-                            <select
-                              value={item.packagingType}
-                              onChange={(e) =>
-                                handleItemChange(index, 'packagingType', e.target.value)
-                              }
-                              style={{
-                                width: '100%',
-                                padding: '8px',
-                                border: '1px solid #ddd',
-                                borderRadius: '4px',
-                                boxSizing: 'border-box'
-                              }}
-                            >
-                              <option value="">-- Select Type --</option>
-                              {Object.values(PackagingType).map((v) => (
-                                <option key={v} value={v}>
-                                  {v}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-
-                          {/* QTY - NUMBER */}
-                          <td style={{ padding: '12px' }}>
-                            <input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) =>
-                                handleItemChange(index, 'quantity', Number(e.target.value))
-                              }
-                              min="0"
-                              style={{
-                                width: '100%',
-                                padding: '8px',
-                                border: '1px solid #ddd',
-                                borderRadius: '4px',
-                                boxSizing: 'border-box'
-                              }}
-                            />
-                          </td>
-
-                          {/* RATE - NUMBER */}
-                          <td style={{ padding: '12px' }}>
-                            <input
-                              type="number"
-                              placeholder="0.00"
-                              value={item.ratePerUnit}
-                              onChange={(e) =>
-                                handleItemChange(index, 'ratePerUnit', Number(e.target.value))
-                              }
-                              min="0"
-                              step="0.01"
-                              style={{
-                                width: '100%',
-                                padding: '8px',
-                                border: '1px solid #ddd',
-                                borderRadius: '4px',
-                                boxSizing: 'border-box'
-                              }}
-                            />
-                          </td>
-
-                          {/* AMOUNT - DISPLAY */}
-                          <td style={{ padding: '12px', textAlign: 'right', fontWeight: '600', color: '#27ae60' }}>
-                            ₹{(item.quantity * item.ratePerUnit).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                          </td>
-
-                          {/* DELETE - BUTTON */}
-                          <td style={{ padding: '12px', textAlign: 'center' }}>
-                            <button
-                              className="danger-button"
-                              onClick={() => removeRow(index)}
-                              disabled={formData.items.length === 1}
-                              style={{
-                                padding: '6px 10px',
-                                background: formData.items.length === 1 ? '#ccc' : '#e74c3c',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: formData.items.length === 1 ? 'not-allowed' : 'pointer',
-                                fontSize: '14px'
-                              }}
-                            >
-                              ✕
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* ADD ROW BUTTON */}
-                <button 
-                  className="secondary-button"
-                  onClick={addRow}
-                  style={{ marginTop: '1rem', padding: '10px 16px' }}
-                >
-                  ➕ Add Item
-                </button>
-              </div>
-
-              {/* TOTAL SECTION */}
-              <div style={{             
-                padding: '1.5rem',
-                backgroundColor: '#f0f8ff',
-                borderTop: '2px solid #ddd',
-                borderRadius: '0 0 8px 8px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  alignItems: 'center',
-                  gap: '2rem'
-                }}>
-                  <div>
-                    <span style={{ fontSize: '1.1rem', fontWeight: '600' }}>Total Amount:</span>
-                  </div>
-                  <div style={{
-                    fontSize: '2rem',
-                    fontWeight: '700',
-                    color: '#27ae60',
-                    minWidth: '200px',
-                    textAlign: 'right'
-                  }}>
-                    ₹{formData.items
-                      .reduce((sum, i) => sum + i.quantity * i.ratePerUnit, 0)
-                      .toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                  </div>
-                </div>
-              </div>
-
-             
-
-            {/* ACTION BUTTONS */}
-            <div className="modal-actions" style={{ borderTop: '1px solid #eee', backgroundColor: '#f9f9f9' }}>
-              <button
-                className="secondary-button"
-                onClick={() => setShowForm(false)}
-                style={{ padding: '12px 24px' }}
-              >
-                Cancel
-              </button>
-
-              <button
-                className="primary-button"
-                onClick={submitForm}
-                disabled={formLoading}
-                style={{ padding: '12px 32px', fontSize: '1rem' }}
-              >
-                {formLoading ? '⏳ Saving...' : '💾 Save Purchase'}
-              </button>
-            </div>
-
-            </div>
-
-          </div>
-        </div>
-      )}
-    </div>
-  );
+            }
+        <div className="form-group"><label>Description</label><input value={it.description} onChange={e => updateItem(i, 'description', e.target.value)} /></div><div className="form-group"><label>HSN Code</label><input value={it.hsnCode} onChange={e => updateItem(i, 'hsnCode', e.target.value)} /></div>
+        <div className="form-group"><label>Invoice Qty</label><input type="number" min="0" value={it.invoiceQuantity} onChange={e => updateItem(i, 'invoiceQuantity', e.target.value)} /></div><div className="form-group"><label>Purchase Unit</label><input value={it.purchaseUnit} readOnly /></div>
+        <div><button className="secondary-button" onClick={() => setItems(items.filter((_, idx) => idx !== i))} disabled={items.length === 1}>Remove</button></div>
+      </div>)}<button className="secondary-button" onClick={() => setItems([...items, emptyItem()])}>+ Add Item</button>
+      <h4 style={{ marginTop: 24 }}>GST Details</h4><div className="form-grid">{[['cgstAmount', 'CGST Amount *'], ['sgstAmount', 'SGST Amount *'], ['igstAmount', 'IGST Amount *'], ['invoiceTotal', 'Invoice Total *'], ['transportCharges', 'Transport Charges'], ['ewayBillNumber', 'E-Way Bill']].map(([k, l]) => <div className="form-group" key={k}><label>{l}</label><input type={k === 'ewayBillNumber' ? 'text' : 'number'} min="0" value={form[k]} onChange={e => setForm({ ...form, [k]: k === 'ewayBillNumber' ? e.target.value : n(e.target.value) })} /></div>)}</div>
+      <div className="modal-actions"><button className="primary-button" disabled={saving} onClick={save}>{saving ? 'Saving...' : 'Save Purchase'}</button><button className="secondary-button" onClick={() => setShow(false)}>Cancel</button></div>
+    </div></div>}
+  </div>;
 };
-
 export default ProcurementPackaging;

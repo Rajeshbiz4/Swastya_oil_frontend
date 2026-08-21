@@ -1,394 +1,181 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import DataTable from '../components/UI/DataTable';
-import FormBuilder from '../components/UI/FormBuilder';
-import DateRangePicker from '../components/UI/DateRangePicker';
-import { OilPurchase, PurchaseSummary, TankerBooking } from '../services/api';
-import { oilPurchaseAPI, bookingAPI } from '../services/api';
-import { FormField, PaymentMode } from '../types';
+import api from '../services/api';
+import { settingsApi } from '../services/businessApi';
 import './Pages.css';
-import { OilTypes } from '../types/enums';
-
+const today = () => new Date().toISOString().slice(0, 10);
+const empty = () => ({ bookingId: '', supplierName: '', supplierGstin: '', oilType: '', actualWeightKg: 0, bookingQuantityKg: 0, ratePerKg: 0, bookingTotalAmount: 0, invoiceNumber: '', invoiceDate: today(), deliveryDate: today(), cgstAmount: 0, sgstAmount: 0, igstAmount: 0, tankerTransportCharges: 0, brokerage: 0, extraCharges: 0, transporterName: '', vehicleNumber: '', ewayBillNumber: '', lrNumber: '', paymentMode: 'Cash', remarks: '' });
 const ProcurementOil: React.FC = () => {
-  const [showForm, setShowForm] = useState(false);
-  const [oilPurchases, setOilPurchases] = useState<OilPurchase[]>([]);
-  const [pendingBookings, setPendingBookings] = useState<TankerBooking[]>([]);
-  const [selectedBooking, setSelectedBooking] = useState<TankerBooking | null>(null);
-  const [oilSummary, setOilSummary] = useState<PurchaseSummary | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+    const [rows, setRows] = useState<any[]>([]), [bookings, setBookings] = useState<any[]>([]), [oilTypes, setOilTypes] = useState<any[]>([]), [form, setForm] = useState<any>(empty()), [show, setShow] = useState(false), [loading, setLoading] = useState(false), [msg, setMsg] = useState('');
+    const load = async () => { setLoading(true); try { const [p, b, o] = await Promise.all([api.get('/procurement/oil-purchases', { params: { limit: 100 } }), api.get('/bookings'), settingsApi.getOilTypes()]); setRows(p.data.data?.purchases || []); setBookings((b.data.data || []).filter((x: any) => ['BOOKED', 'PARTIALLY_PURCHASED'].includes(x.status))); setOilTypes((o.data.data || []).filter((x: any) => x.active)); } finally { setLoading(false) } };
+    useEffect(() => { load() }, []);
+    const cgst = Number(form.cgstAmount || 0);
+    const sgst = Number(form.sgstAmount || 0);
+    const igst = Number(form.igstAmount || 0);
 
-  // date range filters
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+    const gst = cgst + sgst + igst;
 
-  const [formData, setFormData] = useState({
-    bookingId: '',
-    supplierName: '',
-    quantity: 0,
-    ratePerLiter: 0,
-    paymentMode: 'Cash',
-    invoiceNumber: '',
-    oilType: 'SOYABEAN_OIL',
-    actualWeight: 0,
-    brokerage: 0,
-    extraCharges: 0,
-    tankerTransport: 0,
-    invoiceDate: new Date().toISOString().split('T')[0],
-    deliveryDate: new Date().toISOString().split('T')[0],
-  });
+    const bookingTotalAmount =
+        Number(form.bookingTotalAmount || 0);
 
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [formErrorSummary, setFormErrorSummary] = useState<string | null>(null);
+    const transportCharges =
+        Number(form.tankerTransportCharges || 0);
 
-  const fetchPendingBookings = useCallback(async () => {
-    try {
-      const response = await bookingAPI.getAll({ bookingstatus: 'PartiallyPaid' });
-      if (response.data.success) {
-        console.log('Fetched pending bookings:', response.data.data);
-        setPendingBookings(response.data.data || []);
-      }
-    } catch (err: unknown) {
-      console.error('Failed to fetch pending bookings:', err);
-    }
-  }, []);
+    const brokerage =
+        Number(form.brokerage || 0);
 
-  const fetchOilPurchases = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params: Record<string, string> = { limit: '100' };
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
-      const response = await oilPurchaseAPI.getAll(params);
-      if (response.data.success) {
-        console.log('Fetched oil purchases:', response.data.data);
-        setOilPurchases(response.data.data?.purchases || []);
-      }
-    } catch (err: unknown) {
-      const anyErr = err as { error?: { message?: string } };
-      setError(anyErr?.error?.message || 'Failed to fetch oil purchases');
-    } finally {
-      setLoading(false);
-    }
-  }, [startDate, endDate]);
+    const extraCharges =
+        Number(form.extraCharges || 0);
 
-  const fetchOilSummary = useCallback(async () => {
-    try {
-      const params: Record<string, string> = {};
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
-      const response = await oilPurchaseAPI.getSummary(params);
-      if (response.data.success) {
-        setOilSummary(response.data.data?.summary || null);
-      }
-    } catch (err: unknown) {
-      console.error('Failed to fetch oil summary:', err);
-    }
-  }, [startDate, endDate]);
+    // Booking amount already includes GST
+    const taxableAmount =
+        bookingTotalAmount - gst;
 
-  useEffect(() => {
-    fetchPendingBookings();
-    fetchOilPurchases();
-    fetchOilSummary();
-  }, [startDate, endDate, fetchPendingBookings, fetchOilPurchases, fetchOilSummary]);
+    // Cost excluding recoverable GST
+    const purchaseCostBeforeTax =
+        taxableAmount +
+        transportCharges +
+        brokerage +
+        extraCharges;
 
-  // form handlers and validation (same as earlier)
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-    const missingFields: string[] = [];
+    // Final payable invoice amount
+    const invoiceNetAmount =
+        bookingTotalAmount +
+        transportCharges +
+        brokerage +
+        extraCharges;
 
-    if (!formData.supplierName) {
-      errors.supplierName = 'Supplier name is required';
-      missingFields.push('supplierName');
-    }
-    if (formData.quantity <= 0) {
-      errors.quantity = 'Quantity must be greater than 0';
-      missingFields.push('quantity');
-    }
-    if (formData.ratePerLiter <= 0) {
-      errors.ratePerLiter = 'Rate must be greater than 0';
-      missingFields.push('ratePerLiter');
-    }
-    if (!formData.paymentMode) {
-      errors.paymentMode = 'Payment mode is required';
-      missingFields.push('paymentMode');
-    }
-    if (!formData.invoiceNumber) {
-      errors.invoiceNumber = 'Invoice number is required';
-      missingFields.push('invoiceNumber');
-    }
-    if (!formData.invoiceDate) {
-      errors.invoiceDate = 'Invoice date is required';
-      missingFields.push('invoiceDate');
-    }
-    if (!formData.deliveryDate) {
-      errors.deliveryDate = 'Delivery date is required';
-      missingFields.push('deliveryDate');
-    }
-    if (!formData.oilType) {
-      errors.oilType = 'Oil type is required';
-      missingFields.push('oilType');
-    }
+    // Actual landed cost of oil
+    const landedCostPerKg =
+        Number(form.actualWeightKg || 0) > 0
+            ? purchaseCostBeforeTax /
+            Number(form.actualWeightKg)
+            : 0;
 
-    setFormErrors(errors);
-    setFormErrorSummary(
-      missingFields.length
-        ? `All fields are required: ${missingFields.join(', ')}`
-        : null
-    );
+    const hsn = useMemo(() => oilTypes.find(o => o.code === form.oilType)?.hsnCode || '', [oilTypes, form.oilType]);
+    const selectBooking = (id: string) => {
+        const b = bookings.find(x => x._id === id);
+        setForm({
+            ...form,
+            bookingId: id,
 
-    return missingFields.length === 0;
-  };
+            supplierName:
+                b?.vendorName ||
+                b?.supplierName ||
+                '',
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleChange = (name: string, value: any) => {
-    if (name === 'bookingId') {
-      handleBookingSelect(value);
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
+            supplierGstin:
+                b?.vendorGstin ||
+                b?.supplierGstin ||
+                '',
 
-  const handleBookingSelect = (bookingId: string) => {
-    const booking = pendingBookings.find((b) => b._id === bookingId) || null;
-    setSelectedBooking(booking);
-    setFormData((prev) => ({
-      ...prev,
-      bookingId,
-      supplierName: booking?.supplierName || '',
-      oilType: booking?.oilType || '',
-      quantity: booking ? booking.tankerCapacity : 0,
-      ratePerLiter: booking ? booking.rate : 0,
-      deliveryDate: booking ? new Date(booking.bookingDate).toISOString().split('T')[0] : prev.deliveryDate,
-    }));
+            oilType: b?.oilType || '',
 
-  };
+            bookingQuantityKg:
+                Number(
+                    b?.pendingQuantityKg ??
+                    b?.tankerCapacityKg ??
+                    0
+                ),
 
-  // form configuration for FormBuilder
-  const oilFormFields: FormField[] = [
-    {
-      name: 'bookingId',
-      label: 'Select Booking',
-      type: 'select',
-      required: false,
-      options: [
-        ...pendingBookings.map((booking) => ({
-          value: booking._id,
-          label: `${new Date(booking.bookingDate).toLocaleDateString()} - ${booking.tankerCapacity.toLocaleString()}L @ ₹${booking.rate}/L (Pending: ₹${booking.pendingAmount.toLocaleString()})`,
-        })),
-      ],
-    },
-    { name: 'supplierName', label: 'Supplier Name', type: 'text', required: true, },
-    { name: 'oilType', label: 'Oil Type', type: 'select', required: true, options: Object.keys(OilTypes).map((key) => ({ value: key, label: OilTypes[key] })) },
-     { name: 'actualWeight', label: 'Actual Weight (kg)', type: 'number', required: true },
-      { name: 'tankerTransport', label: 'Tanker Transport charges', type: 'number', required: true },
-    { name: 'quantity', label: 'booking Quantity (KG)', type: 'number', required: true, min: '10000' },
-    { name: 'ratePerLiter', label: 'Rate per Liter', type: 'number', required: true, min: '0.01', step: '0.01' },
-    {
-      name: 'paymentMode',
-      label: 'Payment Mode',
-      type: 'select',
-      required: true,
-      options: [
-        { value: PaymentMode.CASH, label: 'Cash'},
-        { value: PaymentMode.CHECK, label: 'Cheque' },
-        { value: PaymentMode.ONLINE, label: 'Online' },
-      ],
-    },
-    { name: 'invoiceNumber', label: 'Invoice Number', type: 'text', required: true },
-    { name: 'invoiceDate', label: 'Invoice Date', type: 'date', required: true },
-    { name: 'deliveryDate', label: 'Delivery Date', type: 'date', required: true },
-     { name: 'brokerage', label: 'Brokerage (optional)', type: 'number', required: false, min: '0' },
-    { name: 'extraCharges', label: 'Extra Charges (optional)', type: 'number', required: false, min: '0' },
-  ];
+            ratePerKg:
+                Number(b?.ratePerKg || 0),
 
-  const calculatedOilAmount = formData.quantity * formData.ratePerLiter;
-
-  const submitForm = async () => {
-    console.log('Submitting form with data:', formData);
-    if (!validateForm()) return;
-    try {
-      setFormLoading(true);
-      const response = await oilPurchaseAPI.create(formData);
-      if (response.data.success) {
-        setSuccess('Oil purchase added successfully');
-        setFormErrors({});
-        setFormErrorSummary(null);
-        setShowForm(false);
-        fetchOilPurchases();
-        fetchOilSummary();
-        setFormData({
-          bookingId: '',
-          supplierName: '',
-          quantity: 0,
-          ratePerLiter: 0,
-          paymentMode: 'Cash',
-          invoiceNumber: '',
-          oilType: 'SOYABEAN_OIL',
-          actualWeight: 0,
-          brokerage: 0,
-          extraCharges: 0,
-          tankerTransport: 0,
-          invoiceDate: new Date().toISOString().split('T')[0],
-          deliveryDate: new Date().toISOString().split('T')[0],
+            bookingTotalAmount:
+                Number(
+                    b?.totalAmount ??
+                    b?.bookingAmount ??
+                    0
+                )
         });
-      }
-    } catch (err: unknown) {
-      const anyErr = err as { error?: { message?: string } };
-      setError(anyErr.error?.message || 'Failed to submit oil purchase');
-    } finally {
-      setFormLoading(false);
-    }
-  };
+    };
 
-  const oilColumns = [
-    { key: 'invoiceNumber', title: 'Invoice #', sortable: true },
-    { key: 'supplierName', title: 'Supplier', sortable: true },
-    { key: 'oilType', title: 'Oil Type', sortable: true, render: (value: string) => value ? value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) : '-' },
-    { key: 'quantity', title: 'Quantity (L)', sortable: true },
-    { key: 'ratePerLiter', title: 'Rate/L', sortable: true },
-    { key: 'totalAmount', title: 'Total Amount', sortable: true, render: (val: number) => `₹${val?.toLocaleString()}` },
-  ];
+    const save = async () => {
+        setMsg('');
 
-  return (
-    <div className="module-page">
-      <div className="module-header">
-        <div>
-          <h1>Oil Purchases</h1>
-          <p>Record and review raw oil tanker procurement</p>
-        </div>
-      </div>
+        try {
+            await api.post('/procurement/oil-purchases', {
+                ...form,
+                hsnCode: hsn,
 
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
+                taxableAmount,
+                purchaseCostBeforeTax,
+                invoiceNetAmount,
+                landedCostPerKg,
+                totalGstAmount: gst
+            });
 
-      <div className="module-content">
-        <div className="filters-section">
-          <div className="filters-row">
-            <div className="filter-group">
-              <label>Delivery Date</label>
-              <DateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                onStartDateChange={setStartDate}
-                onEndDateChange={setEndDate}
-                label=""
-              />
+            setShow(false);
+            setForm(empty());
+
+            setMsg(
+                'Oil purchase saved and Raw Oil Inventory updated.'
+            );
+
+            load();
+        } catch (e: any) {
+            setMsg(
+                e?.error?.message ||
+                e?.message ||
+                'Failed to save oil purchase'
+            );
+        }
+    };
+    const cols = [{ key: 'purchaseNumber', title: 'Purchase No.' }, { key: 'batchNumber', title: 'Batch Number' }, { key: 'invoiceNumber', title: 'Invoice No.' }, { key: 'invoiceDate', title: 'Invoice Date', render: (v: string) => new Date(v).toLocaleDateString('en-IN') }, { key: 'supplierName', title: 'Supplier' }, { key: 'oilType', title: 'Oil Type' }, { key: 'actualWeightKg', title: 'Actual Weight (KG)', render: (v: number) => Number(v || 0).toLocaleString() }, { key: 'ratePerKg', title: 'Rate/KG', render: (v: number) => `₹${Number(v || 0).toFixed(2)}` }, { key: 'totalGstAmount', title: 'GST', render: (v: number) => `₹${Number(v || 0).toLocaleString('en-IN')}` }, { key: 'invoiceNetAmount', title: 'Net Amount', render: (v: number) => `₹${Number(v || 0).toLocaleString('en-IN')}` }];
+    return <div className="module-page"><div className="module-header"><div><h1>Oil Purchase</h1><p>Record actual supplier invoice and tanker receipt.</p></div><button className="primary-button" onClick={() => { setForm(empty()); setShow(true) }}>+ New Oil Purchase</button></div>{msg && <div className={msg.includes('saved') ? 'success-message' : 'error-message'}>{msg}</div>}<DataTable data={rows} columns={cols} loading={loading} rowKey="_id" />
+        {show && <div className="modal"><div className="modal-content" style={{ maxWidth: 900 }}><div className="modal-header"><h3>New Oil Purchase</h3><button className="modal-close" onClick={() => setShow(false)}>×</button></div><p className="help-text">Tip: selecting a booking will prefill supplier, oil type, booking quantity and rate.</p><div className="form-grid" style={{ padding: '1rem' }}>
+            <div className="form-group"><label>Select Booking</label><select value={form.bookingId} onChange={e => selectBooking(e.target.value)}><option value="">-- Select Booking --</option>{bookings.map(b => <option key={b._id} value={b._id}>{b.bookingNumber} - {b.supplierName} - {b.pendingQuantityKg} KG</option>)}</select></div>
+            <div className="form-group"><label>Supplier Name *</label><input value={form.supplierName} onChange={e => setForm({ ...form, supplierName: e.target.value })} /></div>
+            <div className="form-group"><label>Supplier GSTIN *</label><input value={form.supplierGstin} onChange={e => setForm({ ...form, supplierGstin: e.target.value.toUpperCase() })} /></div>
+            <div className="form-group"><label>Oil Type *</label><select value={form.oilType} onChange={e => setForm({ ...form, oilType: e.target.value })}><option value="">-- Select --</option>{oilTypes.map(o => <option key={o.code} value={o.code}>{o.label}</option>)}</select></div>
+            <div className="form-group"><label>Actual Weight (KG) *</label><input type="number" min="0.01" value={form.actualWeightKg} onChange={e => setForm({ ...form, actualWeightKg: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>Booking Quantity (KG)</label><input value={form.bookingQuantityKg} disabled /></div>
+            <div className="form-group"><label>Rate per KG (₹) *</label><input type="number" step="0.01" value={form.ratePerKg} onChange={e => setForm({ ...form, ratePerKg: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>HSN Code</label><input value={hsn} disabled /></div>
+            <div className="form-group"><label>Invoice Number *</label><input value={form.invoiceNumber} onChange={e => setForm({ ...form, invoiceNumber: e.target.value })} /></div>
+            <div className="form-group"><label>Invoice Date *</label><input type="date" value={form.invoiceDate} onChange={e => setForm({ ...form, invoiceDate: e.target.value })} /></div>
+            <div className="form-group"><label>Delivery Date *</label><input type="date" value={form.deliveryDate} onChange={e => setForm({ ...form, deliveryDate: e.target.value })} /></div>
+            <div className="form-group"><label>Payment Mode *</label><select value={form.paymentMode} onChange={e => setForm({ ...form, paymentMode: e.target.value })}>{['Cash', 'Bank Transfer', 'Cheque', 'Credit'].map(v => <option key={v}>{v}</option>)}</select></div>
+            <div className="form-group"><label>CGST Amount (₹)</label><input type="number" min="0" value={form.cgstAmount} onChange={e => setForm({ ...form, cgstAmount: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>SGST Amount (₹)</label><input type="number" min="0" value={form.sgstAmount} onChange={e => setForm({ ...form, sgstAmount: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>IGST Amount (₹)</label><input type="number" min="0" value={form.igstAmount} onChange={e => setForm({ ...form, igstAmount: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>Tanker Transport Charges (₹) *</label><input type="number" min="0" value={form.tankerTransportCharges} onChange={e => setForm({ ...form, tankerTransportCharges: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>Brokerage</label><input type="number" min="0" value={form.brokerage} onChange={e => setForm({ ...form, brokerage: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>Extra Charges</label><input type="number" min="0" value={form.extraCharges} onChange={e => setForm({ ...form, extraCharges: Number(e.target.value) })} /></div>
+            <div className="form-group"><label>Transporter Name</label><input value={form.transporterName} onChange={e => setForm({ ...form, transporterName: e.target.value })} /></div><div className="form-group"><label>Vehicle Number</label><input value={form.vehicleNumber} onChange={e => setForm({ ...form, vehicleNumber: e.target.value.toUpperCase() })} /></div><div className="form-group"><label>E-Way Bill</label><input value={form.ewayBillNumber} onChange={e => setForm({ ...form, ewayBillNumber: e.target.value })} /></div><div className="form-group"><label>LR Number</label><input value={form.lrNumber} onChange={e => setForm({ ...form, lrNumber: e.target.value })} /></div>
+            <div className="form-group">
+                <label>Taxable Amount</label>
+                <input
+                    value={`₹${taxableAmount.toFixed(2)}`}
+                    disabled
+                />
             </div>
 
-            <div className="filter-group" style={{ marginLeft: 'auto', alignSelf: 'center' }}>
-              <button
-                className="primary-button"
-                onClick={() => {
-                  setShowForm(true);
-                  setFormErrors({});
-                  setFormErrorSummary(null);
-                }}
-              >
-                Add Oil Purchase
-              </button>
+            <div className="form-group">
+                <label>Purchase Cost Before Tax</label>
+                <input
+                    value={`₹${purchaseCostBeforeTax.toFixed(2)}`}
+                    disabled
+                />
             </div>
-          </div>
-        </div>
 
-        {/* {oilSummary && (
-          <div className="summary-row">
-            <span>Total Qty: {oilSummary.totalQuantity}</span>
-            <span>Total Amount: ₹{oilSummary.totalAmount?.toLocaleString()}</span>
-            <span>Avg Rate: ₹{oilSummary.averageRate?.toFixed(2)}</span>
-          </div>
-        )} */}
-
-        <div className="data-table-wrapper">
-          <DataTable
-            data={oilPurchases}
-            columns={oilColumns}
-            loading={loading}
-            rowKey="_id"
-          />
-        </div>
-
-        {showForm && (
-          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h3 id="modal-title">New Oil Purchase</h3>
-                <button className="modal-close" aria-label="Close" onClick={() => setShowForm(false)}>×</button>
-              </div>
-              {formErrorSummary && (
-                <div className="form-error-summary" style={{ margin: '0.75rem 0 1rem', padding: '0.75rem 1rem', backgroundColor: '#fdecea', border: '1px solid #f5c6cb', borderRadius: '6px', color: '#a71d2a' }}>
-                  {formErrorSummary}
-                </div>
-              )}
-                    {selectedBooking && (
-                <div className="info-section" style={{ marginBottom: '1.5rem' }}>
-                  <h3>Selected Booking Details</h3>
-                  <div className="summary-cards" style={{ marginTop: '1rem' }}>
-                    <div className="credit-card">
-                      <div className="credit-label">Booking Date</div>
-                      <div className="credit-value">{new Date(selectedBooking.bookingDate).toLocaleDateString()}</div>
-                    </div>
-                    <div className="credit-card">
-                      <div className="credit-label">Tanker Capacity</div>
-                      <div className="credit-value">{selectedBooking.tankerCapacity.toLocaleString()} L</div>
-                    </div>
-                    <div className="credit-card">
-                      <div className="credit-label">Rate per Liter</div>
-                      <div className="credit-value">₹{selectedBooking.rate.toFixed(2)}</div>
-                    </div>
-                    <div className="credit-card">
-                      <div className="credit-label">Booking Amount</div>
-                      <div className="credit-value">₹{selectedBooking.bookingAmount.toLocaleString()}</div>
-                    </div>
-                    <div className="credit-card" style={{ borderLeft: '4px solid #e74c3c' }}>
-                      <div className="credit-label">Pending Amount</div>
-                      <div className="credit-value" style={{ color: '#e74c3c' }}>
-                        ₹{selectedBooking.pendingAmount.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              
-              <p className="help-text">Tip: selecting a booking will prefill quantity and rate.</p>
-
-              <FormBuilder
-                fields={oilFormFields}
-                values={formData}
-                onChange={handleChange}
-                onSubmit={(e) => { e.preventDefault(); submitForm(); }}
-                loading={formLoading}
-                submitText="Add Oil Purchase"
-                errors={formErrors}
-              />
-
-              {formData.quantity > 0 && formData.ratePerLiter > 0 && (
-                <div className="summary-card" style={{ margin: '1.5rem', textAlign: 'center' }}>
-                  <h4>Calculated Purchase Amount</h4>
-                  <div className="summary-value" style={{ color: '#27ae60', fontSize: '1.75rem' }}>
-                    ₹{(calculatedOilAmount + formData.brokerage + formData.tankerTransport + formData.extraCharges).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                  <p style={{ color: '#7f8c8d', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>
-                    ₹{formData.quantity.toLocaleString()} L × ₹{formData.ratePerLiter.toFixed(2)} per liter
-                  </p>
-                </div>
-              )}
-              <div className="modal-actions">
-                <button onClick={submitForm} disabled={formLoading} className="primary-button">
-                  {formLoading ? 'Saving...' : 'Save Purchase'}
-                </button>
-                <button onClick={() => setShowForm(false)} className="secondary-button">
-                  Cancel
-                </button>
-              </div>
+            <div className="form-group">
+                <label>Invoice Net Amount</label>
+                <input
+                    value={`₹${invoiceNetAmount.toFixed(2)}`}
+                    disabled
+                />
             </div>
-          </div>
-        )}
-      </div>
+
+            <div className="form-group">
+                <label>Landed Cost / KG</label>
+                <input
+                    value={`₹${landedCostPerKg.toFixed(2)}`}
+                    disabled
+                />
+            </div>
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}><label>Remarks</label><textarea rows={3} value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} /></div>
+        </div><div className="modal-actions"><button className="primary-button" onClick={save}>Save Purchase</button><button className="secondary-button" onClick={() => setShow(false)}>Cancel</button></div></div></div>}
     </div>
-  );
 };
-
 export default ProcurementOil;

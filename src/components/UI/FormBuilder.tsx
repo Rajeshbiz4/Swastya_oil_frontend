@@ -32,7 +32,7 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
       id: field.name,
       name: field.name,
       required: field.required,
-      disabled: loading,
+      disabled: loading || field.disabled,
       className: hasError ? 'error' : '',
       value,
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {

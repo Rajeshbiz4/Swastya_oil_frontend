@@ -15,6 +15,9 @@ export interface ApiResponse<T = unknown> {
 export interface TankerBooking {
   _id: string;
   bookingDate: string;
+  vendorId?: string;
+  vendorName?: string;
+  vendorGstin?: string;
   supplierName: string;
   oilType: string;
   tankerCapacity: number;
@@ -45,10 +48,10 @@ export interface BookingSummary {
 }
 
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
-  export const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
+  //export const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
   // const baseURL =  'http://localhost:5000/api';
 
-  // export const baseURL = 'http://localhost:5000/api';
+   export const baseURL = 'http://localhost:5000/api';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -120,6 +123,7 @@ export const bookingAPI = {
   // Create new booking
   create: (bookingData: {
     bookingDate: string;
+    vendorId: string;
     tankerCapacity: number;
     rate: number;
     bookingAmount: number;
@@ -131,6 +135,7 @@ export const bookingAPI = {
   // Update booking
   update: (id: string, bookingData: {
     bookingDate?: string;
+    vendorId?: string;
     tankerCapacity?: number;
     rate?: number;
     bookingAmount?: number;
@@ -494,6 +499,29 @@ getDailyProductionReport: (date: string) =>
     }
   ),
   
+
+};
+
+export interface AttendanceReport {
+  employeeId: string;
+  employeeName: string;
+  designation: string;
+  presentDays: number;
+  absentDays: number;
+  halfDays: number;
+  overtimeHours: number;
+}
+
+export const attendanceAPI = {
+
+  getAttendanceReport: (
+    month: number,
+    year: number
+  ) => {
+    return api.get<ApiResponse<AttendanceReport[]>>(
+      `/attendance/report?month=${month}&year=${year}`
+    );
+  },
 
 };
 

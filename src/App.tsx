@@ -29,6 +29,9 @@ import UserManagement from './pages/UserManagement';
 import EmployeeManagement from './pages/EmployeeManagement';
 import Maintenance from './pages/Maintenance';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
+import VendorManagement from './pages/VendorManagement';
+import CustomerManagement from './pages/CustomerManagement';
 
 // Placeholder components for future implementation
 const NotFound = () => <div className="page-placeholder">Page Not Found</div>;
@@ -92,6 +95,16 @@ const AppContent: React.FC = () => {
               <Booking />
             </ProtectedRoute>
           } />
+          <Route path="vendors" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+              <VendorManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="customers" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+              <CustomerManagement />
+            </ProtectedRoute>
+          } />
           {/* Procurement submenu routes */}
           <Route
             path="procurement"
@@ -124,6 +137,11 @@ const AppContent: React.FC = () => {
           <Route path="reports" element={
             <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
               <Reports />
+            </ProtectedRoute>
+          } />
+          <Route path="settings" element={
+            <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+              <Settings />
             </ProtectedRoute>
           } />
 

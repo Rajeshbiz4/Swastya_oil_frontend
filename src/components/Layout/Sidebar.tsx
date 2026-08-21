@@ -29,6 +29,15 @@ const navigationItems: NavItem[] = [
     roles: [UserRole.ADMIN]
   },
   {
+    label: 'Masters',
+    path: '',
+    roles: [UserRole.ADMIN],
+    children: [
+      { label: 'Vendor Management', path: '/vendors', roles: [UserRole.ADMIN] },
+      { label: 'Customer Management', path: '/customers', roles: [UserRole.ADMIN] },
+    ],
+  },
+  {
     label: 'Procurement',
     path: '',
     roles: [UserRole.ADMIN],
@@ -62,6 +71,11 @@ const navigationItems: NavItem[] = [
   { 
     label: 'Reports', 
     path: '/reports',
+    roles: [UserRole.ADMIN]
+  },
+  {
+    label: 'Application Settings',
+    path: '/settings',
     roles: [UserRole.ADMIN]
   },
   // User-only navigation

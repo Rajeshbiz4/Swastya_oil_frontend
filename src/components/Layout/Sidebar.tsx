@@ -61,6 +61,12 @@ const navigationItems: NavItem[] = [
   roles: [UserRole.ADMIN]
   },
 
+  {  
+  label: 'Customers',  
+  path: '/customers', 
+  roles: [UserRole.ADMIN] 
+  },
+
   { 
     label: 'Inventory', 
     path: '/inventory',

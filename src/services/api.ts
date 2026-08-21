@@ -73,11 +73,34 @@ export interface BookingSummary {
   statusBreakdown: Record<string, { count: number; totalAmount: number }>;
 }
 
+export interface Customer {
+  _id: string;
+  customerName: string;
+  contact: string;
+  alternateContact?: string;
+  email?: string;
+  gstNo?: string;
+  panNo?: string;
+  address: string;
+  destinationAddress?: string;
+  stateName: string;
+  stateCode: string;
+  city?: string;
+  pinCode?: string;
+  customerType: string;
+  creditLimit?: number;
+  creditDays?: number;
+  notes?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
-  export const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
+ // export const baseURL =  'https://swastya-oil-backend1.vercel.app/api';
   // const baseURL =  'http://localhost:5000/api';
 
-  // export const baseURL = 'http://localhost:5000/api';
+  export const baseURL = 'http://localhost:5000/api';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -602,6 +625,43 @@ export const vendorAPI = {
   delete: (id: string) => {
     return api.delete<ApiResponse<{ message: string }>>(`/vendors/${id}`);
   },
+};
+
+export const customerAPI = {
+
+  getAll: () => {
+    return api.get<ApiResponse<Customer[]>>('/customers');
+  },
+
+  getById: (id: string) => {
+    return api.get<ApiResponse<Customer>>(`/customers/${id}`);
+  },
+
+  create: (customerData: {
+    customerName: string;
+    contact: string;
+    alternateContact?: string;
+    email?: string;
+    gstNo?: string;
+    panNo?: string;
+    address: string;
+    destinationAddress?: string;
+    stateName: string;
+    stateCode: string;
+    city?: string;
+    pinCode?: string;
+    customerType: string;
+    creditLimit?: number;
+    creditDays?: number;
+    notes?: string;
+    isActive: boolean;
+  }) => {
+    return api.post<ApiResponse<Customer>>(
+      '/customers',
+      customerData
+    );
+  },
+
 };
 
 export default api;

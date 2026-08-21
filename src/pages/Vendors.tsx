@@ -102,6 +102,33 @@ const handleEdit = (vendor: Vendor) => {
   setShowForm(true);
 };
 
+const resetForm = () => {
+  setFormData({
+    vendorName: '',
+    contactPerson: '',
+    mobileNumber: '',
+    alternateMobile: '',
+    email: '',
+    gstin: '',
+    panNumber: '',
+    address: '',
+    city: '',
+    state: '',
+    stateCode: '',
+    pinCode: '',
+    vendorType: '',
+    paymentTerms: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    openingBalance: 0,
+    balanceType: 'Payable',
+    status: 'Active',
+    notes: '',
+  });
+};
+
+
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -182,7 +209,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   }, []);
 
   return (
-    <div className="page-container">
+    <div className="page-container vendor-page">
 
       {/* Header */}
       <div className="employee-management-header">
@@ -191,12 +218,41 @@ const handleSubmit = async (e: React.FormEvent) => {
           <p>Manage your oil and packaging suppliers.</p>
         </div>
 
-        <button
-          className="primary-button"
-          onClick={() => setShowForm(true)}
-        >
-          + Add Vendor
-        </button>
+         <button
+  className="add-vendor-button"
+  onClick={() => {
+    setEditingVendor(null);
+
+    setFormData({
+      vendorName: '',
+      contactPerson: '',
+      mobileNumber: '',
+      alternateMobile: '',
+      email: '',
+      gstin: '',
+      panNumber: '',
+      address: '',
+      city: '',
+      state: '',
+      stateCode: '',
+      pinCode: '',
+      vendorType: '',
+      paymentTerms: '',
+      bankName: '',
+      accountNumber: '',
+      ifscCode: '',
+      openingBalance: 0,
+      balanceType: 'Payable',
+      status: 'Active',
+      notes: '',
+    });
+
+    setShowForm(true);
+  }}
+>
+  + Add Vendor
+</button>
+
       </div>
 
       {/* Loading */}

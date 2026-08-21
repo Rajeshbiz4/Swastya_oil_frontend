@@ -1770,7 +1770,192 @@
 }
 
 
-/* Vendor Modal */
+/* ================================
+   Customer Management
+================================ */
+
+.customer-list {
+  margin-top: 25px;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.customer-list h2 {
+  margin: 0 0 20px;
+  color: #243b53;
+  font-size: 22px;
+}
+
+.customer-list table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.customer-list th {
+  background: #f5f7fa;
+  color: #334e68;
+  font-weight: 600;
+  text-align: left;
+  padding: 14px 12px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.customer-list td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #475569;
+  font-size: 14px;
+}
+
+.customer-list tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Active / Inactive status */
+
+.customer-list td:last-child {
+  font-weight: 600;
+}
+
+/* =========================
+   CUSTOMER MANAGEMENT
+   ========================= */
+
+.add-customer-btn {
+  background: #2e7d32;
+  color: #ffffff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.add-customer-btn:hover {
+  background: #256628;
+}
+
+
+/* Modal Close Button */
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 28px;
+  color: #555;
+  cursor: pointer;
+  padding: 2px 8px;
+}
+
+.modal-close-btn:hover {
+  color: #d32f2f;
+}
+
+
+/* Modal Footer */
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 25px;
+  padding-top: 18px;
+  border-top: 1px solid #e5e7eb;
+}
+
+
+/* Cancel Button */
+
+.cancel-btn {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background: #e5e7eb;
+}
+
+
+/* Save Customer Button */
+
+.save-customer-btn {
+  background: #2e7d32;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.save-customer-btn:hover {
+  background: #256628;
+}
+
+.save-customer-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Customer Modal Position */
+
+.modal-content {
+  position: relative;
+  left: 90px;
+}
+
+/* =========================================================
+   VENDOR MANAGEMENT
+   ========================================================= */
+
+/* Vendor page header */
+.vendor-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+/* Add Vendor button */
+.add-vendor-button {
+  background: #2e7d32;
+  color: #ffffff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+
+  /* Move button down near the table/card */
+  margin-top: 85px;
+
+  /* Align with card right side */
+  margin-right: 0;
+}
+
+.add-vendor-button:hover {
+  background: #256628;
+}
+
+
+/* =========================================================
+   VENDOR MODAL
+   ========================================================= */
 
 .vendor-modal-overlay {
   position: fixed;
@@ -1778,119 +1963,398 @@
   left: 0;
   right: 0;
   bottom: 0;
+
   background: rgba(0, 0, 0, 0.45);
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   z-index: 1000;
   padding: 20px;
 }
 
+
+/* Modal Card */
 .vendor-modal {
-  background: #fff;
+  background: #ffffff;
+
   width: 900px;
   max-width: 95%;
+
   max-height: 90vh;
   overflow-y: auto;
-  border-radius: 8px;
+
+  border-radius: 10px;
+
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+
+  margin-left: 17%;
+}
+
+
+/* =========================================================
+   MODAL HEADER
+   ========================================================= */
+/* Vendor Management Header */
+/* Vendor Management Header */
+.employee-management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 50px;
+  padding-right: 25px;
+}
+
+.employee-management-header > div {
+  flex: 1;
+}
+
+.employee-management-header .add-vendor-button {
+  margin-left: auto;
+  margin-right: 15px;
+  flex-shrink: 0;
 }
 
 .vendor-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+
   padding: 18px 24px;
+
   border-bottom: 1px solid #ddd;
 }
 
 .vendor-modal-header h2 {
   margin: 0;
+
   color: #1f3b56;
+
+  font-size: 22px;
+  font-weight: 600;
 }
 
+
+/* Close button */
 .vendor-close-button {
   border: none;
   background: transparent;
+
   font-size: 28px;
+
   cursor: pointer;
+
   color: #555;
+
+  padding: 2px 8px;
+
+  transition: 0.2s ease;
 }
+
+.vendor-close-button:hover {
+  color: #d32f2f;
+}
+
+
+/* =========================================================
+   VENDOR FORM SECTION
+   ========================================================= */
 
 .vendor-form-section {
   padding: 20px 24px;
+
   border-bottom: 1px solid #eee;
 }
 
 .vendor-form-section h3 {
   margin-top: 0;
   margin-bottom: 18px;
+
   color: #1f3b56;
+
+  font-size: 17px;
+  font-weight: 600;
 }
 
+
+/* Form grid */
 .vendor-form-grid {
   display: grid;
+
   grid-template-columns: 1fr 1fr;
+
   gap: 16px;
 }
 
-.form-group {
+
+/* Form group */
+.vendor-form-grid .form-group {
   display: flex;
   flex-direction: column;
 }
 
-.form-group label {
+
+/* Label */
+.vendor-form-grid .form-group label {
   margin-bottom: 6px;
+
   font-weight: 500;
+
   color: #333;
-}
 
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
   font-size: 14px;
+}
+
+
+/* Inputs */
+.vendor-form-grid .form-group input,
+.vendor-form-grid .form-group select,
+.vendor-form-grid .form-group textarea {
+  width: 100%;
+
+  padding: 10px 12px;
+
+  border: 1px solid #ccc;
+
+  border-radius: 5px;
+
+  font-size: 14px;
+
   box-sizing: border-box;
+
+  background: #ffffff;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+
+/* Textarea */
+.vendor-form-grid .form-group textarea {
+  min-height: 80px;
+
+  resize: vertical;
+}
+
+
+/* Focus */
+.vendor-form-grid .form-group input:focus,
+.vendor-form-grid .form-group select:focus,
+.vendor-form-grid .form-group textarea:focus {
   outline: none;
+
   border-color: #2684d9;
+
+  box-shadow: 0 0 0 2px rgba(38, 132, 217, 0.1);
 }
 
+
+/* Full width field */
 .vendor-full-width {
   grid-column: 1 / -1;
 }
 
+
+/* =========================================================
+   VENDOR FORM BUTTONS
+   ========================================================= */
+
 .vendor-form-actions {
   display: flex;
+
   justify-content: flex-end;
+
+  align-items: center;
+
   gap: 10px;
+
   padding: 18px 24px;
+
+  border-top: 1px solid #eee;
 }
 
+
+/* Cancel button */
 .secondary-button {
   padding: 10px 20px;
+
   border: 1px solid #bbb;
-  background: #fff;
+
+  background: #ffffff;
+
+  color: #374151;
+
   border-radius: 5px;
+
   cursor: pointer;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  transition: 0.2s ease;
 }
 
 .secondary-button:hover {
   background: #f5f5f5;
+
+  border-color: #999;
+}
+
+
+/* Save button */
+.primary-button {
+  padding: 10px 20px;
+
+  border: none;
+
+  background: #2e7d32;
+
+  color: #ffffff;
+
+  border-radius: 5px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  transition: 0.2s ease;
+}
+
+.primary-button:hover {
+  background: #256628;
 }
 
 .primary-button:disabled {
   opacity: 0.6;
+
   cursor: not-allowed;
 }
 
+
+/* =========================================================
+   VENDOR DETAILS MODAL
+   ========================================================= */
+
+.vendor-details-modal {
+  max-width: 850px;
+
+  max-height: 90vh;
+
+  overflow-y: auto;
+}
+
+
+/* Details content */
+.vendor-details-content {
+  padding: 20px 24px;
+}
+
+
+/* Details section */
+.vendor-details-section {
+  margin-bottom: 24px;
+}
+
+.vendor-details-section h3 {
+  margin: 0 0 14px;
+
+  padding-bottom: 8px;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  font-size: 17px;
+
+  color: #263b4d;
+}
+
+
+/* Details grid */
+.vendor-details-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 14px 30px;
+}
+
+
+/* Individual detail */
+.vendor-details-grid > div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+/* Label */
+.vendor-details-grid span {
+  font-size: 13px;
+
+  color: #6b7280;
+}
+
+
+/* Value */
+.vendor-details-grid strong {
+  font-size: 14px;
+
+  color: #263b4d;
+
+  font-weight: 500;
+}
+
+
+/* Full width details */
+.vendor-details-full-width {
+  grid-column: 1 / -1;
+}
+
+
+/* Notes */
+.vendor-details-notes {
+  padding: 12px;
+
+  background: #f8f9fa;
+
+  border-radius: 6px;
+
+  color: #374151;
+
+  font-size: 14px;
+
+  min-height: 40px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
 @media (max-width: 700px) {
+
+  .vendor-page-header {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 12px;
+  }
+
+  .add-vendor-button {
+    align-self: flex-end;
+  }
+
+  .vendor-modal {
+    width: 100%;
+
+    max-width: 100%;
+
+    max-height: 95vh;
+  }
+
   .vendor-form-grid {
     grid-template-columns: 1fr;
   }
@@ -1898,63 +2362,22 @@
   .vendor-full-width {
     grid-column: auto;
   }
-}
 
+  .vendor-details-grid {
+    grid-template-columns: 1fr;
+  }
 
-.vendor-details-modal {
-  max-width: 850px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
+  .vendor-details-full-width {
+    grid-column: auto;
+  }
 
-.vendor-details-content {
-  padding: 20px;
-}
+  .vendor-form-actions {
+    flex-direction: column-reverse;
 
-.vendor-details-section {
-  margin-bottom: 24px;
-}
+    align-items: stretch;
+  }
 
-.vendor-details-section h3 {
-  margin: 0 0 14px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 17px;
-  color: #263b4d;
-}
-
-.vendor-details-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px 30px;
-}
-
-.vendor-details-grid > div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.vendor-details-grid span {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.vendor-details-grid strong {
-  font-size: 14px;
-  color: #263b4d;
-  font-weight: 500;
-}
-
-.vendor-details-full-width {
-  grid-column: 1 / -1;
-}
-
-.vendor-details-notes {
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  color: #374151;
-  font-size: 14px;
-  min-height: 40px;
+  .vendor-form-actions button {
+    width: 100%;
+  }
 }

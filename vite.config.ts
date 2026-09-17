@@ -9,7 +9,7 @@ export default defineConfig({
 
     proxy: {
       '/api': {
-        target: 'https://swastya-oil-backend.vercel.app',
+        target: 'https://swastya-oil-backend.vercel.app/api',
         changeOrigin: true,
         secure: true
       }

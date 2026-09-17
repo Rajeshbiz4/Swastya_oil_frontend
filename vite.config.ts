@@ -14,4 +14,4 @@ import 'dotenv/config';
       console.error('Auth Error!', err);
     }
 })();
-export default defineConfig({plugins:[react()],server:{port:5173,proxy:{'/api':{target:'http://localhost:5000',changeOrigin:true}}}});
+export default defineConfig({plugins:[react()],server:{port:5173,proxy:{'/api':{target:'https://swastya-oil-backend.vercel.app/',changeOrigin:true}}}});

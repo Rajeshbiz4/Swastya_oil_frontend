@@ -49,9 +49,9 @@ export interface BookingSummary {
 
 // Determine base URL: use Vite env variable in production, otherwise use Vite proxy '/api'
   //export const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
-  // const baseURL =  'http://localhost:5000/api';
+  const baseURL =  'https://swastya-oil-backend.vercel.app/api';
 
-   export const baseURL = 'http://localhost:5000/api';
+  //  export const baseURL = 'http://localhost:5000/api';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
